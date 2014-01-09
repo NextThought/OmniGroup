@@ -12,7 +12,7 @@
 
 RCS_ID("$Id$");
 
-static const CGFloat _CompletionCellMargin = 10.0f;
+//static const CGFloat _CompletionCellMargin = 10.0f;
 
 @interface OFCompletionMatchLabel : UIView
 + (NSAttributedString *)attributedStringForCompletionMatch:(OFCompletionMatch *)completionMatch;
@@ -122,7 +122,7 @@ static void _SetAttributedStringAttribute(NSMutableAttributedString *attributedS
 
     NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:[completionMatch string]];
     OFIndexPath *characterIndexPath = [completionMatch characterIndexPath];
-    unsigned int indexCount = [characterIndexPath length];
+    NSUInteger indexCount = [characterIndexPath length];
 
     if (indexCount > 0) {
         NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:
@@ -133,7 +133,7 @@ static void _SetAttributedStringAttribute(NSMutableAttributedString *attributedS
         NSUInteger indexes[indexCount];
         [characterIndexPath getIndexes:indexes];
         for (unsigned int indexIndex = 0; indexIndex < indexCount; indexIndex++) {
-            unsigned int indexValue = indexes[indexIndex];
+            NSUInteger indexValue = indexes[indexIndex];
             NSRange range = NSMakeRange(indexValue, 1);
             [attributedString addAttributes:attributes range:range];
         }

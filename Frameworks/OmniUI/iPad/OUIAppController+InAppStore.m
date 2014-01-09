@@ -98,7 +98,7 @@ static const UInt8 kKeychainIdentifier[] = "com.omnigroup.InAppPurchase";
                            nil];
     OSStatus status = SecItemDelete((__bridge CFDictionaryRef)query);
     if (status != errSecSuccess) {
-        UIAlertView *keychainResetFailedAlert = [[UIAlertView alloc] initWithTitle:[NSString stringWithFormat:@"Couldn't Re-Lock %@", [self sheetTitleForInAppStoreProductIdentifier:productIdentifier]] message:[NSString stringWithFormat:@"Keychain error: %ld", status] delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
+        UIAlertView *keychainResetFailedAlert = [[UIAlertView alloc] initWithTitle:[NSString stringWithFormat:@"Couldn't Re-Lock %@", [self sheetTitleForInAppStoreProductIdentifier:productIdentifier]] message:[NSString stringWithFormat:@"Keychain error: %ld", (long)status] delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
         [keychainResetFailedAlert show];
     } else {
         UIAlertView *keychainResetSuccessAlert = [[UIAlertView alloc] initWithTitle:[NSString stringWithFormat:@"Re-Locked %@", [self sheetTitleForInAppStoreProductIdentifier:productIdentifier]] message:[NSString stringWithFormat:@"%@ is now re-locked", [self titleForInAppStoreProductIdentifier:productIdentifier]] delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];

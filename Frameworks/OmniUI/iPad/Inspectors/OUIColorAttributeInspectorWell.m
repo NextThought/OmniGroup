@@ -59,8 +59,8 @@ RCS_ID("$Id$");
             CGContextRef ctx = UIGraphicsGetCurrentContext();
             CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceGray();
             
-            float whiteFill[] = {1, 1};
-            float grayFill[] = {0.85, 1};
+            CGFloat whiteFill[] = {1, 1};
+            CGFloat grayFill[] = {0.85, 1};
             CGContextSetFillColorSpace(ctx, colorSpace);
             
             // Simple checkerboard
@@ -201,8 +201,8 @@ static id _commonInit(OUIColorAttributeInspectorWell *self)
         CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceGray();
 
         if ([_color alphaComponent] < 1) {            
-            float whiteFill[] = {1, 1};
-            float grayFill[] = {0.85, 1};
+            CGFloat whiteFill[] = {1, 1};
+            CGFloat grayFill[] = {0.85, 1};
             CGContextSetFillColorSpace(ctx, colorSpace);
 
             // Simple checkerboard
@@ -222,8 +222,8 @@ static id _commonInit(OUIColorAttributeInspectorWell *self)
         
         if (!self.singleSwatch) {
             // Grid dividing the normal gradient background from the color swatch
-            float leftLine[] = {0.0, 0.15};
-            float rightLine[] = {1.0, 0.35};
+            CGFloat leftLine[] = {0.0, 0.15};
+            CGFloat rightLine[] = {1.0, 0.35};
             CGContextSetFillColorSpace(ctx, colorSpace);
 
             CGContextSetFillColor(ctx, leftLine);

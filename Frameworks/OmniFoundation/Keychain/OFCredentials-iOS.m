@@ -416,6 +416,6 @@ BOOL OFHasTrustForChallenge(NSURLAuthenticationChallenge *challenge)
     OSStatus err = SecTrustEvaluate(trust, &evaluationResult); // NB: May block for long periods (eg OCSP verification, etc)
     if (err == errSecSuccess && evaluationResult == kSecTrustResultProceed)
         return YES;
-    NSLog(@"err:%ld, evaluationResult:%lu", err, (unsigned long)evaluationResult);
+    NSLog(@"err:%ld, evaluationResult:%lu", (long)err, (unsigned long)evaluationResult);
     return NO;
 }

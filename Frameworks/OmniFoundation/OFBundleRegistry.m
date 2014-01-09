@@ -181,7 +181,7 @@ static NSArray *oldDisabledBundleNames;
 @implementation OFBundleRegistry (Private)
 
 static NSString * const OFBundleRegistryConfig = @"OFBundleRegistryConfig";
-static NSString * const OFRequiredSoftwareVersions = @"OFRequiredSoftwareVersions";
+//static NSString * const OFRequiredSoftwareVersions = @"OFRequiredSoftwareVersions";
 static NSString * const OFRegistrations = @"OFRegistrations";
 
 static NSString * const OFBundleRegistryConfigSearchPaths = @"SearchPaths";
