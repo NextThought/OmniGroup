@@ -659,7 +659,7 @@
 				345613D71193197700E7D187 /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		34DB335A08C62AB500BC2748 /* Build configuration list for PBXNativeTarget "OmniQuartz" */ = {
 			isa = XCConfigurationList;
@@ -669,7 +669,7 @@
 				34DB335D08C62AB500BC2748 /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		34DB335E08C62AB500BC2748 /* Build configuration list for PBXProject "OmniQuartz" */ = {
 			isa = XCConfigurationList;
@@ -679,7 +679,7 @@
 				34DB336108C62AB500BC2748 /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

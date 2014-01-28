@@ -3455,7 +3455,7 @@
 				3401163811E5181A0016ADB3 /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		3434791911923B5E007D0CE5 /* Build configuration list for PBXNativeTarget "OmniAppKitTouch" */ = {
 			isa = XCConfigurationList;
@@ -3465,7 +3465,7 @@
 				3434791811923B54007D0CE5 /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		4A4E085608AA75E90098FF0F /* Build configuration list for PBXProject "OmniAppKit" */ = {
 			isa = XCConfigurationList;
@@ -3475,7 +3475,7 @@
 				4A4E085908AA75E90098FF0F /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		4AA1E7F308AA764600E2FF6B /* Build configuration list for PBXNativeTarget "OmniAppKit (Framework)" */ = {
 			isa = XCConfigurationList;
@@ -3485,7 +3485,7 @@
 				4AA1E7F608AA764600E2FF6B /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		4AA1E80B08AA764600E2FF6B /* Build configuration list for PBXNativeTarget "OAUnitTests" */ = {
 			isa = XCConfigurationList;
@@ -3495,7 +3495,7 @@
 				4AA1E80E08AA764600E2FF6B /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		4AA1E81908AA764700E2FF6B /* Build configuration list for PBXNativeTarget "OAMakeImageSizeIntegral" */ = {
 			isa = XCConfigurationList;
@@ -3505,7 +3505,7 @@
 				4AA1E81C08AA764700E2FF6B /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		4AA1E82608AA764700E2FF6B /* Build configuration list for PBXNativeTarget "OAPatternColorPicker" */ = {
 			isa = XCConfigurationList;
@@ -3515,7 +3515,7 @@
 				4AA1E82908AA764700E2FF6B /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

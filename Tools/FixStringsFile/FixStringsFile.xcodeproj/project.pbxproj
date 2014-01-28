@@ -305,7 +305,7 @@
 				34DB3AAC08C7AADC00BC2748 /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		34DB3AAD08C7AADC00BC2748 /* Build configuration list for PBXProject "FixStringsFile" */ = {
 			isa = XCConfigurationList;
@@ -315,7 +315,7 @@
 				34DB3AB008C7AADC00BC2748 /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

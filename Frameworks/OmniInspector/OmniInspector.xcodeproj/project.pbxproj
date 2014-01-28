@@ -729,7 +729,7 @@
 				34B253C208D0D6AD00DD2070 /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		34B253C308D0D6AD00DD2070 /* Build configuration list for PBXProject "OmniInspector" */ = {
 			isa = XCConfigurationList;
@@ -739,7 +739,7 @@
 				34B253C608D0D6AD00DD2070 /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
