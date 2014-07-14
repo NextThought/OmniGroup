@@ -1,4 +1,4 @@
-// Copyright 1998-2005, 2007-2008, 2010, 2012-2013 Omni Development, Inc. All rights reserved.
+// Copyright 1998-2005, 2007-2008, 2010, 2012-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -24,11 +24,11 @@ RCS_ID("$Id$")
 static inline uint8_t _fromhex(unichar hexDigit)
 {
     if (hexDigit >= '0' && hexDigit <= '9')
-        return hexDigit - '0';
+        return (uint8_t)(hexDigit - '0');
     if (hexDigit >= 'a' && hexDigit <= 'f')
-        return hexDigit - 'a' + 10;
+        return (uint8_t)(hexDigit - 'a' + 10);
     if (hexDigit >= 'A' && hexDigit <= 'F')
-        return hexDigit - 'A' + 10;
+        return (uint8_t)(hexDigit - 'A' + 10);
     return 0xff;
 }
 
@@ -80,7 +80,7 @@ static inline uint8_t _fromhex(unichar hexDigit)
     while (inputPosition < length) {
         READ_DIGIT(digit0);
         READ_DIGIT(digit1);
-        outputBytes[outputPosition++] = (digit0 << 4) | digit1;
+        outputBytes[outputPosition++] = ((uint8_t)(digit0 << 4)) | digit1;
     }
     
     result = [self initWithBytesNoCopy:outputBytes length:outputLength];
@@ -226,7 +226,7 @@ static inline void ascii85put(OFDataBuffer *buffer, unsigned long tuple, int byt
     OFDataBufferRelease(&buffer, kCFAllocatorDefault, &resultData);
     
     [self release];
-    return NSMakeCollectable(resultData);
+    return (OB_BRIDGE NSData *)resultData;
 }
 
 static inline void encode85(OFDataBuffer *dataBuffer, unsigned long tuple, int count)
@@ -394,7 +394,7 @@ XX,XX,XX,XX, XX,XX,XX,XX, XX,XX,XX,XX, XX,XX,XX,XX,
     OFDataBufferRelease(buffer, kCFAllocatorDefault, &resultData);
 
     [self release];
-    return NSMakeCollectable(resultData);
+    return (OB_BRIDGE NSData *)resultData;
 }
 
 static const char basis_64[] =
@@ -568,7 +568,7 @@ static inline void ascii26put(OFDataBuffer *buffer, unsigned long tuple, int cou
     OFDataBufferRelease(&buffer, kCFAllocatorDefault, &resultData);
     
     [self release];
-    return NSMakeCollectable(resultData);
+    return (OB_BRIDGE NSData *)resultData;
 }
 
 static inline void encode26(OFDataBuffer *dataBuffer, unsigned long tuple, int count256)
@@ -635,14 +635,14 @@ static inline void encode26(OFDataBuffer *dataBuffer, unsigned long tuple, int c
     return string;
 }
 
-static inline unichar hex(int i)
+static inline char hex(int i)
 {
     static const char hexDigits[16] = {
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
     };
     
-    return (unichar)hexDigits[i];
+    return hexDigits[i];
 }
 
 - (NSUInteger)lengthOfQuotedPrintableStringWithMapping:(const OFQuotedPrintableMapping *)qpMap
@@ -706,8 +706,7 @@ static inline unichar hex(int i)
         }
     }
     
-    CFStringRef resultString = CFStringCreateWithBytesNoCopy(kCFAllocatorDefault, destinationBuffer, destinationIndex, kCFStringEncodingISOLatin1, FALSE, kCFAllocatorMalloc);
-    return [NSMakeCollectable(resultString) autorelease];
+    return CFBridgingRelease(CFStringCreateWithBytesNoCopy(kCFAllocatorDefault, destinationBuffer, destinationIndex, kCFStringEncodingISOLatin1, FALSE, kCFAllocatorMalloc));
 }
 
 

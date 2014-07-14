@@ -1,4 +1,4 @@
-// Copyright 1997-2012 Omni Development, Inc. All rights reserved.
+// Copyright 1997-2012, 2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -48,8 +48,13 @@
 // Show a specific Help page in an appropriate viewer.
 - (void)showHelpURL:(NSString *)helpURL;
     // - If invoked in OmniWeb, opens the URL in OmniWeb. helpURL should be a path relative to omniweb:/Help/.
-    // - If invoked in an application that has Apple Help content (determined by the presence of the CFBundleHelpBookName key in the app's Info.plist), the URL will display in  Help Viewer. helpURL should be a path relative to the help book folder.
+    // - If invoked in an application that has built-in HTML help (Omni-style, determined by the presence of the OAHelpFolder key in the app's Info.plist), the (mapped) URL will be displayed in the built-in help viewer.
+    // - If invoked in an application that has Apple Help content (determined by the presence of the CFBundleHelpBookName key in the app's Info.plist), the URL will display in Help Viewer. helpURL should be a path relative to the help book folder.
     // - Otherwise, we hand the URL off to NSWorkspace. This should generally be avoided.
+
+- (NSURL *)builtInHelpURLForHelpURLString:(NSString *)helpURLString;
+    // If the application has built-in help content (as determined by the presence of the OAHelpFolder key in the app's Info.plist), returns the URL that should be opened in the built-in help viewer, otherwise returns nil.
+    // This is typically only used internally by -showHelpURL:, but may be used by a subclass which has need to override -showHelpURL: to spawn custom viewers for certain help documents.
 
 // Application Support directory
 - (NSString *)applicationSupportDirectoryName; // Calls the delegate, falls back to the process name. Does not cache.
@@ -76,6 +81,7 @@
 @optional
 - (NSString *)applicationSupportDirectoryName:(OAApplication *)application;
 - (void)openAddressWithString:(NSString *)urlString;
+- (void)downloadAddressWithString:(NSString *)urlString;
 @end
 
 @interface NSResponder (OAApplicationEvents)

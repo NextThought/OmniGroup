@@ -1,4 +1,4 @@
-// Copyright 1997-2005, 2007-2008, 2010-2013 Omni Development, Inc. All rights reserved.
+// Copyright 1997-2005, 2007-2008, 2010-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -10,6 +10,7 @@
 
 #import <Foundation/NSOperation.h>
 #import <dispatch/dispatch.h>
+#import <OmniBase/macros.h>
 
 RCS_ID("$Id$")
 
@@ -231,13 +232,15 @@ typedef double (*dblImp_t)(id self, SEL _cmd, id arg);
                                                      0/* mask -- not applicable */,
                                                      dispatch_get_main_queue());
     
-    dispatch_time_t startTime = dispatch_time(DISPATCH_TIME_NOW, delay * 1e9);
+    dispatch_time_t startTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * 1e9) /* dispatch_time() takes nanoseconds */);
     dispatch_source_set_timer(timer, startTime, 0/*interval*/, 0/*leeway*/);
     
     dispatch_source_set_event_handler(timer, ^{
         [operationQueue addOperationWithBlock:block];
         dispatch_source_cancel(timer);
+#if !OB_ARC
         dispatch_release(timer);
+#endif
     });
 
     // Fire it up.

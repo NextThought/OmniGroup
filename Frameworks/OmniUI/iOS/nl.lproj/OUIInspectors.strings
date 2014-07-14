@@ -50,13 +50,13 @@
 "No color selected" = "Geen kleur geselecteerd";
 
 /* popover inspector label title for no selected objects */
-"No Selection" = "Geen selectie";
+"No Selection" = "Niets geselecteerd";
 
 /* Title for section of font list */
 "Recommended Fonts" = "Aanbevolen lettertypen";
 
 /* Name for the variant of a font with out any special attributes */
-"Regular" = "Normaal";
+"Regular" = "Regular";
 
 /* Label for font size controls */
 "Size" = "Grootte";
@@ -66,3 +66,4 @@
 
 /* Inspector title */
 "Text Style" = "Tekststijl";
+

@@ -1,4 +1,4 @@
-// Copyright 2000-2008, 2010, 2012-2013 Omni Development, Inc. All rights reserved.
+// Copyright 2000-2008, 2010, 2012-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -130,8 +130,8 @@ static struct OFCharacterScanResult OFScanUTF8CharactersIntoBuffer(struct OFStri
                 if ((in_bytes[1] & 0xC0) != 0x80) {
                     aCharacter = UNKNOWN_CHAR;
                 } else {
-                    aCharacter = ((((unsigned int)aByte) & 0x1F) << 6) |
-                        (((unsigned int)in_bytes[1]) & 0x3F);
+                    aCharacter = (unichar)((((unichar)(aByte & 0x1F)) << 6) |
+                                            ((unichar)(in_bytes[1] & 0x3F)));
                 }
                 in_bytes += 2;
             } else if ((aByte & 0xF0) == 0xE0) {
@@ -150,9 +150,9 @@ static struct OFCharacterScanResult OFScanUTF8CharactersIntoBuffer(struct OFStri
                 if ((byte2 & 0xC0) != 0x80 || (byte3 & 0xC0) != 0x80) {
                     aCharacter = UNKNOWN_CHAR;
                 } else {
-                    aCharacter = ((((unsigned int)aByte) & 0x0F) << 12) |
-                        ((byte2 & 0x3F) << 6) |
-                        (byte3 & 0x3F);
+                    aCharacter = (unichar)((((unichar)(aByte & 0x0F)) << 12) |
+                                           (((unichar)(byte2 & 0x3F)) << 6) |
+                                                      (byte3 & 0x3F));
                 }
                 in_bytes += 3;
             } else if ((aByte & 0xF8) == 0xF0) {
@@ -243,7 +243,7 @@ struct OFCharacterScanResult OFScanCharactersIntoBuffer(struct OFStringDecoderSt
                 CFStringRef stringBuffer = CFStringCreateWithBytes(kCFAllocatorDefault, in_bytes, toScan, state.encoding, TRUE);
                 // [byteBuffer release];
                 OBASSERT(CFStringGetLength(stringBuffer) == (CFIndex)toScan);
-                [(NSString *)stringBuffer getCharacters:out_characters];
+                [(OB_BRIDGE NSString *)stringBuffer getCharacters:out_characters];
                 CFRelease(stringBuffer);
                 return (struct OFCharacterScanResult){.state = state, .bytesConsumed = toScan, .charactersProduced = toScan};
             }
@@ -367,7 +367,7 @@ CFDataRef OFCreateDataFromStringWithDeferredEncoding(CFStringRef str, CFRange ra
             slowCursor = fastCursor; // slowCursor += charCount; 
             while (charCount) {
                 OBASSERT( *unicharPtr >= OFDeferredASCIISupersetBase && *unicharPtr < (OFDeferredASCIISupersetBase+256) );
-                *charPtr = ( *unicharPtr - OFDeferredASCIISupersetBase );
+                *charPtr = (uint8_t)( *unicharPtr - OFDeferredASCIISupersetBase );
                 charPtr ++;
                 unicharPtr ++;
                 charCount --;
@@ -394,14 +394,14 @@ extern NSString *OFApplyDeferredEncoding(NSString *str, CFStringEncoding newEnco
         return str;
 
     NSUInteger stringLength = [str length];
-    CFDataRef octets = OFCreateDataFromStringWithDeferredEncoding((CFStringRef)str, CFRangeMake(0, stringLength), newEncoding, 0);
+    CFDataRef octets = OFCreateDataFromStringWithDeferredEncoding((OB_BRIDGE CFStringRef)str, CFRangeMake(0, stringLength), newEncoding, 0);
     if (!octets)
         return nil;
 
     CFStringRef result = CFStringCreateFromExternalRepresentation(kCFAllocatorDefault, octets, newEncoding);
     CFRelease(octets);
 
-    return [(NSString *)result autorelease];
+    return [(OB_BRIDGE NSString *)result autorelease];
 }
 
 extern NSString *OFMostlyApplyDeferredEncoding(NSString *str, CFStringEncoding newEncoding)
@@ -413,7 +413,7 @@ extern NSString *OFMostlyApplyDeferredEncoding(NSString *str, CFStringEncoding n
     if (inputStringLength == 0)
         return str;
     
-    CFDataRef octets = OFCreateDataFromStringWithDeferredEncoding((CFStringRef)str, CFRangeMake(0, inputStringLength), newEncoding, 0);
+    CFDataRef octets = OFCreateDataFromStringWithDeferredEncoding((OB_BRIDGE CFStringRef)str, CFRangeMake(0, inputStringLength), newEncoding, 0);
     if (!octets)
         return str;
     
@@ -430,7 +430,7 @@ extern NSString *OFMostlyApplyDeferredEncoding(NSString *str, CFStringEncoding n
     /* The most common case is that we scan the whole buffer in one gulp. */
     struct OFCharacterScanResult firstScan = OFScanCharactersIntoBuffer(recodeState, CFDataGetBytePtr(octets), octetCount, resultCharacters, recodeBufferSize);
     if (firstScan.bytesConsumed == octetCount) {
-        NSString *immutableResult = [NSMakeCollectable(CFStringCreateWithCharactersNoCopy(kCFAllocatorDefault, resultCharacters, firstScan.charactersProduced, kCFAllocatorMalloc)) autorelease];
+        NSString *immutableResult = CFBridgingRelease(CFStringCreateWithCharactersNoCopy(kCFAllocatorDefault, resultCharacters, firstScan.charactersProduced, kCFAllocatorMalloc));
         CFRelease(octets);
         // resultCharacters owned by the result.
         return immutableResult;
@@ -464,7 +464,7 @@ extern NSString *OFMostlyApplyDeferredEncoding(NSString *str, CFStringEncoding n
     CFRelease(octets);
     free(resultCharacters);
     
-    NSString *immutableResult = [NSMakeCollectable(CFStringCreateCopy(kCFAllocatorDefault, resultBuffer)) autorelease];
+    NSString *immutableResult = CFBridgingRelease(CFStringCreateCopy(kCFAllocatorDefault, resultBuffer));
     CFRelease(resultBuffer);
           
     return immutableResult;

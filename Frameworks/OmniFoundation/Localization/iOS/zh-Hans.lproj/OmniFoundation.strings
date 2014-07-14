@@ -5,7 +5,7 @@
 "%0.1f GHz" = "%0.1f GHz";
 
 /* abbreviated string for bytes format */
-"%0.1f kB" = "%0.1f KB";
+"%0.1f kB" = "%0.1f kB";
 
 /* abbreviated string for kilohertz format */
 "%0.1f KHz" = "%0.1f KHz";
@@ -56,15 +56,15 @@
 "Bundle requires additional software" = "包要求附加软件";
 
 /* compression error reason */
-"bzip2 library returned error code %d when finishing compression. %s." = "bzip2 资源库在完成压缩时返回错误代码 %1$d。 %2$s。";
+"bzip2 library returned error code %d when finishing compression. %s." = "bzip2 资源库在完成压缩时返回错误代码 %1$d。%2$s。";
 
 /* decompression error reason */
-"bzip2 library returned error code %d when reading data. %s." = "bzip2 资源库在读取数据时返回错误代码 %1$d。 %2$s。";
+"bzip2 library returned error code %d when reading data. %s." = "bzip2 资源库在读取数据时返回错误代码 %1$d。%2$s。";
 
 /* compression error reason */
-"bzip2 library returned error code %d when writing data. %s." = "bzip2 资源库在写入数据时返回错误代码 %1$d。 %2$s。";
+"bzip2 library returned error code %d when writing data. %s." = "bzip2 资源库在写入数据时返回错误代码 %1$d。%2$s。";
 
-/* OFLockFile recovery option */
+/* OFMLockfile recovery option */
 "Cancel" = "取消";
 
 /* error recovery option */
@@ -76,8 +76,6 @@
 /* Error message when mkdir() fails
    Error message when mkdir() will fail because there's a file in the way
    Error message when stat() fails when trying to create a directory tree */
-
-
 "Could not create directory" = "无法创建目录";
 
 /* time span formatter span */
@@ -93,7 +91,7 @@
 "Duplicate bundle name" = "复制包的名称";
 
 /* exception reason */
-"Element '%@' not allowed at path: %@" = "元素“%1$@”不允许以下路径：%2$@";
+"Element '%@' not allowed at path: %@" = "元素 '%1$@' 不允许以下路径： %2$@";
 
 /* error reason */
 "Failed to create directory for lock file at \"%@\"." = "针对位于“%@”的锁定文件创建目录失败。";
@@ -143,11 +141,11 @@
 /* invalid bundle reason */
 "Not a valid bundle" = "不是有效的包";
 
-/* OFLockFile recovery option */
+/* OFMLockfile recovery option */
 "Override Lock" = "覆盖锁定";
 
 /* time span formatter span */
-"s" = "S";
+"s" = "s";
 
 /* time span formatter span */
 "second" = "秒";
@@ -183,7 +181,7 @@
 "Unable to decompress data." = "不能解压缩数据。";
 
 /* decompression exception format */
-"Unable to decompress gzip data: invalid header" = "不能解压缩 gzip 数据：无效的标头";
+"Unable to decompress gzip data: invalid header" = "不能解压缩 gzip 数据：标题无效";
 
 /* compression error description */
 "Unable to initialize compression" = "不能初始化压缩";
@@ -222,4 +220,5 @@
 "zlib returned error code %d." = "zlib 返回错误代码 %d。";
 
 /* zlib error reason */
-"zlib returned error code %d. %s." = "zlib 返回错误代码 %1$d。 %2$s。";
+"zlib returned error code %d. %s." = "zlib 返回错误代码 %1$d。%2$s。";
+

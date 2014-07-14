@@ -1,4 +1,4 @@
-// Copyright 2010-2013 The Omni Group. All rights reserved.
+// Copyright 2010-2014 The Omni Group. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -186,7 +186,10 @@ RCS_ID("$Id$");
 - (void)_addAttachmentFromAsset:(ALAsset *)asset;
 {
     ALAssetRepresentation *rep = [asset defaultRepresentation];
+    OBASSERT([rep size] > 0);
+#if !defined(__LP64__)
     OBASSERT([rep size] <= NSUIntegerMax); // -size returns long long, which warns on 32-bit
+#endif
     NSMutableData *data = [NSMutableData dataWithLength:(NSUInteger)[rep size]];
     
     NSError *error = nil;

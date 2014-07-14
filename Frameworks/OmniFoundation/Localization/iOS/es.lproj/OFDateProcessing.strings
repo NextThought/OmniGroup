@@ -105,7 +105,7 @@
 "week" = "semana";
 
 /* weeks, plural, used for scanning user input */
-"weeks" = "sem.";
+"weeks" = "semanas";
 
 /* one-letter abbreviation for year or years, used for scanning user input */
 "y" = "a";
@@ -117,7 +117,7 @@
 "years" = "años";
 
 /* \"yes\" this should be an abbreviation for \"yesterday\" that makes sense for the given language, used for scanning user input */
-"yes" = "sí";
+"yes" = "ayer";
 
 /* yesterday, used for scanning user input */
 "yesterday" = "ayer";

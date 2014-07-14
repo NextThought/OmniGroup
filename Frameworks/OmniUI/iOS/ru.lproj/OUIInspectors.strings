@@ -1,5 +1,5 @@
 /* font size label format string in points */
-"%@ points" = "%@ точек";
+"%@ points" = "%@ пункт.";
 
 /* title format for color component slider */
 "<alpha title+value>" = "Непрозрачность: %d%%";
@@ -44,7 +44,7 @@
 "Font smaller" = "Уменьшить шрифт";
 
 /* popover inspector label title for mulitple selection */
-"Multiple Selection" = "Множественный выбор";
+"Multiple Selection" = "Выбрано несколько";
 
 /* Descriptive text on the no color pane of the color picker */
 "No color selected" = "Цвет не выбран";
@@ -56,7 +56,7 @@
 "Recommended Fonts" = "Рекомендуемые шрифты";
 
 /* Name for the variant of a font with out any special attributes */
-"Regular" = "Обычная";
+"Regular" = "Обычный";
 
 /* Label for font size controls */
 "Size" = "Размер";
@@ -66,3 +66,4 @@
 
 /* Inspector title */
 "Text Style" = "Стиль текста";
+

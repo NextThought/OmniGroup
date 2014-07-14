@@ -8,17 +8,17 @@
 "~" = "~";
 
 /* one-letter abbreviation for day or days, used for scanning user input */
-"d" = "д";
+"d" = "дн.";
 
 /* day, singular, used for scanning user input */
-"day" = "день";
+"day" = "дн.";
 
 /* days, plural, used for scanning user input */
-"days" = "дней";
+"days" = "дн.";
 
 /* one-letter abbreviation for hour or hours, for scanning user input
    one-letter abbreviation for hour or hours, used for scanning user input */
-"h" = "h";
+"h" = "ч";
 
 /* hour, singular, used for scanning user input */
 "hour" = "час";
@@ -39,13 +39,13 @@
 "last year" = "последний год";
 
 /* one-letter abbreviation for month or months, used for scanning user input */
-"m" = "м";
+"m" = "мес.";
 
 /* month, singular, used for scanning user input */
-"month" = "мес.";
+"month" = "месяц";
 
 /* months, plural, used for scanning user input */
-"months" = "мес.";
+"months" = "месяцев";
 
 /* modifier, the most commonly used translation of \"next\", or some other shorthand way of saying things like \"next week\", used for scanning user input */
 "next" = "следующий";
@@ -84,7 +84,7 @@
 "today" = "сегодня";
 
 /* Today */
-"Today" = "Сег.";
+"Today" = "Сегодня";
 
 /* \"tom\" this should be an abbreviation for \"tomorrow\" that makes sense for the given language, used for scanning user input */
 "tom" = "завтр.";
@@ -99,7 +99,7 @@
 "tonight" = "вечером";
 
 /* one-letter abbreviation for week or weeks, used for scanning user input */
-"w" = "н";
+"w" = "нед.";
 
 /* week, singular, used for scanning user input */
 "week" = "неделя";
@@ -114,10 +114,10 @@
 "year" = "год";
 
 /* years, plural, used for scanning user input */
-"years" = "лет";
+"years" = "годы";
 
 /* \"yes\" this should be an abbreviation for \"yesterday\" that makes sense for the given language, used for scanning user input */
-"yes" = "да";
+"yes" = "вчера";
 
 /* yesterday, used for scanning user input */
 "yesterday" = "вчера";

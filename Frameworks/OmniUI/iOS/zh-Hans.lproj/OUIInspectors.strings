@@ -38,10 +38,10 @@
 "Font" = "字体";
 
 /* Increment font size button accessibility label */
-"Font bigger" = "字体放大";
+"Font bigger" = "调大字体";
 
 /* Decrement font size button accessibility label */
-"Font smaller" = "字体缩小";
+"Font smaller" = "调小字体";
 
 /* popover inspector label title for mulitple selection */
 "Multiple Selection" = "多个选择";
@@ -66,3 +66,4 @@
 
 /* Inspector title */
 "Text Style" = "文本样式";
+

@@ -8,17 +8,17 @@
 "~" = "~";
 
 /* one-letter abbreviation for day or days, used for scanning user input */
-"d" = "d";
+"d" = "T.";
 
 /* day, singular, used for scanning user input */
-"day" = "Tage";
+"day" = "Tag";
 
 /* days, plural, used for scanning user input */
 "days" = "Tage";
 
 /* one-letter abbreviation for hour or hours, for scanning user input
    one-letter abbreviation for hour or hours, used for scanning user input */
-"h" = "h";
+"h" = "S.";
 
 /* hour, singular, used for scanning user input */
 "hour" = "Stunde";
@@ -27,7 +27,7 @@
 "hours" = "Stunden";
 
 /* modifier, used for scanning user input */
-"last" = "letzte/r/s";
+"last" = "letzte/n/s";
 
 /* last month, used for scanning user input */
 "last month" = "letzten Monat";
@@ -39,7 +39,7 @@
 "last year" = "letztes Jahr";
 
 /* one-letter abbreviation for month or months, used for scanning user input */
-"m" = "m";
+"m" = "M.";
 
 /* month, singular, used for scanning user input */
 "month" = "Monat";
@@ -48,7 +48,7 @@
 "months" = "Monate";
 
 /* modifier, the most commonly used translation of \"next\", or some other shorthand way of saying things like \"next week\", used for scanning user input */
-"next" = "nächste/r/s";
+"next" = "nächste/n/s";
 
 /* next month, used for scanning user input */
 "next month" = "nächsten Monat";
@@ -78,7 +78,7 @@
 "this year" = "dieses Jahr";
 
 /* \"tod\" this should be an abbreviation for \"today\" that makes sense for the given language, used for scanning user input */
-"tod" = "heu";
+"tod" = "heute";
 
 /* today, used for scanning user input */
 "today" = "heute";
@@ -87,7 +87,7 @@
 "Today" = "Heute";
 
 /* \"tom\" this should be an abbreviation for \"tomorrow\" that makes sense for the given language, used for scanning user input */
-"tom" = "mor";
+"tom" = "morg.";
 
 /* tomorrow */
 "tomorrow" = "morgen";
@@ -99,16 +99,16 @@
 "tonight" = "heute Abend";
 
 /* one-letter abbreviation for week or weeks, used for scanning user input */
-"w" = "W";
+"w" = "W.";
 
 /* week, singular, used for scanning user input */
-"week" = "Wochen";
+"week" = "Woche";
 
 /* weeks, plural, used for scanning user input */
 "weeks" = "Wochen";
 
 /* one-letter abbreviation for year or years, used for scanning user input */
-"y" = "y";
+"y" = "J.";
 
 /* year, singular, used for scanning user input */
 "year" = "Jahr";
@@ -117,7 +117,7 @@
 "years" = "Jahre";
 
 /* \"yes\" this should be an abbreviation for \"yesterday\" that makes sense for the given language, used for scanning user input */
-"yes" = "ja";
+"yes" = "gest";
 
 /* yesterday, used for scanning user input */
 "yesterday" = "gestern";

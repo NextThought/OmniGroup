@@ -8,7 +8,7 @@
 "~" = "~";
 
 /* one-letter abbreviation for day or days, used for scanning user input */
-"d" = "天";
+"d" = "d";
 
 /* day, singular, used for scanning user input */
 "day" = "天";
@@ -18,7 +18,7 @@
 
 /* one-letter abbreviation for hour or hours, for scanning user input
    one-letter abbreviation for hour or hours, used for scanning user input */
-"h" = "时";
+"h" = "h";
 
 /* hour, singular, used for scanning user input */
 "hour" = "小时";
@@ -27,7 +27,7 @@
 "hours" = "小时";
 
 /* modifier, used for scanning user input */
-"last" = "上一";
+"last" = "最后";
 
 /* last month, used for scanning user input */
 "last month" = "上月";
@@ -39,7 +39,7 @@
 "last year" = "去年";
 
 /* one-letter abbreviation for month or months, used for scanning user input */
-"m" = "分";
+"m" = "m";
 
 /* month, singular, used for scanning user input */
 "month" = "月";
@@ -99,7 +99,7 @@
 "tonight" = "今晚";
 
 /* one-letter abbreviation for week or weeks, used for scanning user input */
-"w" = "周";
+"w" = "w";
 
 /* week, singular, used for scanning user input */
 "week" = "周";
@@ -108,7 +108,7 @@
 "weeks" = "周";
 
 /* one-letter abbreviation for year or years, used for scanning user input */
-"y" = "年";
+"y" = "y";
 
 /* year, singular, used for scanning user input */
 "year" = "年";
@@ -117,7 +117,7 @@
 "years" = "年";
 
 /* \"yes\" this should be an abbreviation for \"yesterday\" that makes sense for the given language, used for scanning user input */
-"yes" = "是";
+"yes" = "昨天";
 
 /* yesterday, used for scanning user input */
 "yesterday" = "昨天";

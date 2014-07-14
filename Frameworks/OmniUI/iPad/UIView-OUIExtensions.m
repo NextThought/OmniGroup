@@ -1,4 +1,4 @@
-// Copyright 2010-2013 The Omni Group. All rights reserved.
+// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -213,6 +213,18 @@ static void OUIViewPerformPosing(void)
 }
 
 #endif
+
++ (UIView *)topLevelViewFromNibNamed:(NSString *)nibName;
+{
+    UINib *nib = [UINib nibWithNibName:nibName bundle:nil];
+    NSArray *topLevelObjects = [nib instantiateWithOwner:nil options:nil];
+    OBASSERT([topLevelObjects count] == 1);
+    
+    UIView *topLevelView = (UIView *)[topLevelObjects firstObject];
+    OBASSERT([topLevelView isKindOfClass:[UIView class]]);
+    
+    return topLevelView;
+}
 
 - (UIImage *)snapshotImageWithRect:(CGRect)rect;
 {

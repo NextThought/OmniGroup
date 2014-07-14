@@ -27,7 +27,7 @@
 "hours" = "heures";
 
 /* modifier, used for scanning user input */
-"last" = "dernier";
+"last" = "le/la dernier/dernière";
 
 /* last month, used for scanning user input */
 "last month" = "le mois dernier";
@@ -48,7 +48,7 @@
 "months" = "mois";
 
 /* modifier, the most commonly used translation of \"next\", or some other shorthand way of saying things like \"next week\", used for scanning user input */
-"next" = "prochain";
+"next" = "le/la prochain(e)";
 
 /* next month, used for scanning user input */
 "next month" = "le mois prochain";
@@ -66,7 +66,7 @@
 "now" = "maintenant";
 
 /* modifier, the most commonly used translation of \"this\", or some other shorthand way of saying things like \"this week\", used for scanning user input */
-"this" = "ce";
+"this" = "ce/cette";
 
 /* this month, used for scanning user input */
 "this month" = "ce mois-ci";
@@ -84,7 +84,7 @@
 "today" = "aujourd’hui";
 
 /* Today */
-"Today" = "Auj.";
+"Today" = "Aujourd’hui";
 
 /* \"tom\" this should be an abbreviation for \"tomorrow\" that makes sense for the given language, used for scanning user input */
 "tom" = "dem";
@@ -102,10 +102,10 @@
 "w" = "s";
 
 /* week, singular, used for scanning user input */
-"week" = "sem.";
+"week" = "semaine";
 
 /* weeks, plural, used for scanning user input */
-"weeks" = "sem.";
+"weeks" = "semaines";
 
 /* one-letter abbreviation for year or years, used for scanning user input */
 "y" = "a";
@@ -117,7 +117,7 @@
 "years" = "années";
 
 /* \"yes\" this should be an abbreviation for \"yesterday\" that makes sense for the given language, used for scanning user input */
-"yes" = "oui";
+"yes" = "hier";
 
 /* yesterday, used for scanning user input */
 "yesterday" = "hier";

@@ -18,7 +18,7 @@
 
 /* one-letter abbreviation for hour or hours, for scanning user input
    one-letter abbreviation for hour or hours, used for scanning user input */
-"h" = "h";
+"h" = "o";
 
 /* hour, singular, used for scanning user input */
 "hour" = "ora";
@@ -39,7 +39,7 @@
 "last year" = "anno scorso";
 
 /* one-letter abbreviation for month or months, used for scanning user input */
-"m" = "me";
+"m" = "m";
 
 /* month, singular, used for scanning user input */
 "month" = "mese";
@@ -87,7 +87,7 @@
 "Today" = "Oggi";
 
 /* \"tom\" this should be an abbreviation for \"tomorrow\" that makes sense for the given language, used for scanning user input */
-"tom" = "dom.";
+"tom" = "dom";
 
 /* tomorrow */
 "tomorrow" = "domani";
@@ -99,13 +99,13 @@
 "tonight" = "stasera";
 
 /* one-letter abbreviation for week or weeks, used for scanning user input */
-"w" = "se";
+"w" = "s";
 
 /* week, singular, used for scanning user input */
 "week" = "settimana";
 
 /* weeks, plural, used for scanning user input */
-"weeks" = "sett.";
+"weeks" = "settimane";
 
 /* one-letter abbreviation for year or years, used for scanning user input */
 "y" = "a";

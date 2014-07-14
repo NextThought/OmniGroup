@@ -1,4 +1,4 @@
-// Copyright 2007-2013 Omni Development, Inc. All rights reserved.
+// Copyright 2007-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -217,7 +217,9 @@ RCS_ID("$Id$");
     
     if (![[OSUChecker sharedUpdateChecker] applicationOnReleaseTrack]) {
         // Append the bundle version
-        version = [version stringByAppendingFormat:@" (v%@)", [bundleInfo objectForKey:(NSString *)kCFBundleVersionKey]];
+        OFVersionNumber *versionNumber = [[OFVersionNumber alloc] initWithVersionString:[bundleInfo objectForKey:(id)kCFBundleVersionKey]];
+        version = [version stringByAppendingFormat:@" (v%@ built %s)", [versionNumber prettyVersionString], __DATE__];
+        [versionNumber release];
     }
 
     NSArray *displayedItems = [_availableItemController arrangedObjects];
@@ -473,7 +475,11 @@ decisionListener:(id<WebPolicyDecisionListener>)listener;
 - (void)webView:(WebView *)sender didFailLoadWithError:(NSError *)error forFrame:(WebFrame *)frame;
 {
     [self setValue:[NSNumber numberWithBool:NO] forKey:OSUAvailableUpdateControllerLoadingReleaseNotesBinding];
-    [sender presentError:error];
+
+    if ([error hasUnderlyingErrorDomain:NSURLErrorDomain code:NSURLErrorCancelled])
+        return;
+
+    NSLog(@"Load failed for software update release notes: %@", [error toPropertyList]);
 }
 
 #pragma mark OSUTextField / NSTextView delegates

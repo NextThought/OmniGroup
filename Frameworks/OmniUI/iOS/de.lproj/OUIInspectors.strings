@@ -2,7 +2,7 @@
 "%@ points" = "%@ Punkte";
 
 /* title format for color component slider */
-"<alpha title+value>" = "Opazität: %d%%";
+"<alpha title+value>" = "Deckkraft: %d%%";
 
 /* title format for color component slider */
 "<blue title+value>" = "Blau: %d";
@@ -66,3 +66,4 @@
 
 /* Inspector title */
 "Text Style" = "Textstil";
+

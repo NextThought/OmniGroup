@@ -1,4 +1,4 @@
-// Copyright 2010-2013 The Omni Group. All rights reserved.
+// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -146,13 +146,6 @@ static id _commonInit(OUIColorAttributeInspectorWell *self)
     [self setNeedsDisplay];
 }
 
-- (void)setSingleSwatch:(BOOL)single;
-{
-    // <bug:///94099> (Remove singleSwatch property on OUIColorAttributeInspectorWell since it is no longer consulted when drawing) -- singleSwatch is only used by drawInteriorFillWithRect: which is not currently called. This class currently draws how OmniPlan wants it regardless of this setting.
-    
-    singleSwatch = single;
-}
-
 #pragma mark - UIView subclass
 
 - (void)layoutSubviews;
@@ -170,6 +163,12 @@ static id _commonInit(OUIColorAttributeInspectorWell *self)
     // The right view is currently expected to have built-in padding.
     CGRect rightRect;
     CGRectDivide(contentsRect, &rightRect, &contentsRect, CGRectGetHeight(oldFrame), CGRectMaxXEdge);
+    
+    if (self.singleSwatch) {
+        rightRect.origin.x = contentsRect.origin.x;
+        rightRect.size.width = contentsRect.size.width + rightRect.size.width;
+    }
+
     rightRect.size.height = CGRectGetHeight(oldFrame);
     rightRect.origin.y = CGRectGetMinY(contentsRect) + (contentsRect.size.height - rightRect.size.height)/2;
 

@@ -1,4 +1,4 @@
-// Copyright 2013 Omni Development, Inc. All rights reserved.
+// Copyright 2013-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -194,7 +194,14 @@ static NSDictionary *_fontAttributesFromOAFontDescriptor(OAFontDescriptor *fontD
 {
     OAFontDescriptor *descriptor = [[_helvetica12 newFontDescriptorWithWeight:8] autorelease];
     NSDictionary *attributesFromFoundFont = _fontAttributesFromOAFontDescriptor(descriptor);
+    
+#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
     [self _assertIsHelvetica12Attributes:attributesFromFoundFont];
+#else
+    STAssertNotNil(attributesFromFoundFont, nil);
+    CheckFontName(attributesFromFoundFont, @"Helvetica-Bold"); // No semi-bold installed on the Mac by default
+    CheckFontSize(attributesFromFoundFont, 12);
+#endif
 }
 
 - (void)testHelveticaItalic;

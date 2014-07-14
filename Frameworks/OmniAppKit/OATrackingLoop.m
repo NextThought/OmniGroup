@@ -1,4 +1,4 @@
-// Copyright 2010, 2013 The Omni Group. All rights reserved.
+// Copyright 2010, 2013-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -16,10 +16,7 @@ RCS_ID("$Id$");
 
 static BOOL OATrackingLoopDebug = YES;
 
-@interface OATrackingLoop (/*Private*/)
-- _initWithView:(NSView *)view mouseDown:(NSEvent *)event;
-- (void)_run;
-- (void)_invalidate;
+@interface OATrackingLoop ()
 
 // Redeclared readwrite to encourage their use internally. This allows for their replacement at runtime (in tests so that correct mouse tracking can be verified, for example)
 @property(nonatomic,readwrite) NSPoint initialMouseDownPointInView;
@@ -29,6 +26,17 @@ static BOOL OATrackingLoopDebug = YES;
 @end
 
 @implementation OATrackingLoop
+{
+    NSEventType _upEventType;
+    NSEventType _draggedEventType;
+    NSString *_runLoopMode;
+    NSDate *_limitDate;
+    BOOL _stopped;
+    BOOL _invalid;
+
+    CGFloat _hysteresisSize;
+    NSRect _hysteresisViewRect;
+}
 
 + (void)initialize;
 {
@@ -58,28 +66,6 @@ static BOOL OATrackingLoopDebug = YES;
 
     [super dealloc];
 }
-
-@synthesize debug = _debug;
-@synthesize disablesAnimation = _disablesAnimation;
-@synthesize view = _view;
-@synthesize mouseDownEvent = _mouseDownEvent;
-@synthesize insideHysteresisRect = _insideHysteresisRect;
-@synthesize hysteresisSize = _hysteresisSize;
-@synthesize insideVisibleRectChanged = _insideVisibleRectChanged;
-
-@synthesize initialMouseDownPointInView = _initialMouseDownPointInView;
-@synthesize currentMouseDraggedPointInView = _currentMouseDraggedPointInView;
-@synthesize currentMouseDraggedPointInWindow = _currentMouseDraggedPointInWindow;
-
-@synthesize modifierFlags = _modifierFlags;
-
-@synthesize hysteresisExit = _hysteresisExit;
-@synthesize insideVisibleRect = _insideVisibleRect;
-@synthesize modifierFlagsChanged = _modifierFlagsChanged;
-@synthesize shouldAutoscroll = _shouldAutoscroll;
-@synthesize dragged = _dragged;
-@synthesize longPress = _longPress;
-@synthesize up = _up;
 
 // This is usable if the tracking operation doesn't move the view itself.
 - (NSSize)draggedOffsetInView;
@@ -200,23 +186,24 @@ static BOOL OATrackingLoopDebug = YES;
     
     while (!_stopped) {
         // If you want to do a tracking loop w/o consuming the mouseUp, you can call -stop in one of the other callbacks and then start a *new* tracking loop.  At least, that's the theory.
-        NSEvent *nextEvent = [window nextEventMatchingMask:NSAnyEventMask untilDate:_limitDate inMode:_runLoopMode dequeue:YES];
-        DEBUG_LOOP(@"event: %@", nextEvent);
+        [_currentEvent autorelease];
+        _currentEvent = [[window nextEventMatchingMask:NSAnyEventMask untilDate:_limitDate inMode:_runLoopMode dequeue:YES] retain];
+        DEBUG_LOOP(@"event: %@", _currentEvent);
         
         NSUInteger oldFlags = _modifierFlags;
-        _modifierFlags = [nextEvent modifierFlags];
+        _modifierFlags = [_currentEvent modifierFlags];
         
-        NSEventType eventType = [nextEvent type];
+        NSEventType eventType = [_currentEvent type];
         // It looks as though we can't get an actual notification that Mission Control, Expose, or Dashboard is coming up. If invoke them with a key and mouse up while they're in front, we actually seem to get the mouse up when we come back. Mouse buttons invoking them appear to be a problem.  NSSystemDefined events of subtype 7 seem to be "mouse button state change events". data1 is the mouse/mice that changed state, and data2 is the current state of all mouse buttons. CGEventTaps cause us to get what appears to be "mouse button 1 changed state and mouse button 1 is down, which we already know, because we're here.  Exit for any other mouse button changing state.
         if (eventType == _upEventType ||
-            ((eventType == NSSystemDefined && [nextEvent subtype] == 7) && ([nextEvent data1] != 1 || [nextEvent data2] != 1))) {
+            ((eventType == NSSystemDefined && [_currentEvent subtype] == 7) && ([_currentEvent data1] != 1 || [_currentEvent data2] != 1))) {
             DEBUG_LOOP(@"  up!");
             if (_up)
-                _up();
+                _up(self);
             [self stop];
         } else if (eventType == _draggedEventType) {
             DEBUG_LOOP(@"  dragged!");
-            self.currentMouseDraggedPointInWindow = [nextEvent locationInWindow];
+            self.currentMouseDraggedPointInWindow = [_currentEvent locationInWindow];
             self.currentMouseDraggedPointInView = [_view convertPoint:self.currentMouseDraggedPointInWindow fromView:nil];
             
             // If there is a hysteresis rect, check if we have gone outside it.
@@ -233,7 +220,7 @@ static BOOL OATrackingLoopDebug = YES;
                         exitPoint = OATrackingLoopExitPointHorizontal;
                     
                     if (_hysteresisExit)
-                        _hysteresisExit(exitPoint);
+                        _hysteresisExit(self, exitPoint);
                     _insideHysteresisRect = NO;
                 }
             }
@@ -244,7 +231,7 @@ static BOOL OATrackingLoopDebug = YES;
             else {
                 // TODO: Add a 'snap' block that allows for other data-based snapping.
                 if (_dragged)
-                    _dragged();
+                    _dragged(self);
             }
             
             // Check if the drag position changes whether we are inside the visible rect or not.
@@ -253,11 +240,11 @@ static BOOL OATrackingLoopDebug = YES;
             if (nowInsideVisibleRect ^ _insideVisibleRect) {
                 _insideVisibleRect = nowInsideVisibleRect;
                 if (_insideVisibleRectChanged)
-                    _insideVisibleRectChanged();
+                    _insideVisibleRectChanged(self);
             }
             
             if (_shouldAutoscroll) {
-                BOOL shouldScroll = _shouldAutoscroll();
+                BOOL shouldScroll = _shouldAutoscroll(self);
                 if (shouldScroll != hasStartedPeriodicEvents) {
                     if (shouldScroll)
                         [NSEvent startPeriodicEventsAfterDelay:0 withPeriod:0.1];
@@ -268,12 +255,12 @@ static BOOL OATrackingLoopDebug = YES;
                 
                 if (shouldScroll) {
                     [lastMouseEvent release];
-                    lastMouseEvent = [nextEvent retain];
+                    lastMouseEvent = [_currentEvent retain];
                 }
             }
         } else if (eventType == NSFlagsChanged) {
             if (_modifierFlagsChanged)
-                _modifierFlagsChanged(oldFlags);
+                _modifierFlagsChanged(self, oldFlags);
         } else if (eventType == NSPeriodic) {
             OBASSERT(_shouldAutoscroll);
             if ([_view autoscroll:lastMouseEvent]) {
@@ -283,7 +270,7 @@ static BOOL OATrackingLoopDebug = YES;
                 self.currentMouseDraggedPointInView = [_view convertPoint:self.currentMouseDraggedPointInWindow fromView:nil];
 
                 if (_dragged)
-                    _dragged();
+                    _dragged(self);
             }
         } else {
             // Discard? -sendEvent: to the window? Call another customizable hook?
@@ -297,6 +284,9 @@ static BOOL OATrackingLoopDebug = YES;
     
     [timer invalidate];
     
+    [_currentEvent release];
+    _currentEvent = nil;
+    
     [lastMouseEvent release];
     if (hasStartedPeriodicEvents)
         [NSEvent stopPeriodicEvents];
@@ -307,7 +297,7 @@ static BOOL OATrackingLoopDebug = YES;
 - (void)_longPress:(NSTimer *)timer;
 {
     if (_longPress)
-        _longPress();
+        _longPress(self);
 }
 
 - (void)_invalidate;
@@ -318,6 +308,9 @@ static BOOL OATrackingLoopDebug = YES;
     self.modifierFlagsChanged = NULL;
     self.dragged = NULL;
     self.up = NULL;
+    
+    [_currentEvent release];
+    _currentEvent = nil;
     
     _invalid = YES;
 }
