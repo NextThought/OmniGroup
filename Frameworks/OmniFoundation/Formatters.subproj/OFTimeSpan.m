@@ -121,7 +121,7 @@ RCS_ID("$Id$")
     NSDateComponents *result = [[[NSDateComponents alloc] init] autorelease];
     result.year = floorf(_components.years);
     result.month = floorf(_components.months);
-    result.week = floorf(_components.weeks);
+    result.weekOfYear = floorf(_components.weeks);
     result.day = floorf(_components.days);
     result.hour = floorf(_components.hours);
     result.minute = floorf(_components.minutes);
