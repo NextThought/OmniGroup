@@ -163,6 +163,7 @@ static CGFloat _bottomHeightToAvoidForEndingKeyboardFrame(OUIKeyboardNotifier *s
             isDocked = (screenBounds.size.width - keyboardEndFrame.size.width) == keyboardEndFrame.origin.x;
             break;
         default:
+			isDocked = false;
             OBASSERT_NOT_REACHED("Unknown interface orientation");
             break;
     }
