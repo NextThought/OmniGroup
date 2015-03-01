@@ -5,8 +5,6 @@
 // distributed with this project and can also be found at
 // <http://www.omnigroup.com/developer/sourcecode/sourcelicense/>.
 
-#pragma GCC diagnostic ignored "-Wobjc-designated-initializers"
-
 #import <OmniFoundation/NSNumber-OFExtensions.h>
 #import <OmniFoundation/NSNumber-OFExtensions-CGTypes.h>
 
