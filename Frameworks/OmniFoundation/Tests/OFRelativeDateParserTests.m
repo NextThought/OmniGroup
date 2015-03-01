@@ -5,7 +5,6 @@
 // distributed with this project and can also be found at
 // <http://www.omnigroup.com/developer/sourcecode/sourcelicense/>.
 
-#define STEnableDeprecatedAssertionMacros
 #import "OFTestCase.h"
 
 #import <OmniFoundation/OFRelativeDateParser.h>
@@ -53,7 +52,7 @@ static unsigned int range(OFRandomState *state, unsigned int min, unsigned int m
 
 static BOOL _testRandomDate(OFRandomState *state, NSString *shortFormat, NSString *mediumFormat, NSString *longFormat, NSString *timeFormat)
 {
-    NSCalendar *calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
+    NSCalendar *calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
     
     // specifically set en_US, to make this pass if the user's current locale is ja_JP.
     [calendar setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_US"]];
@@ -136,7 +135,7 @@ static BOOL _testRandomDate(OFRandomState *state, NSString *shortFormat, NSStrin
 	    }
 	}
     }
-    
+
     [testDateComponents setDay:day];
     [testDateComponents setMonth:month];
     [testDateComponents setYear:year];
@@ -212,7 +211,7 @@ static BOOL _testRandomDate(OFRandomState *state, NSString *shortFormat, NSStrin
     // Default to en_US instead of the user's locale for now (in the tests only). Some tests will override this.
     [[OFRelativeDateParser sharedParser] setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_US"]];
      
-    calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
+    calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
     
     // specifically set en_US, to make this pass if the user's current locale is ja_JP.
     [calendar setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_US"]];
@@ -238,10 +237,14 @@ static BOOL _testRandomDate(OFRandomState *state, NSString *shortFormat, NSStrin
 #define parseDate(string, expectedDate, baseDate, dateFormat, timeFormat) \
 do { \
     NSDate *result = nil; \
-    [[OFRelativeDateParser sharedParser] getDateValue:&result forString:string fromStartingDate:baseDate calendar:calendar withShortDateFormat:dateFormat withMediumDateFormat:dateFormat withLongDateFormat:dateFormat withTimeFormat:timeFormat error:nil]; \
+    if (dateFormat == nil && timeFormat == nil) { \
+        [[OFRelativeDateParser sharedParser] getDateValue:&result forString:string fromStartingDate:baseDate useEndOfDuration:NO defaultTimeDateComponents:nil calendar:calendar error:NULL]; \
+    } else { \
+        [[OFRelativeDateParser sharedParser] getDateValue:&result forString:string fromStartingDate:baseDate calendar:calendar withShortDateFormat:dateFormat withMediumDateFormat:dateFormat withLongDateFormat:dateFormat withTimeFormat:timeFormat error:nil]; \
+    } \
     if (expectedDate && ![result isEqualTo:expectedDate]) \
         NSLog( @"FAILURE-> String: %@, locale:%@, result:%@, expected: %@ dateFormat:%@, timeFormat:%@", string, [[[OFRelativeDateParser sharedParser] locale] localeIdentifier], result, expectedDate, dateFormat, timeFormat); \
-    shouldBeEqual(result, expectedDate); \
+    XCTAssertEqualObjects(result, expectedDate); \
 } while(0)
 //NSLog( @"string: %@, expected: %@, result: %@", string, expectedDate, result );
 
@@ -301,7 +304,7 @@ do { \
 	    NSString *timeFormat = [timeFormats objectAtIndex:timeIndex];
 	    NSString *dateFormat = [dateFormats objectAtIndex:dateIndex];
 	    
-	    // skip we have crazy candian dates, this combo is just messed up
+	    // skip we have crazy canadian dates, this combo is just messed up
 	    if (![dateFormat containsString:@"MMM"]) {
 		NSString *string = @"fri noon";
 		NSDate *baseDate = _dateFromYear(2001, 1, 1, 0, 0, 0, calendar);
@@ -315,14 +318,14 @@ do { \
 - (void)testCanada;
 {
     // test using canada's date formats
-    calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
+    calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
     
     // specifically set en_US, to make this pass if the user's current locale is ja_JP.
     [calendar setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_US"]];
      
     NSString *timeFormat = @"h:mm a";
     NSString *dateFormat = @"d-MMM-yy";
-    should(_testRandomDate(randomState, dateFormat, dateFormat, dateFormat, timeFormat));
+    XCTAssertTrue(_testRandomDate(randomState, dateFormat, dateFormat, dateFormat, timeFormat));
     
 }
 
@@ -336,7 +339,7 @@ do { \
 	    NSString *timeFormat = [timeFormats objectAtIndex:timeIndex];
 	    NSString *dateFormat = [dateFormats objectAtIndex:dateIndex];
 	    
-	    // skip we have crazy candian dates, this combo is just messed up
+	    // skip we have crazy canadian dates, this combo is just messed up
 	    if (![dateFormat containsString:@"MMM"]) {
 		NSString *string = @"1997-12-29";
 		NSDate *baseDate = _dateFromYear(2001, 1, 1, 0, 0, 0, calendar);
@@ -458,6 +461,88 @@ do { \
     [[OFRelativeDateParser sharedParser] setLocale:savedLocale];
 }
 
+- (void)testChineseTaiwan;
+{
+    // <bug:///102906> (Bug: Can't change Due time when using Chinese (Simplified or Traditional) language and China or Taiwan region settings [default, due])
+    NSLocale *savedLocale = [[OFRelativeDateParser sharedParser] locale];
+    NSLocale *savedCalendarLocale = calendar.locale;
+
+    NSLocale *locale = [[NSLocale alloc] initWithLocaleIdentifier:@"zh-Hans_TW"];
+    [[OFRelativeDateParser sharedParser] setLocale:locale];
+    calendar.locale = locale;
+
+    NSDate *baseDate = _dateFromYear(2011, 7, 5, 0, 0, 0, calendar);
+    NSDate *expectedDate = _dateFromYear(2014, 9, 21, 16, 52, 0, calendar);
+    NSString *dateString = @"14/9/21 下午4:52";
+    parseDate( dateString, expectedDate, baseDate, nil, nil ); 
+
+    [[OFRelativeDateParser sharedParser] setLocale:savedLocale];
+    calendar.locale = savedCalendarLocale;
+}
+
+- (void)_testRoundtripDate:(NSDate *)originalDate inLocaleIdentifier:(NSString *)localeIdentifier;
+{
+    NSLocale *savedLocale = [[OFRelativeDateParser sharedParser] locale];
+    NSLocale *savedCalendarLocale = calendar.locale;
+
+    NSLocale *locale = [[NSLocale alloc] initWithLocaleIdentifier:localeIdentifier];
+    [[OFRelativeDateParser sharedParser] setLocale:locale];
+    calendar.locale = locale;
+
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+
+    [formatter setCalendar:calendar];
+    [formatter setLocale:locale];
+    
+    [formatter setDateStyle:NSDateFormatterNoStyle];
+    [formatter setTimeStyle:NSDateFormatterShortStyle]; 
+    NSString *timeFormat = [[formatter dateFormat] copy];
+    NSString *timeString = [formatter stringFromDate:originalDate];
+
+    // We're not going to combine the input date and time in a single format, we'll ensure that there is always a space between the date and time and they're in the expected order
+    [formatter setDateStyle:NSDateFormatterShortStyle];
+    [formatter setTimeStyle:NSDateFormatterNoStyle]; 
+    NSString *shortFormat = [[formatter dateFormat] copy];
+    NSString *shortDateString = [NSString stringWithFormat:@"%@ %@", [formatter stringFromDate:originalDate], timeString];
+
+    [formatter setDateStyle:NSDateFormatterMediumStyle];
+    NSString *mediumFormat = [[formatter dateFormat] copy];
+    NSString *mediumDateString = [NSString stringWithFormat:@"%@ %@", [formatter stringFromDate:originalDate], timeString];
+
+    // [formatter setDateStyle:NSDateFormatterLongStyle];
+    // NSString *longFormat = [[formatter dateFormat] copy];
+    // NSString *longDateString = [NSString stringWithFormat:@"%@ %@", [formatter stringFromDate:originalDate], timeString];
+
+    NSLog(@"Testing round trip dates in [%@]", localeIdentifier);
+    parseDate(shortDateString, originalDate, originalDate, shortFormat, timeFormat);
+    parseDate(mediumDateString, originalDate, originalDate, mediumFormat, timeFormat);
+    // parseDate(longDateString, originalDate, originalDate, longFormat, timeFormat);
+    parseDate(timeString, originalDate, originalDate, nil, timeFormat);
+
+    [[OFRelativeDateParser sharedParser] setLocale:savedLocale];
+    calendar.locale = savedCalendarLocale;
+}
+
+- (void)testRoundtripDatesInAllLocales;
+{
+    NSDate *originalDate = _dateFromYear(2014, 9, 21, 16, 52, 0, calendar);
+    for (NSString *localeIdentifier in [NSLocale availableLocaleIdentifiers])
+        [self _testRoundtripDate:originalDate inLocaleIdentifier:localeIdentifier];
+}
+
+- (void)testBasicRoundtripDate;
+{
+    NSDate *originalDate = _dateFromYear(2014, 9, 21, 16, 52, 0, calendar);
+    [self _testRoundtripDate:originalDate inLocaleIdentifier:@"en_US"]; // English (U.S.)
+}
+
+- (void)testTrickyRoundtripDates;
+{
+    NSDate *originalDate = _dateFromYear(2014, 9, 21, 16, 52, 0, calendar);
+    [self _testRoundtripDate:originalDate inLocaleIdentifier:@"ar_OM"]; // Arabic (Oman)
+    [self _testRoundtripDate:originalDate inLocaleIdentifier:@"ee_TG"]; // Ewe (Togo)
+}
+
 - (void)testRandomCases;
 {
     NSString *timeFormat = @"HH:mm";
@@ -478,7 +563,7 @@ do { \
 
 -(void)testNil;
 {
-    calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
+    calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
     NSDate *baseDate = _dateFromYear(2007, 1, 1, 1, 1, 0, calendar);
     NSString *string = @"";
     NSUInteger dateIndex = [dateFormats count];
@@ -697,6 +782,38 @@ do { \
     }
 }
 
+- (void)testSpecificAt;
+{
+    NSString *string = @"may 4 1997 at 3:07pm";
+    NSDate *baseDate = _dateFromYear(2001, 1, 1, 0, 0, 0, calendar);
+    NSDate *expectedDate = _dateFromYear(1997, 5, 4, 15, 7, 0, calendar);
+    parseDate( string, expectedDate, baseDate, @"MM/dd/yy", @"HH:mm" );
+}
+
+- (void)testRoundtripCommaFormat;
+{
+    NSString *commaFormat = @"M/d/yy, h:mm a";
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    formatter.locale = [[OFRelativeDateParser sharedParser] locale];
+    NSDate *baseDate = _dateFromYear(2001, 1, 1, 0, 0, 0, calendar);
+    NSDate *originalDate = _dateFromYear(2014, 9, 25, 15, 30, 0, calendar);
+    formatter.dateFormat = commaFormat;
+    NSString *originalDateString = [formatter stringFromDate:originalDate];
+    NSLog(@"Parsing [%@]", originalDateString);
+
+    NSDate *parsedDate;
+    [[OFRelativeDateParser sharedParser] getDateValue:&parsedDate forString:originalDateString fromStartingDate:baseDate useEndOfDuration:NO defaultTimeDateComponents:nil calendar:calendar error:NULL];
+    XCTAssertEqualObjects(originalDate, parsedDate);
+    NSString *parsedDateString = [formatter stringFromDate:parsedDate];
+    XCTAssertEqualObjects(originalDateString, parsedDateString);
+
+    NSDate *reparsedDate;
+    [[OFRelativeDateParser sharedParser] getDateValue:&reparsedDate forString:parsedDateString fromStartingDate:baseDate useEndOfDuration:NO defaultTimeDateComponents:nil calendar:calendar error:NULL];
+    XCTAssertEqualObjects(parsedDate, reparsedDate);
+    NSString *reparsedDateString = [formatter stringFromDate:reparsedDate];
+    XCTAssertEqualObjects(parsedDateString, reparsedDateString);
+}
+
 - (void)testTwentyFourHourTime;
 {
     // test with all different formats
@@ -725,7 +842,7 @@ do { \
 	while (timeIndex--) {
 	    NSString *timeFormat = [timeFormats objectAtIndex:timeIndex];
 	    NSString *dateFormat = [dateFormats objectAtIndex:dateIndex];
-	    should(_testRandomDate(randomState, dateFormat, dateFormat, dateFormat, timeFormat));
+	    XCTAssertTrue(_testRandomDate(randomState, dateFormat, dateFormat, dateFormat, timeFormat));
 	}
     }
 }
@@ -743,7 +860,7 @@ do { \
     NSDate *date = nil;
     [[OFRelativeDateParser sharedParser] getDateValue:&date forString:testDateString fromStartingDate:baseDate calendar:calendar withShortDateFormat:dateFormat withMediumDateFormat:dateFormat withLongDateFormat:dateFormat withTimeFormat:timeFormat error:nil];
     
-    STAssertEqualObjects(date, _dateFromYear(1994, 9, 26, 9, 28, 0, calendar), nil);
+    XCTAssertEqualObjects(date, _dateFromYear(1994, 9, 26, 9, 28, 0, calendar));
 }
 
 - (void)testLocaleWeekdays;
@@ -760,7 +877,7 @@ do { \
 	
 	NSArray *weekdays = [formatter weekdaySymbols];
 	NSDate *baseDate = _dateFromYear(2001, 1, 10, 0, 0, 0, calendar);
-	NSDateComponents *components = [calendar components:NSWeekdayCalendarUnit fromDate:baseDate];
+	NSDateComponents *components = [calendar components:NSCalendarUnitWeekday fromDate:baseDate];
 
 	// test with all different formats
 	NSUInteger dateIndex = [dateFormats count];
@@ -812,7 +929,7 @@ do { \
 	[[OFRelativeDateParser sharedParser] setLocale:locale];
 	
 	
-	calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
+	calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
 	NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
 	
 	[formatter setLocale:locale];
@@ -821,7 +938,7 @@ do { \
 	
         NSSet *shortdays = [NSSet setWithArray:[formatter shortWeekdaySymbols]];
 
-	NSDateComponents *components = [calendar components:NSMonthCalendarUnit fromDate:baseDate];
+	NSDateComponents *components = [calendar components:NSCalendarUnitMonth fromDate:baseDate];
 	
 	NSUInteger dateIndex = [dateFormats count];
 	while (dateIndex--) {
@@ -872,6 +989,20 @@ do { \
     [[OFRelativeDateParser sharedParser] setLocale:currentLocale];
 }
 
+- (void)testTimestamps;
+{
+    NSString *testDateString = @"2014-09-21 20:35:54 -0700";
+    NSString *customFormat = @"yyyy'-'MM'-'dd' 'HH':'mm':'ss' 'ZZZ";
+    NSString *timeFormat = @"";
+
+    [calendar setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"PDT"]];
+
+    NSDate *baseDate = _dateFromYear(2007, 1, 1, 0, 0, 0, calendar);
+    NSDate *date = nil;
+    [[OFRelativeDateParser sharedParser] getDateValue:&date forString:testDateString fromStartingDate:baseDate calendar:calendar withCustomFormat:customFormat withShortDateFormat:customFormat withMediumDateFormat:customFormat withLongDateFormat:customFormat withTimeFormat:timeFormat error:nil];
+
+    XCTAssertEqualObjects(date, _dateFromYear(2014, 9, 21, 20, 35, 54, calendar));
+}
 
 - (void)testTimes;
 {
@@ -985,7 +1116,7 @@ do { \
 {
     NSLocale *locale = [NSLocale localeWithLocaleIdentifier:@"ko_KR"];
     
-    calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
+    calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
     [calendar setLocale:locale];
 
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
@@ -1014,18 +1145,18 @@ do { \
         __autoreleasing NSDate *date = nil;
         __autoreleasing NSError *error = nil;
         if (![parser getDateValue:&date forString:dateString fromStartingDate:nil useEndOfDuration:NO defaultTimeDateComponents:nil calendar:calendar error:&error]) {
-            STFail(@"Failed to parse date");
+            XCTFail(@"Failed to parse date");
             return;
         }
         
-        STAssertNotNil(date, @"Success should fill out a date");
+        XCTAssertNotNil(date, @"Success should fill out a date");
         
         NSDateComponents *components = [calendar components:NSCalendarUnitYear|NSCalendarUnitMonth|NSCalendarUnitDay|NSCalendarUnitHour|NSCalendarUnitMinute fromDate:date];
-        STAssertEquals(components.year, 2014L, nil);
-        STAssertEquals(components.month, 4L, nil);
-        STAssertEquals(components.day, 10L, nil);
-        STAssertEquals(components.hour, expectedHour, nil);
-        STAssertEquals(components.minute, 28L, nil);
+        XCTAssertEqual(components.year, 2014L);
+        XCTAssertEqual(components.month, 4L);
+        XCTAssertEqual(components.day, 10L);
+        XCTAssertEqual(components.hour, expectedHour);
+        XCTAssertEqual(components.minute, 28L);
     }
 }
 

@@ -1,4 +1,4 @@
-// Copyright 2010-2011, 2013 Omni Development, Inc. All rights reserved.
+// Copyright 2010-2011, 2013-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -8,7 +8,7 @@
 // $Id$
 
 @class NSFileWrapper;
-@class OUIDocumentPicker, OUIDocumentPickerFilter, ODSItem, ODSFileItem, OFXServerAccount;
+@class OUIDocumentPicker, OUIDocumentPickerHomeScreenViewController, OUIDocumentPickerFilter, ODSItem, ODSFileItem, OFXServerAccount;
 
 #import <OmniUIDocument/OUIExportOptionsType.h>
 #import <OmniUIDocument/OUIDocumentPickerItemView.h>
@@ -17,8 +17,11 @@
 
 @optional
 
-- (UIViewController *)documentPickerHomeViewController:(OUIDocumentPicker *)picker;
+- (OUIDocumentPickerHomeScreenViewController *)documentPickerHomeViewController:(OUIDocumentPicker *)picker;
 - (BOOL)documentPickerPresentCloudSetup:(OUIDocumentPicker *)picker;
+
+// Sample restoration
+- (BOOL)documentPickerShouldOpenSampleDocuments;  // Default is YES
 
 // Filter
 - (NSArray *)documentPickerAvailableFilters:(OUIDocumentPicker *)picker; // array of OUIDocumentPickerFilter
@@ -34,6 +37,9 @@
 // New file creation with template support. By implementing this you will get a template picker when trying to create new documents.
 - (OUIDocumentPickerFilter *)documentPickerDocumentFilter:(OUIDocumentPicker *)picker;
 - (OUIDocumentPickerFilter *)documentPickerTemplateDocumentFilter:(OUIDocumentPicker *)picker;
+
+// Default documentStoreFilter's filterPredicate
+- (NSPredicate *)defaultDocumentStoreFilterFilterPredicate:(OUIDocumentPicker *)picker;
 
 // Your opportunity to customize the default item view before it's in its superview
 - (void)documentPicker:(OUIDocumentPicker *)picker willDisplayItemView:(OUIDocumentPickerItemView *)itemView;
@@ -70,9 +76,8 @@
 - (UIImage *)documentPicker:(OUIDocumentPicker *)picker exportIconForUTI:(CFStringRef)fileUTI;  // used by the large export options buttons
 - (NSString *)documentPicker:(OUIDocumentPicker *)picker labelForUTI:(CFStringRef)fileUTI;
 
-- (UIImage *)documentPicker:(OUIDocumentPicker *)picker exportIconForAppStoreIdentifier:(NSString *)appStoreIdentifier;  // used by the large export options buttons
-- (NSString *)documentPicker:(OUIDocumentPicker *)picker exportLabelForAppStoreIdentifier:(NSString *)appStoreIdentifier;
-- (NSString *)documentPicker:(OUIDocumentPicker *)picker exportDescriptionForAppStoreIdentifier:(NSString *)appStoreIdentifier;
+- (NSString *)documentPicker:(OUIDocumentPicker *)picker purchaseDescriptionForExportType:(CFStringRef)fileUTI;
+- (void)documentPicker:(OUIDocumentPicker *)picker purchaseExportType:(CFStringRef)fileUTI navigationController:(UINavigationController *)navigationController;
 
 - (NSString *)documentPicker:(OUIDocumentPicker *)picker toolbarPromptForRenamingItem:(ODSItem *)item;
 

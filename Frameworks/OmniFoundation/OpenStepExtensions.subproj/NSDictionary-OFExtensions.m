@@ -11,6 +11,9 @@
 #import <OmniFoundation/NSMutableArray-OFExtensions.h>
 #import <OmniBase/rcsid.h>
 #import <OmniBase/assertions.h>
+#import <OmniBase/objc.h>
+#import <OmniBase/OBUtilities.h>
+
 #include <stdlib.h>
 
 RCS_ID("$Id$")
@@ -88,21 +91,21 @@ RCS_ID("$Id$")
 
 - (NSDictionary *)dictionaryByAddingObjectsFromDictionary:(NSDictionary *)otherDictionary;
 {
-    NSMutableDictionary *mutatedDictionary = nil;
-	
-	for(id key in otherDictionary.allKeys){
-		id otherValue = otherDictionary[key];
-		id value = self[key];
-		
-		if (value != otherValue) {
-			if (!mutatedDictionary)
-				mutatedDictionary = [[self mutableCopy] autorelease];
-			mutatedDictionary[key] = otherValue;
-		}
-	}
+    __block NSMutableDictionary *mutatedDictionary = nil;
+    
+    [otherDictionary enumerateKeysAndObjectsUsingBlock:^(id key, id otherValue, BOOL *stop) {
+        id value = self[key];
+        if (value != otherValue) {
+            if (!mutatedDictionary)
+                mutatedDictionary = [self mutableCopy];
+            mutatedDictionary[key] = otherValue;
+        }
+    }];
 
-    if (mutatedDictionary)
+    if (mutatedDictionary) {
+        [mutatedDictionary autorelease];
         return [[mutatedDictionary copy] autorelease];
+    }
     return [[self copy] autorelease];
 }
 
@@ -305,14 +308,14 @@ RCS_ID("$Id$")
 - (void)makeValuesPerformSelector:(SEL)sel withObject:(id)object;
 {
     [self enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
-        [value performSelector:sel withObject:object];
+        OBSendVoidMessageWithObject(value, sel, object);
     }];
 }
 
 - (void)makeValuesPerformSelector:(SEL)sel;
 {
     [self enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
-        [value performSelector:sel];
+        OBSendVoidMessage(value, sel);
     }];
 }
 
@@ -349,15 +352,15 @@ static id copyDictionaryKeys(CFDictionaryRef self, Class resultClass)
 {
     NSUInteger keyCount = CFDictionaryGetCount(self);
     
-    __unsafe_unretained id *keys;
+    void **keys;
     size_t byteCount = sizeof(*keys) * keyCount;
     BOOL useMalloc = byteCount >= SAFE_ALLOCA_SIZE;
-    keys = useMalloc ? malloc(byteCount) : alloca(byteCount);
+    keys = (void **)(useMalloc ? malloc(byteCount) : alloca(byteCount));
     
     CFDictionaryGetKeysAndValues((CFDictionaryRef)self, (const void **)keys, NULL);
     
     id keyArray;
-    keyArray = [[resultClass alloc] initWithObjects:keys count:keyCount];
+    keyArray = [[resultClass alloc] initWithObjects:OBCastMemoryBufferToUnsafeObjectArray(keys) count:keyCount];
     
     if (useMalloc)
         free(keys);

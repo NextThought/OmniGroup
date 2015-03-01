@@ -5,8 +5,6 @@
 // distributed with this project and can also be found at
 // <http://www.omnigroup.com/developer/sourcecode/sourcelicense/>.
 
-#pragma GCC diagnostic ignored "-Wobjc-designated-initializers"
-
 #import <OmniFoundation/NSNumber-OFExtensions-CGTypes.h>
 #import <CoreFoundation/CoreFoundation.h>
 #import <OmniBase/rcsid.h>
@@ -20,11 +18,15 @@ RCS_ID("$Id$")
     return CFBridgingRelease(CFNumberCreate(kCFAllocatorDefault, kCFNumberCGFloatType, &value));
 }
 
+// Convenience initializers warn incorrectly with -Wobjc-designated-initializers when returning a new object <http://llvm.org/bugs/show_bug.cgi?id=20390>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wobjc-designated-initializers"
 - (id)initWithCGFloat:(CGFloat)value;
 {
     [self release];
     return (OB_BRIDGE NSNumber *)CFNumberCreate(kCFAllocatorDefault, kCFNumberCGFloatType, &value);
 }
+#pragma clang diagnostic pop
 
 - (CGFloat)cgFloatValue
 {

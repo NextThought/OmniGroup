@@ -25,7 +25,6 @@
 #import <IOKit/graphics/IOGraphicsLib.h>
 #import <OpenGL/OpenGL.h>
 #import <OpenGL/gl.h>
-#import <QuickTime/QuickTime.h>
 #import <mach/mach_error.h>
 #endif
 
@@ -149,11 +148,11 @@ static NSDictionary *copySystemProfileForDataType(NSString *dataType)
     NSFileHandle *outputHandle = [pipe fileHandleForReading];
     NSData *output = [outputHandle readDataToEndOfFile];
     
-    NSString *errorString = nil;
-    id plist = [NSPropertyListSerialization propertyListFromData:output mutabilityOption:NSPropertyListImmutable format:NULL errorDescription:&errorString];
-    if (!plist && errorString) {
+    NSError *error = nil;
+    id plist = [NSPropertyListSerialization propertyListWithData:output options:NSPropertyListImmutable format:NULL error:&error];
+    if (!plist && error) {
 #ifdef DEBUG    
-	NSLog(@"Unable to query system profile for '%@' -- '%@'", dataType, errorString);
+	NSLog(@"Unable to query system profile for '%@' -- '%@'", dataType, error);
 #endif	
     }
     
@@ -604,7 +603,7 @@ CFDictionaryRef OSUCopyHardwareInfo(NSString *applicationIdentifier, bool collec
     {
 #if OSU_MAC
 	NSOpenGLPixelFormatAttribute attributes[] = {
-	    NSOpenGLPFAFullScreen,
+	    // NSOpenGLPFAFullScreen, // Deprecated since 10.6
 	    NSOpenGLPFAScreenMask, CGDisplayIDToOpenGLDisplayMask(CGMainDisplayID()),
 	    NSOpenGLPFAAccelerated,
 	    NSOpenGLPFANoRecovery,

@@ -77,8 +77,9 @@ OBDEPRECATED_METHOD(-updateInterfaceFromInspectedObjects); // -> -updateInterfac
 @property (readonly,retain) NSMutableArray *popTransitions;
 @end
 
-// Might want to make this variable, but at least let's only hardcode it in one spot. Popovers are required to be between 320 and 600; let's shoot for the minimum.
-const CGFloat OUIInspectorContentWidth = 320;
+// Variable now, should really be turned into an accessor instead of this global. Popovers are required to be between 320 and 600; let's shoot for the minimum.
+const CGFloat OUIConstantInspectorWidth = 320;
+CGFloat OUIInspectorContentWidth = OUIConstantInspectorWidth;
 
 const NSTimeInterval OUICrossFadeDuration = 0.2;
 
@@ -168,7 +169,6 @@ NSString * const OUIInspectorDidEndChangingInspectedObjectsNotification = @"OUII
         _navigationController.delegate = self;
         _navigationController.toolbarHidden = YES;
     }
-
     return self;
 }
 
@@ -220,22 +220,8 @@ NSString * const OUIInspectorDidEndChangingInspectedObjectsNotification = @"OUII
 
     // In the embedding case, the 'from whatever' arguments are irrelevant. We assumed the embedding navigation controller is going to be made visibiel somehow.
     if ([self isEmbededInOtherNavigationController] == NO) {
-        if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
-            _navigationController.topViewController.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(dismiss)];
-            OBFinishPorting;
-            // The following code is bing disabled. We are removing calls to -[OUIAppController topViewController]. In a ViewController Containment world, topViewController could be ambiguous. We need to find a better way to handle this.
-#if 0
-            // When we have time to worry about iPhone, we should replace this:
-            [[[OUIAppController controller] topViewController] presentViewController:_navigationController animated:YES completion:NULL];
-            // with something like this:
-            UIViewController *viewControllerToPresentFrom = [self.delegate inspectorViewControllerToPresentFrom:self];
-            [viewControllerToPresentFrom presentViewController:_navigationController animated:YES completion:NULL];
-#endif
-
-        } else {
-            if (![[OUIAppController controller] presentPopover:_popoverController fromBarButtonItem:item permittedArrowDirections:UIPopoverArrowDirectionUp animated:YES])
-                return NO;
-        }
+        if (![[OUIAppController controller] presentPopover:_popoverController fromBarButtonItem:item permittedArrowDirections:UIPopoverArrowDirectionUp animated:YES])
+            return NO;
     }
     
     [[NSNotificationCenter defaultCenter] postNotificationName:OUIInspectorDidPresentNotification object:self];
@@ -269,14 +255,13 @@ NSString * const OUIInspectorDidEndChangingInspectedObjectsNotification = @"OUII
 
 - (void)dismissAnimated:(BOOL)animated;
 {
-    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
-        [_navigationController dismissViewControllerAnimated:animated completion:NULL];
-    } else {
-        if (!_popoverController)
-            return;
-        
+    if (!_popoverController)
+        return;
+  
+    if (_popoverController.contentViewController.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact)
+        [_popoverController.contentViewController.presentingViewController dismissViewControllerAnimated:animated completion:NULL];
+    else
         [[OUIAppController controller] dismissPopover:_popoverController animated:animated];
-    }
 }
 
 - (NSArray *)makeAvailableSlicesForStackedSlicesPane:(OUIStackedSlicesInspectorPane *)pane;
@@ -306,15 +291,18 @@ static UINavigationController *_getNavigationController(OUIInspector *self)
 static void _configureContentSize(OUIInspector *self, UIViewController *vc, CGFloat height, BOOL animated)
 {
     const CGFloat toolbarHeight = 38;
-
+    
     BOOL wantsToolbar = self->_alwaysShowToolbar || ([vc.toolbarItems count] > 0);
     if (wantsToolbar)
         height -= toolbarHeight;
     
+    UIWindow *window = [[OUIAppController controller] window];
+    if ([[window traitCollection] horizontalSizeClass] == UIUserInterfaceSizeClassCompact)
+        OUIInspectorContentWidth = CGRectGetWidth([window frame]);
+    
     self->_popoverController.lockContentSize = YES;
     {
         vc.preferredContentSize = CGSizeMake(OUIInspectorContentWidth, height);
-        
         [self->_navigationController setToolbarHidden:!wantsToolbar animated:animated];
     }
     self->_popoverController.lockContentSize = NO;
@@ -526,6 +514,7 @@ static void _configureContentSize(OUIInspector *self, UIViewController *vc, CGFl
     
     OUIWithAnimationsDisabled(!visible, ^{
         _mainPane.inspectedObjects = objects;
+        self.topVisiblePane.inspectedObjects = objects;  // what about any other panes in the controller stack?
         
         [self _configureTitleForPane:_mainPane];
         
@@ -544,7 +533,7 @@ static void _configureContentSize(OUIInspector *self, UIViewController *vc, CGFl
             // The popover controller will read the nav controller's contentSizeForViewInPopover as soon as it is created (and it will read the top view controller's)
             _configureContentSize(self, _mainPane, _height, NO);
             
-            if (_popoverController == nil && UI_USER_INTERFACE_IDIOM() != UIUserInterfaceIdiomPhone) {
+            if (_popoverController == nil) {
                 _popoverController = [[OUIInspectorPopoverController alloc] initWithContentViewController:_navigationController];
                 _popoverController.delegate = self;
                 _popoverController.backgroundColor = [[self class] backgroundColor];

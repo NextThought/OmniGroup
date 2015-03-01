@@ -17,6 +17,7 @@
 #import <OmniFoundation/OFObject-Queue.h>
 #import <OmniFoundation/OFVersionNumber.h>
 #import <OmniFoundation/OFWeakReference.h>
+#import <OmniFoundation/OFPreference.h>
 
 RCS_ID("$Id$")
 
@@ -32,6 +33,8 @@ RCS_ID("$Id$")
     NSMutableArray *_observerReferences; // OFWeakReferences holding the observers
     NSMutableSet *postponingObservers;
     NSMutableDictionary *queues;
+    
+    OFPreference *_crashOnAssertionOrUnhandledExceptionPreference;
 }
 
 static OFController *sharedController = nil;
@@ -40,18 +43,16 @@ static BOOL CrashOnAssertionOrUnhandledException = NO; // Cached so we can get t
 #ifdef OMNI_ASSERTIONS_ON
 static void _OFControllerCheckTerminated(void)
 {
-    NSAutoreleasePool *p = [[NSAutoreleasePool alloc] init];
-    
-    // Make sure that applications that use OFController actually call its -willTerminate.
-    NSDictionary *environment = [[NSProcessInfo processInfo] environment];
-    if ([[[environment objectForKey:@"XCInjectBundle"] pathExtension] isEqualToString:@"octest"] &&
-        [[environment objectForKey:@"XCInjectBundleInto"] hasPrefix:[[NSBundle mainBundle] bundlePath]]) {
-        // We need to skip this check for otest host apps since +[SenTestProbe runTests:] just calls exit() rather than -terminate:.        
-    } else {
-        OBASSERT(!sharedController || sharedController->_status == OFControllerTerminatingStatus || sharedController->_status == OFControllerNotInitializedStatus);
+    @autoreleasepool {
+        // Make sure that applications that use OFController actually call its -willTerminate.
+        NSDictionary *environment = [[NSProcessInfo processInfo] environment];
+        if ([[[environment objectForKey:@"XCInjectBundle"] pathExtension] isEqualToString:@"xctest"] &&
+            [[environment objectForKey:@"XCInjectBundleInto"] hasPrefix:[[NSBundle mainBundle] bundlePath]]) {
+            // We need to skip this check for xctest host apps since +[XCTestProbe runTests:] just calls exit() rather than -terminate:.
+        } else {
+            OBASSERT(!sharedController || sharedController->_status == OFControllerTerminatingStatus || sharedController->_status == OFControllerNotInitializedStatus);
+        }
     }
-    
-    [p drain];
 }
 #endif
 
@@ -61,12 +62,12 @@ static void _OFControllerCheckTerminated(void)
     static NSBundle *controllingBundle = nil;
     
     if (!controllingBundle) {
-        if (NSClassFromString(@"SenTestCase")) {
-            // There should be exactly one bundle with an extension of either 'otest' (the old extension) or 'octest' (what Xcode 3 uses).
+        if (NSClassFromString(@"XCTestCase")) {
+            // There should be exactly one test bundle with an extension of either 'xctest'.
             NSBundle *candidateBundle = nil;
             for (NSBundle *bundle in [NSBundle allBundles]) {
                 NSString *extension = [[bundle bundlePath] pathExtension];
-                if ([extension isEqualToString:@"otest"] || [extension isEqualToString:@"octest"]) {
+                if ([extension isEqualToString:@"xctest"]) {
                     if (candidateBundle) {
                         NSLog(@"found extra possible unit test bundle %@", bundle);
                     } else
@@ -81,7 +82,7 @@ static void _OFControllerCheckTerminated(void)
         if (!controllingBundle)
             controllingBundle = [[NSBundle mainBundle] retain];
         
-        // If the controlling bundle specifies a minimum OS revision, make sure it is at least 10.8 (since that is our global minimum on the trunk right now).  Only really applies for LaunchServices-started bundles (applications).
+        // If the controlling bundle specifies a minimum OS revision, make sure it is at least 10.10 (since that is our global minimum on the trunk right now).  Only really applies for LaunchServices-started bundles (applications).
 #ifdef OMNI_ASSERTIONS_ON
         {
             NSString *requiredVersionString = [[controllingBundle infoDictionary] objectForKey:@"LSMinimumSystemVersion"];
@@ -89,7 +90,7 @@ static void _OFControllerCheckTerminated(void)
                 OFVersionNumber *requiredVersion = [[OFVersionNumber alloc] initWithVersionString:requiredVersionString];
                 OBASSERT(requiredVersion);
                 
-                OFVersionNumber *globalRequiredVersion = [[OFVersionNumber alloc] initWithVersionString:@"10.8"];
+                OFVersionNumber *globalRequiredVersion = [[OFVersionNumber alloc] initWithVersionString:@"10.10"];
                 OBASSERT([globalRequiredVersion compareToVersionNumber:requiredVersion] != NSOrderedDescending);
                 [requiredVersion release];
                 [globalRequiredVersion release];
@@ -150,6 +151,7 @@ static void _OFControllerCheckTerminated(void)
     return sharedController;
 }
 
+
 - (id)init;
 {
     OBPRECONDITION([NSThread isMainThread]);
@@ -174,8 +176,9 @@ static void _OFControllerCheckTerminated(void)
     // We are setting up the shared instance in +sharedController
     if (!(self = [super init]))
         return nil;
-    
-    CrashOnAssertionOrUnhandledException = [self crashOnAssertionOrUnhandledException];
+
+    // We can't depend on the default being registered here since we are early in startup. Default to on, but then cache the actual value in -didInitialize, once things get registered.
+    CrashOnAssertionOrUnhandledException = YES;
     
     NSExceptionHandler *handler = [NSExceptionHandler defaultExceptionHandler];
     [handler setDelegate:self];
@@ -200,6 +203,11 @@ static void _OFControllerCheckTerminated(void)
 {
     OBPRECONDITION([NSThread isMainThread]);
 
+    if (_crashOnAssertionOrUnhandledExceptionPreference) {
+        [OFPreference removeObserver:self forPreference:_crashOnAssertionOrUnhandledExceptionPreference];
+        [_crashOnAssertionOrUnhandledExceptionPreference release];
+    }
+    
     [_observerReferences release];
     [postponingObservers release];
     [queues release];
@@ -267,7 +275,7 @@ static void _OFControllerCheckTerminated(void)
         return;
     
     if (state <= _status) {
-        [receiver performSelector:message];
+        OBSendVoidMessage(receiver, message);
     } else {
         OFInvocation *queueEntry = [[OFInvocation alloc] initForObject:receiver selector:message];
         [self queueInvocation:queueEntry whenStatus:state];
@@ -307,6 +315,16 @@ static void _OFControllerCheckTerminated(void)
     OBPRECONDITION([NSThread isMainThread]);
     OBPRECONDITION(_status == OFControllerNotInitializedStatus);
     
+    // See -init for why we delay this work
+    {
+        static NSString * const CrashOnAssertionOrUnhandledExceptionKey = @"OFCrashOnAssertionOrUnhandledException";
+        OBPRECONDITION([[OFPreference registeredKeys] member:CrashOnAssertionOrUnhandledExceptionKey]);
+        
+        _crashOnAssertionOrUnhandledExceptionPreference = [[OFPreference preferenceForKey:CrashOnAssertionOrUnhandledExceptionKey] retain];
+        [OFPreference addObserver:self selector:@selector(_crashOnAssertionPreferenceChanged:) forPreference:_crashOnAssertionOrUnhandledExceptionPreference];
+        [self _crashOnAssertionPreferenceChanged:nil];
+    }
+
     self.status = OFControllerInitializedStatus;
     [self _makeObserversPerformSelector:@selector(controllerDidInitialize:)];
 }
@@ -422,13 +440,6 @@ static void _OFControllerCheckTerminated(void)
 #endif
 }
 
-- (BOOL)crashOnAssertionOrUnhandledException;
-{
-    // This acts as a global throttle on the 'crash on exeception' support.  If this is off, we assume the app doesn't want the behavior at all.
-    // Some applications, like OmniFocus, are in a constantly saved state.  In this case, there is little to lose by crashing and lots to gain (avoid corrupting data, get reports from users so we can fix them, etc.).  Other applications aren't always saved, so crashing at the first sign of trouble would lead to data loss.  Each application can pick their behavior by setting this key in their Info.plist in the defaults registration area.
-    return [[NSUserDefaults standardUserDefaults] boolForKey:@"OFCrashOnAssertionOrUnhandledException"];
-}
-
 static void OFCrashImmediately(void)
 {
     unsigned int *bad = (unsigned int *)sizeof(unsigned int);
@@ -469,17 +480,11 @@ static void OFCrashImmediately(void)
     [self crashWithReport:report];
 }
 
-- (void)handleUncaughtException:(NSException *)exception;
-{
-    OBRecordBacktrace(NULL, OBBacktraceBuffer_NSException);
-    [self crashWithException:exception mask:NSLogUncaughtExceptionMask];
-}
-
 - (BOOL)shouldLogException:(NSException *)exception mask:(NSUInteger)aMask;
 {
     if ([exception.name isEqual:@"SenTestFailureException"])
         return NO;
-    
+
     return YES;
 }
 
@@ -654,6 +659,13 @@ static NSString * const OFControllerAssertionHandlerException = @"OFControllerAs
 
 #pragma mark - Private
 
+- (void)_crashOnAssertionPreferenceChanged:(NSNotification *)note;
+{
+    OBPRECONDITION(!note || note.object == _crashOnAssertionOrUnhandledExceptionPreference);
+    
+    CrashOnAssertionOrUnhandledException = [_crashOnAssertionOrUnhandledExceptionPreference boolValue];
+}
+
 - (void)_makeObserversPerformSelector:(SEL)aSelector;
 {
     OBPRECONDITION([NSThread isMainThread]);
@@ -662,7 +674,7 @@ static NSString * const OFControllerAssertionHandlerException = @"OFControllerAs
         if ([anObserver respondsToSelector:aSelector]) {
             // NSLog(@"Calling %s[%@ %s]", OBPointerIsClass(anObserver) ? "+" : "-", OBShortObjectDescription(anObserver), aSelector);
             @try {
-                [anObserver performSelector:aSelector withObject:self];
+                OBSendVoidMessageWithObject(anObserver, aSelector, self);
             } @catch (NSException *exc) {
                 NSLog(@"Ignoring exception raised during %s[%@ %@]: %@", OBPointerIsClass(anObserver) ? "+" : "-", OBShortObjectDescription(anObserver), NSStringFromSelector(aSelector), [exc reason]);
             };
@@ -677,7 +689,7 @@ static NSString * const OFControllerAssertionHandlerException = @"OFControllerAs
     for (id anObserver in [self _observersSnapshot]) {
         if ([anObserver respondsToSelector:aSelector]) {
             @try {
-                [anObserver performSelector:aSelector withObject:self withObject:object];
+                OBSendVoidMessageWithObjectObject(anObserver, aSelector, self, object);
             } @catch (NSException *exc) {
                 NSLog(@"Ignoring exception raised during %s[%@ %@]: %@", OBPointerIsClass(anObserver) ? "+" : "-", OBShortObjectDescription(anObserver), NSStringFromSelector(aSelector), [exc reason]);
             };

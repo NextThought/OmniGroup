@@ -5,8 +5,6 @@
 // distributed with this project and can also be found at
 // <http://www.omnigroup.com/developer/sourcecode/sourcelicense/>.
 
-#pragma GCC diagnostic ignored "-Wobjc-designated-initializers"
-
 #import <OmniFoundation/OFOrderedMutableDictionary.h>
 
 RCS_ID("$Id$");
@@ -62,10 +60,13 @@ RCS_ID("$Id$");
 
 #pragma mark - NSMutableDictionary subclass
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wobjc-designated-initializers"
 - (id)init;
 {
     return [self initWithCapacity:0];
 }
+#pragma clang diagnostic pop
 
 - (id)initWithCapacity:(NSUInteger)numItems;
 {
