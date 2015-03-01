@@ -240,7 +240,7 @@ extern CFStringRef const OBBuildByCompilerVersion;
 // Sometimes a value is computed but not expected to be used and we wish to avoid clang dead store warnings.  For example, when laying out a stack of views, we might keep a running total of the used height and might want to do this for the last item stacked up (in case something is added later).
 // Using overloadable functions here lets us handle object types (since we can't cast those to void * w/o __bridge and we can't cast non object types to void * _with_ __bridge).
 static inline void __attribute__((overloadable)) _OBUnusedValue(id v) {
-    __strong const id *__ptr __attribute__((unused)) = &v; /* ensure it is actually an l-value */ \
+    __strong id *__ptr __attribute__((unused)) = &v; /* ensure it is actually an l-value */ \
     typeof(v) __unused_value __attribute__((unused)) = v;
 }
 #define OB_UNUSED_VALUE_FOR_TYPE(T) \
@@ -248,14 +248,14 @@ static inline void __attribute__((overloadable)) _OBUnusedValue(T v) { \
     void *__ptr __attribute__((unused)) = (void *)&v; /* ensure it is actually an l-value */ \
     typeof(v) __unused_value __attribute__((unused)) = v; \
 }
-//OB_UNUSED_VALUE_FOR_TYPE(int8_t)
-//OB_UNUSED_VALUE_FOR_TYPE(int16_t)
-//OB_UNUSED_VALUE_FOR_TYPE(int32_t)
-//OB_UNUSED_VALUE_FOR_TYPE(int64_t)
-//OB_UNUSED_VALUE_FOR_TYPE(uint8_t)
-//OB_UNUSED_VALUE_FOR_TYPE(uint16_t)
-//OB_UNUSED_VALUE_FOR_TYPE(uint32_t)
-//OB_UNUSED_VALUE_FOR_TYPE(uint64_t)
+OB_UNUSED_VALUE_FOR_TYPE(int8_t)
+OB_UNUSED_VALUE_FOR_TYPE(int16_t)
+OB_UNUSED_VALUE_FOR_TYPE(int32_t)
+OB_UNUSED_VALUE_FOR_TYPE(int64_t)
+OB_UNUSED_VALUE_FOR_TYPE(uint8_t)
+OB_UNUSED_VALUE_FOR_TYPE(uint16_t)
+OB_UNUSED_VALUE_FOR_TYPE(uint32_t)
+OB_UNUSED_VALUE_FOR_TYPE(uint64_t)
 OB_UNUSED_VALUE_FOR_TYPE(NSUInteger)
 OB_UNUSED_VALUE_FOR_TYPE(NSInteger)
 OB_UNUSED_VALUE_FOR_TYPE(float)
