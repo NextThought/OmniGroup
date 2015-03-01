@@ -1,4 +1,4 @@
-// Copyright 2003-2005, 2007-2013 Omni Development, Inc. All rights reserved.
+// Copyright 2003-2005, 2007-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -12,10 +12,12 @@ RCS_ID("$Id$");
 #import <Foundation/NSStream.h>
 #import <OmniFoundation/OFErrors.h>
 #import <OmniFoundation/OFXMLBuffer.h>
-#import <OmniFoundation/OFXMLError.h>
 #import <OmniFoundation/OFXMLQName.h>
 #import <OmniFoundation/OFXMLInternedStringTable.h>
 #import <OmniFoundation/NSDate-OFExtensions.h>
+
+#import "OFXMLError.h"
+
 #import <libxml/xmlIO.h>
 #import <libxml/xmlreader.h>
 
@@ -55,7 +57,7 @@ static int _readFromInput(void * context, char * buffer, int len)
 {
     OBPRECONDITION(len >= 0);
 
-    OFXMLReader *self = context;
+    OFXMLReader *self = (__bridge OFXMLReader *)context;
 
     if (len <= 0)
         return 0; // -read:maxLength: takes NSUInteger.
@@ -79,7 +81,7 @@ static int _readFromInput(void * context, char * buffer, int len)
 // Returns 0 or -1 in case of error
 static int _closeInput(void * context)
 {
-    OFXMLReader *self = context;
+    OFXMLReader *self = (__bridge OFXMLReader *)context;
     
     switch ([self->_inputStream streamStatus]) {
         case NSStreamStatusNotOpen:
@@ -146,7 +148,7 @@ static BOOL _skipPastEndOfElement(OFXMLReader *self, NSUInteger endTagsLeft, NSE
 
 static void _errorHandler(void *userData, xmlErrorPtr error)
 {
-    OFXMLReader *self = userData;
+    OFXMLReader *self = (__bridge OFXMLReader *)userData;
 
     NSError *errorObject = OFXMLCreateError(error);
     if (!errorObject)
@@ -163,8 +165,7 @@ static void _errorHandler(void *userData, xmlErrorPtr error)
     
     LIBXML_TEST_VERSION
 
-    // Hold a strong reference to this in GC so that it cannot be in the same -finalize cycle as us.
-    _inputStream = (id)CFRetain(inputStream);
+    _inputStream = [inputStream retain];
     
     _errors = [[NSMutableArray alloc] init];
     
@@ -267,50 +268,39 @@ static void _errorHandler(void *userData, xmlErrorPtr error)
     return [self initWithURL:url startingInternedNames:nil error:outError];
 }
 
-static void _finalize(OFXMLReader *self)
+- (void)dealloc;
 {
-    if (self->_reader) {
-        xmlFreeTextReader(self->_reader);
-        self->_reader = NULL;
+    if (_reader) {
+        xmlFreeTextReader(_reader);
+        _reader = NULL;
     }
     
-    if (self->_inputBuffer) {
-        xmlFreeParserInputBuffer(self->_inputBuffer);
-        self->_inputBuffer = NULL;
+    if (_inputBuffer) {
+        xmlFreeParserInputBuffer(_inputBuffer);
+        _inputBuffer = NULL;
     }
     
-    // Since we have a strong reference to _inputStream, we can be sure it isn't collected here and we can have freed up _inputBuffer before it gets collected.
-    switch ([self->_inputStream streamStatus]) {
+    // Since we have a strong reference to _inputStream, we can be sure it isn't collected here and we can have freed up _inputBuffer before it gets deallocated.
+    switch ([_inputStream streamStatus]) {
         case NSStreamStatusNotOpen:
         case NSStreamStatusClosed:
             break;
         default:
-            [self->_inputStream close];
-            OBASSERT([self->_inputStream streamStatus] == NSStreamStatusClosed);
+            [_inputStream close];
+            OBASSERT([_inputStream streamStatus] == NSStreamStatusClosed);
             break;
     }
     
-    // Now, make the input stream collectable.
-    CFRelease(self->_inputStream);
+    [_inputStream release]; // Now, let go of the input stream.
     
-    if (self->_nameTable) {
-        OFXMLInternedNameTableFree(self->_nameTable);
-        self->_nameTable = NULL;
+    if (_nameTable) {
+        OFXMLInternedNameTableFree(_nameTable);
+        _nameTable = NULL;
     }
-}
 
-- (void)dealloc;
-{
-    _finalize(self);
     [_url release];
     [_errors release];
     [super dealloc];
-}
-
-- (void)finalize;
-{
-    _finalize(self);
-    [super finalize];
 }
 
 @synthesize url = _url;
@@ -401,7 +391,7 @@ static void _finalize(OFXMLReader *self)
     return _skipPastEndOfElement(self, 0/*endTagsLeft*/, outError);
 }
 
-- (BOOL)copyString:(NSString **)outString endingElement:(BOOL *)outElementEnded error:(NSError **)outError;
+- (BOOL)copyString:(__strong NSString **)outString endingElement:(BOOL *)outElementEnded error:(NSError **)outError;
 {
     BOOL onEndElement = (_currentNodeType == XML_READER_TYPE_END_ELEMENT);
     BOOL onEmptyElement = (_currentNodeType == XML_READER_TYPE_ELEMENT && _inEmptyElement);
@@ -439,7 +429,7 @@ static void _finalize(OFXMLReader *self)
     return YES;
 }
 
-- (BOOL)copyStringContentsToEndOfElement:(NSString **)outString error:(NSError **)outError;
+- (BOOL)copyStringContentsToEndOfElement:(__strong NSString **)outString error:(NSError **)outError;
 {
     OBPRECONDITION(outString);
     
@@ -541,7 +531,7 @@ static void _finalize(OFXMLReader *self)
     }
 }
 
-- (BOOL)copyValueOfAttribute:(NSString **)outString named:(OFXMLQName *)name error:(NSError **)outError;
+- (BOOL)copyValueOfAttribute:(__strong NSString **)outString named:(OFXMLQName *)name error:(NSError **)outError;
 {
     OBPRECONDITION(outString);
     OBPRECONDITION(name);
@@ -588,7 +578,7 @@ static void _finalize(OFXMLReader *self)
     return YES;
 }
 
-- (BOOL)copyAttributes:(NSDictionary **)outAttributes error:(NSError **)outError;
+- (BOOL)copyAttributes:(__strong NSDictionary **)outAttributes error:(NSError **)outError;
 {
     OBPRECONDITION(_currentNodeType == XML_READER_TYPE_ELEMENT);
     OBPRECONDITION(_inEmptyElement == NO); // If this is YES we are pointing at a virtual 'end' for the empty element.
@@ -669,7 +659,7 @@ static void _finalize(OFXMLReader *self)
 }
 
 // For the current element, return a dictionary of all the namespace mappings defined on this element (has nothing to do with all the namespace mappings in effect from enclosing elements).
-- (BOOL)copyNamespaceDeclarations:(NSDictionary **)outPrefixToNamespaceURLString error:(NSError **)outError;
+- (BOOL)copyNamespaceDeclarations:(__strong NSDictionary **)outPrefixToNamespaceURLString error:(NSError **)outError;
 {
     OBPRECONDITION(_currentNodeType == XML_READER_TYPE_ELEMENT);
     OBPRECONDITION(_inEmptyElement == NO); // If this is YES we are pointing at a virtual 'end' for the empty element.
@@ -934,7 +924,7 @@ static BOOL _prepareSimpleValueReader(OFXMLReader *self, const char **outString,
     SIMPLE_READ_SUFFIX;
 }
 
-- (BOOL)copyDateContentsOfElement:(out NSDate **)outValue error:(NSError **)outError;
+- (BOOL)copyDateContentsOfElement:(out __strong NSDate **)outValue error:(NSError **)outError;
 {
     NSDate *defaultValue = nil;
     

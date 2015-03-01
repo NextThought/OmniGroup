@@ -1,4 +1,4 @@
-// Copyright 2010-2013 The Omni Group. All rights reserved.
+// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -36,9 +36,7 @@ extern NSString * const OUIDocumentPickerScrollViewItemsBinding;
 
 @property(nonatomic,assign) BOOL shouldHideTopControlsOnNextLayout;
 
-- (void)willRotateWithDuration:(NSTimeInterval)duration;
-- (void)didRotate;
-@property(nonatomic,assign) BOOL landscape;
+- (void)retileItems;
 
 @property(nonatomic,retain) UIView *topControls;
 @property(nonatomic,retain) OUIDocumentRenameSession *renameSession;

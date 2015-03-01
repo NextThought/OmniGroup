@@ -1,4 +1,4 @@
-// Copyright 2010-2013 The Omni Group. All rights reserved.
+// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -14,10 +14,22 @@
 #import <OmniUI/OUIInspector.h>
 #import <OmniUI/OUIInspectorSlice.h>
 #import <OmniUI/OUIColorInspectorPaneParentSlice.h>
+#import <OmniUI/UIViewController-OUIExtensions.h>
 
 RCS_ID("$Id$");
 
 @implementation OUIColorInspectorPane
+
+- (instancetype)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil;
+{
+    if ((self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil]) == nil) {
+        return nil;
+    }
+    
+    self.automaticallyAdjustsScrollViewInsets = NO;
+    
+    return self;
+}
 
 - (void)dealloc;
 {

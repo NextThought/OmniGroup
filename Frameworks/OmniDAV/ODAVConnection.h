@@ -1,4 +1,4 @@
-// Copyright 2008-2013 The Omni Group. All rights reserved.
+// Copyright 2008-2014 The Omni Group. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -28,7 +28,12 @@ typedef NS_ENUM(NSUInteger, ODAVDepth) {
 #if !ODAV_NSURLSESSION
 // Stand-in until we use NSURLSessionConfiguration
 @interface ODAVConnectionConfiguration : NSObject
+
++ (NSString *)userAgentStringByAddingComponents:(NSArray *)components;
+
 @property(nonatomic) BOOL allowsCellularAccess;
+@property(nonatomic,copy) NSString *userAgent;
+
 @end
 #endif
 
@@ -36,6 +41,7 @@ typedef NS_ENUM(NSUInteger, ODAVDepth) {
 
 - initWithSessionConfiguration:(ODAV_NSURLSESSIONCONFIGURATION_CLASS *)configuration;
 
+// Completely override the user agent string, otherwise the configuration's userAgent will be used.
 @property(nonatomic,copy) NSString *userAgent;
 
 // NOTE: These get called on a private queue, not the queue the connection was created on or the queue the operations were created or started on
@@ -50,7 +56,7 @@ typedef NS_ENUM(NSUInteger, ODAVDepth) {
 - (void)fileInfosAtURL:(NSURL *)url ETag:(NSString *)predicateETag depth:(ODAVDepth)depth completionHandler:(ODAVConnectionMultipleFileInfoCompletionHandler)completionHandler;
 - (void)fileInfoAtURL:(NSURL *)url ETag:(NSString *)predicateETag completionHandler:(void (^)(ODAVSingleFileInfoResult *result, NSError *error))completionHandler;
 
-// Removes the directory URL itself, "._" files, and des some more error checking for non-directory cases.
+// Removes the directory URL itself, "._" files, and does some more error checking for non-directory cases.
 - (void)directoryContentsAtURL:(NSURL *)url withETag:(NSString *)ETag completionHandler:(ODAVConnectionMultipleFileInfoCompletionHandler)completionHandler;
 
 - (void)getContentsOfURL:(NSURL *)url ETag:(NSString *)ETag completionHandler:(ODAVConnectionOperationCompletionHandler)completionHandler;

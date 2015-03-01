@@ -42,7 +42,17 @@ BOOL OATargetSelectionEnabled(void)
     return OATargetSelection;
 }
 
+OBDEPRECATED_METHOD(-handleRunException:)
+OBDEPRECATED_METHOD(-handleInitException:)
+OBDEPRECATED_METHOD(-currentRunExceptionPanel)
+
 @implementation OAApplication
+{
+    NSTimeInterval lastEventTimeInterval;
+    NSUInteger mouseButtonState;
+    NSMapTable *windowsForSheets;
+    NSMutableArray *sheetQueue;
+}
 
 + (void)initialize;
 {
@@ -70,7 +80,6 @@ static NSImage *CautionIcon = nil;
 
 - (void)dealloc;
 {
-    [exceptionCheckpointDate release];
     [windowsForSheets release];
     [sheetQueue release];
     [super dealloc];
@@ -84,35 +93,6 @@ static NSImage *CautionIcon = nil;
     [super finishLaunching];
 }
 
-- (void)run;
-{
-    exceptionCount = 0;
-    exceptionCheckpointDate = [[NSDate alloc] init];
-    do {
-        NS_DURING {
-            [super run];
-            NS_VOIDRETURN;
-        } NS_HANDLER {
-            if (++exceptionCount >= 300) {
-                if ([exceptionCheckpointDate timeIntervalSinceNow] >= -3.0) {
-                    // 300 unhandled exceptions in 3 seconds: abort
-                    fprintf(stderr, "Caught 300 unhandled exceptions in 3 seconds, aborting\n");
-                    return;
-                }
-                [exceptionCheckpointDate release];
-                exceptionCheckpointDate = [[NSDate alloc] init];
-                exceptionCount = 0;
-            }
-            if (localException) {
-                if ([self isRunning])
-                    [self handleRunException:localException];
-                else
-                    [self handleInitException:localException];
-            }
-        } NS_ENDHANDLER;
-    } while ([self isRunning]);
-}
-
 // This is for the benefit of -miniaturizeWindows: below.
 static NSArray *overrideWindows = nil;
 - (NSArray *)windows;
@@ -122,6 +102,9 @@ static NSArray *overrideWindows = nil;
     return [super windows];
 }
 
+// These are deprecated, but still called by the system frameworks, for example -[NSDocument runModalSavePanelForSaveOperation:delegate:didSaveSelector:contextInfo:]
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-implementations"
 - (void)beginSheet:(NSWindow *)sheet modalForWindow:(NSWindow *)docWindow modalDelegate:(id)modalDelegate didEndSelector:(SEL)didEndSelector contextInfo:(void *)contextInfo;
 {
     if ([NSAllMapTableValues(windowsForSheets) indexOfObjectIdenticalTo:docWindow] != NSNotFound) {
@@ -136,6 +119,8 @@ static NSArray *overrideWindows = nil;
 
 - (void)endSheet:(NSWindow *)sheet returnCode:(NSInteger)returnCode;
 {
+    OBASSERT_NOT_REACHED("Look for alternate API to call");
+
     // Find the document window associated with the sheet we just ended
     NSWindow *docWindow = [[(NSWindow *)NSMapGet(windowsForSheets, sheet) retain] autorelease];
     NSMapRemove(windowsForSheets, sheet);
@@ -161,6 +146,7 @@ static NSArray *overrideWindows = nil;
     [queuedSheet beginSheet];
     [queuedSheet release];
 }
+#pragma clang diagnostic pop
 
 #ifdef CustomScrollWheelHandling
 
@@ -256,7 +242,7 @@ static NSArray *flagsChangedRunLoopModes;
     // The -timestamp method on NSEvent doesn't seem to return an NSTimeInterval based off the same reference date as NSDate (which is what we want).
     lastEventTimeInterval = [NSDate timeIntervalSinceReferenceDate];
 
-    NS_DURING {
+    @try {
         switch ([event type]) {
             case NSSystemDefined:
                 if ([event subtype] == OASystemDefinedEvent_MouseButtonsChangedSubType)
@@ -287,7 +273,7 @@ static NSArray *flagsChangedRunLoopModes;
                     
                     if (viewUnderMouse != nil && [viewUnderMouse respondsToSelector:@selector(controlMouseDown:)]) {
                         [viewUnderMouse controlMouseDown:event];
-                        NS_VOIDRETURN;
+                        return;
                     }
                 }
                 [super sendEvent:event];
@@ -320,11 +306,11 @@ static NSArray *flagsChangedRunLoopModes;
                 [super sendEvent:event];
                 break;
         }
-    } NS_HANDLER {
+    } @catch (NSException *localException) {
         if ([[localException name] isEqualToString:NSAbortModalException] || [[localException name] isEqualToString:NSAbortPrintingException])
             [localException raise];
-        [self handleRunException:localException];
-    } NS_ENDHANDLER;
+        [self reportException:localException];
+    }
 
     [[OFScheduler mainSchedulerIfCreated] scheduleEvents]; // Ping the scheduler, in case the system clock changed
 }
@@ -466,15 +452,6 @@ static void _applyFullSearch(OAApplication *self, SEL theAction, id theTarget, i
 
 - (id)targetForAction:(SEL)theAction to:(id)theTarget from:(id)sender;
 {
-    if (theAction == @selector(validModesForFontPanel:) && ![OFVersionNumber isOperatingSystemMavericksOrLater] && [[NSProcessInfo processInfo] isSandboxed]) {
-        // Workaround for <bug:///90003> (Slow performance if font panel is up while exporting on 10.8)
-        NSWindow *mainWindow = [self mainWindow];
-        NSWindow *keyWindow = [self keyWindow];
-        if ([keyWindow isSheet] && [mainWindow attachedSheet] == keyWindow && [[[keyWindow contentView] subviews] count] == 0) {
-            return nil;
-        }
-    }
-
     if (!theAction || !OATargetSelection)
         return [super targetForAction:theAction to:theTarget from:sender];
     
@@ -532,59 +509,10 @@ static void _applyFullSearch(OAApplication *self, SEL theAction, id theTarget, i
 
 - (void)reportException:(NSException *)anException;
 {
-    if (currentRunExceptionPanel) {
-        // Already handling an exception!
-        NSLog(@"Ignoring exception raised while displaying previous exception: %@", anException);
-        return;
-    }
-
-    @try {
-        // Let OFController have a crack at this.  It may decide it wants to up and crash to report uncaught exceptions back to home base.  Strange, but we'll cover our bases here.  Do our alert regardless of the result, which is intended to control whether AppKit logs the message (but we are displaying UI, not just spewing to Console).
-        // Pass NSLogUncaughtExceptionMask to simulate a totally uncaught exception, even though AppKit has a top-level handler.  This will cause OFController to get the exception two times; once with NSLogOtherExceptionMask (ignored, since it might be caught) and here with NSLogUncaughtExceptionMask (it turned out to not get caught).  One bonus is that since it is the same exception, the NSStackTraceKey is in place and has the location of the original exception raise point.
-        [[OFController sharedController] exceptionHandler:[NSExceptionHandler defaultExceptionHandler] shouldLogException:anException mask:NSLogUncaughtExceptionMask];
-
-        id delegate = [self delegate];
-        if ([delegate respondsToSelector:@selector(handleRunException:)]) {
-            [delegate handleRunException:anException];
-        } else {
-            NSLog(@"%@", [anException reason]);
-
-            // Do NOT use NSRunAlertPanel.  If another exception happens while NSRunAlertPanel is going, the alert will be removed from the screen and the user will not be able to report the original exception!
-            // NSGetAlertPanel will not have a default button if we pass nil.
-            NSString *okString = NSLocalizedStringFromTableInBundle(@"OK", @"OmniAppKit", [OAApplication bundle], "unhandled exception panel button");
-            currentRunExceptionPanel = NSGetAlertPanel(nil, @"%@", okString, nil, nil, [anException reason]);
-            [currentRunExceptionPanel center];
-            [currentRunExceptionPanel makeKeyAndOrderFront:self];
-
-            // The documentation for this method says that -endModalSession: must be before the NS_ENDHANDLER.
-            NSModalSession modalSession = [self beginModalSessionForWindow:currentRunExceptionPanel];
-
-            NSInteger ret = NSAlertErrorReturn;
-            while (ret != NSAlertDefaultReturn) {
-                NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-                @try {
-                    // Might be NSAlertErrorReturn or NSRunContinuesResponse experimental evidence shows that it returns NSRunContinuesResponse if an exception was raised inside calling it (and it doesn't re-raise the exception since it returns).  We'll not assume this, though and we'll put this in a handler.
-                    ret = [self runModalSession:modalSession];
-                } @catch (NSException *localException) {
-                    // Exception might get caught and passed to us by some other code (since this method is public).  So, our nesting avoidance is at the top of the method instead of in this handler block.
-                    [self reportException:localException];
-                    ret = NSAlertErrorReturn;
-                }
-
-                // Since we keep looping until the user clicks the button (rather than hiding the error panel at the first sign of trouble), we don't want to eat all the CPU needlessly.
-                [NSThread sleepUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-                [pool release];
-            }
-            
-            [self endModalSession:modalSession];
-            [currentRunExceptionPanel orderOut:nil];
-            NSReleaseAlertPanel(currentRunExceptionPanel);
-            currentRunExceptionPanel = nil;
-        }
-    } @catch (NSException *exc) {
-        // Exception might get caught and passed to us by some other code (since this method is public).  So, our nesting avoidance is at the top of the method instead of in this handler block.
-        [self reportException:exc];
-    }
+    // Let OFController have a crack at this.  It may decide it wants to up and crash to report uncaught exceptions back to home base.  Strange, but we'll cover our bases here.  Do our alert regardless of the result, which is intended to control whether AppKit logs the message (but we are displaying UI, not just spewing to Console).
+    // Pass NSLogUncaughtExceptionMask to simulate a totally uncaught exception, even though AppKit has a top-level handler.  This will cause OFController to get the exception two times; once with NSLogOtherExceptionMask (ignored, since it might be caught) and here with NSLogUncaughtExceptionMask (it turned out to not get caught).  One bonus is that since it is the same exception, the NSStackTraceKey is in place and has the location of the original exception raise point.
+    if ([[OFController sharedController] exceptionHandler:[NSExceptionHandler defaultExceptionHandler] shouldLogException:anException mask:NSLogUncaughtExceptionMask])
+        [super reportException:anException];
 }
 
 #pragma mark NSResponder subclass
@@ -625,29 +553,6 @@ static void _applyFullSearch(OAApplication *self, SEL theAction, id theTarget, i
 
 #pragma mark -
 #pragma mark API
-
-- (void)handleInitException:(NSException *)anException;
-{
-    id delegate;
-    
-    delegate = [self delegate];
-    if ([delegate respondsToSelector:@selector(handleInitException:)]) {
-        [delegate handleInitException:anException];
-    } else {
-        NSLog(@"%@", [anException reason]);
-    }
-}
-
-- (void)handleRunException:(NSException *)anException;
-{
-    // Redirect exceptions that get raised all the way out to -run back to -reportException:.  AppKit doesn't do this normally.  For example, if cmd-z (to undo) hits an exception, it will get re-raised all the way up to the top level w/o -reportException: getting called.  
-    [self reportException:anException];
-}
-
-- (NSPanel *)currentRunExceptionPanel;
-{
-    return currentRunExceptionPanel;
-}
 
 - (NSWindow *)frontWindowForMouseLocation;
 {
@@ -721,7 +626,7 @@ static void _applyFullSearch(OAApplication *self, SEL theAction, id theTarget, i
 
         NSString *title = [[mainBundle localizedInfoDictionary] stringForKey:@"OAHelpBookName"];
         if ([NSString isEmptyString:title]) {
-            title = [[mainBundle infoDictionary] stringForKey:@"OAHelpBookName"];
+            title = [infoDict stringForKey:@"OAHelpBookName"];
         }
         
         if ([NSString isEmptyString:title]) {
@@ -730,12 +635,18 @@ static void _applyFullSearch(OAApplication *self, SEL theAction, id theTarget, i
 
         OAWebPageViewer *viewer = [OAWebPageViewer sharedViewerNamed:@"Help"];
         viewer.usesWebPageTitleForWindowTitle = NO;
-        
+
+        CGFloat startingWidth = [infoDict floatForKey:@"OAHelpWidth" defaultValue:800.0f];
+        CGFloat startingHeight = [infoDict floatForKey:@"OAHelpHeight" defaultValue:650.0f];
+        CGFloat minHeight = [infoDict floatForKey:@"OAHelpMinHeight" defaultValue:200.0f];
+        CGFloat minWidth = [infoDict floatForKey:@"OAHelpMinWidth" defaultValue:startingWidth];
+        CGFloat maxWidth = [infoDict floatForKey:@"OAHelpMaxWidth" defaultValue:startingWidth];
+
         NSWindow *window = [viewer window];
         [window setTitle:title];
-        [window setContentMinSize:(NSSize) {.height = 200, .width = 800}];
-        [window setContentMaxSize:(NSSize) {.height = CGFLOAT_MAX, .width = 800}];
-        [window setContentSize:(NSSize) {.height = 650, .width = 800}];
+        [window setContentMinSize:(NSSize) {.height = minHeight, .width = minWidth}];
+        [window setContentMaxSize:(NSSize) {.height = CGFLOAT_MAX, .width = maxWidth}];
+        [window setContentSize:(NSSize) {.height = startingHeight, .width = startingWidth}];
         [window center];
         
         NSURLRequest *request = [NSURLRequest requestWithURL:targetURL];

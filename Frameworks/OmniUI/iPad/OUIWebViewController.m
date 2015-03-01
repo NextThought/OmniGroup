@@ -1,4 +1,4 @@
-// Copyright 2010-2013 The Omni Group. All rights reserved.
+// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -33,7 +33,7 @@ RCS_ID("$Id$")
 #endif
 
     _backButton = [[OUIBarButtonItem alloc] initWithTitle:NSLocalizedStringFromTableInBundle(@"Back", @"OmniUI", OMNI_BUNDLE, @"Web view nagivation button for going back in history.")
-                                                   style:UIBarButtonItemStyleBordered target:self action:@selector(goBack:)];
+                                                   style:UIBarButtonItemStylePlain target:self action:@selector(goBack:)];
     self.navigationItem.leftBarButtonItem = _backButton;
 
     self.view = webView;
@@ -133,11 +133,8 @@ RCS_ID("$Id$")
         
         // Implicitly kick web URLs not pointing to *.omnigroup.com over to Safari (or all URLs in retail demos)
         BOOL isWebURL = !([requestURL isFileURL]);
-        NSURLComponents *components = [NSURLComponents componentsWithURL:requestURL resolvingAgainstBaseURL:NO];
-        NSString *host = [components.host lowercaseString];
-        BOOL isOmniURL = isWebURL && ([host hasSuffix:@"omnigroup.com"] || [host hasSuffix:@"sync.omnigroup.com"]);
-        
-        if (isWebURL && (!isOmniURL || [[OUIAppController controller] isRunningRetailDemo])) {
+
+        if (isWebURL) {
             if ([[UIApplication sharedApplication] openURL:requestURL] == NO) {
                 NSString *alertTitle = NSLocalizedStringFromTableInBundle(@"Link could not be opened. Please check Safari restrictions in Settings.", @"OmniUI", OMNI_BUNDLE, @"Web view error opening URL title.");
                 

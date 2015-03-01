@@ -1,4 +1,4 @@
-// Copyright 2010-2013 The Omni Group. All rights reserved.
+// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -41,6 +41,10 @@ NSString * const OUIDocumentPickerScrollViewItemsBinding = @"items";
 static const CGFloat kItemVerticalPadding = 27;
 static const CGFloat kItemHorizontalPadding = 27;
 
+static const CGFloat kItemNormalSize = 220.0;
+static const CGFloat kItemSmallSize = 140.0;
+
+
 typedef struct LayoutInfo {
     CGFloat topControlsHeight;
     CGRect contentRect;
@@ -61,7 +65,7 @@ static CGRect _frameForPositionAtIndex(NSUInteger itemIndex, LayoutInfo layoutIn
     NSUInteger column = itemIndex % layoutInfo.itemsPerRow;
     
     // If the item views plus their padding don't completely fill our layoutWidth, distribute the remaining space as margins on either sides of the scrollview.
-    CGFloat sideMargin = MAX(0, (layoutInfo.contentRect.size.width - (kItemHorizontalPadding + layoutInfo.itemsPerRow * (layoutInfo.itemSize.width + kItemHorizontalPadding))) / 2);
+    CGFloat sideMargin = (layoutInfo.contentRect.size.width - (kItemHorizontalPadding + layoutInfo.itemsPerRow * (layoutInfo.itemSize.width + kItemHorizontalPadding))) / 2;
     
     CGRect frame = (CGRect){
         .origin.x = kItemHorizontalPadding + column * (layoutInfo.itemSize.width + kItemHorizontalPadding) + sideMargin,
@@ -86,14 +90,15 @@ static CGPoint _clampContentOffset(OUIDocumentPickerScrollView *self, CGPoint co
 }
 
 @interface OUIDocumentPickerScrollView (/*Private*/)
-+ (CGSize)_gridSizeForLandscape:(BOOL)landscape;
+
+@property (nonatomic, copy) NSArray *currentSortDescriptors;
+
+- (CGSize)_gridSize;
 - (void)_startDragRecognizer:(OUIDragGestureRecognizer *)recognizer;
 @end
 
 @implementation OUIDocumentPickerScrollView
-{
-    BOOL _landscape;
-    
+{    
     NSMutableSet *_items;
     NSArray *_sortedItems;
     id _draggingDestinationItem;
@@ -114,7 +119,7 @@ static CGPoint _clampContentOffset(OUIDocumentPickerScrollView *self, CGPoint co
     NSArray *_itemViewsForPreviousOrientation;
     NSArray *_fileItemViews;
     NSArray *_groupItemViews;
-    
+        
     OUIDragGestureRecognizer *_startDragRecognizer;
     
     NSTimeInterval _rotationDuration;
@@ -128,8 +133,6 @@ static id _commonInit(OUIDocumentPickerScrollView *self)
     self->_itemsBeingAdded = [[NSMutableSet alloc] init];
     self->_itemsBeingRemoved = [[NSMutableSet alloc] init];
     self->_itemsIgnoredForLayout = [[NSMutableSet alloc] init];
-    
-    self.backgroundColor = nil;
     
     self.showsVerticalScrollIndicator = YES;
     self.showsHorizontalScrollIndicator = NO;
@@ -157,6 +160,10 @@ static id _commonInit(OUIDocumentPickerScrollView *self)
         [preview decrementDisplayCount];
     }];
     
+    for (ODSItem *item in _items) {
+        [self _endObservingSortKeysForItem:item];
+    }
+    
     _startDragRecognizer.delegate = nil;
     _startDragRecognizer = nil;
 }
@@ -171,66 +178,9 @@ static id _commonInit(OUIDocumentPickerScrollView *self)
     OBPRECONDITION(!delegate || [delegate conformsToProtocol:@protocol(OUIDocumentPickerScrollViewDelegate)]);
 
     [super setDelegate:delegate];
-}
-
-/*
- This and -didRotate can be called to perform an animated swap of item views between their current and new orientation (in -setLandscape:).
- If this is not called around a call to -setLandscape:, then the change is assumed to be taking place off screen and will be unanimated.
- */
-
-- (void)willRotateWithDuration:(NSTimeInterval)duration;
-{
-    OBPRECONDITION(self.window); // No point in animating while off screen.
-    OBPRECONDITION(_flags.isAnimatingRotationChange == NO);
     
-    DEBUG_LAYOUT(@"willRotateWithDuration:%f", duration);
-    
-    _flags.isAnimatingRotationChange = YES;
-    _rotationDuration = duration;
-    
-    // Fade out old item views, preparing for a whole new array in the -setGridSize:
-    OBASSERT(_itemViewsForPreviousOrientation == nil);
-    OBASSERT(_fileItemViews != nil);
-    OBASSERT(_groupItemViews != nil);
-    _itemViewsForPreviousOrientation = [_fileItemViews arrayByAddingObjectsFromArray:_groupItemViews];
-    
-    _fileItemViews = nil;
-    _groupItemViews = nil;
-    
-    // Elevate the old previews above the new ones that will be made
-    for (OUIDocumentPickerItemView *itemView in _itemViewsForPreviousOrientation) {
-        itemView.gestureRecognizers = nil;
-        itemView.layer.zPosition = 1;
-    }
-    
-    // ... and fade them out, exposing the new ones
-    [UIView beginAnimations:nil context:NULL];
-    {
-        if (_rotationDuration > 0)
-            [UIView setAnimationDuration:_rotationDuration];
-        for (OUIDocumentPickerItemView *itemView in _itemViewsForPreviousOrientation) {
-            if (itemView.hidden == NO)
-                itemView.alpha = 0;
-        }
-    }
-    [UIView commitAnimations];
-}
-
-- (void)didRotate;
-{
-    OBPRECONDITION(self.window); // No point in animating while off screen.
-    OBPRECONDITION(_flags.isAnimatingRotationChange == YES);
-    
-    DEBUG_LAYOUT(@"didRotate");
-    
-    _flags.isAnimatingRotationChange = NO;
-    
-    // Ditch the old fully faded previews 
-    OUIWithoutAnimating(^{
-        for (OUIDocumentPickerItemView *view in _itemViewsForPreviousOrientation)
-            [view removeFromSuperview];
-        _itemViewsForPreviousOrientation = nil;
-    });
+    // If the delegate changes, the sort descriptors can change also.
+    [self _updateSortDescriptors];
 }
 
 static NSUInteger _itemViewsForGridSize(CGSize gridSize)
@@ -250,7 +200,7 @@ static NSArray *_newItemViews(OUIDocumentPickerScrollView *self, Class itemViewC
     
     NSMutableArray *itemViews = [[NSMutableArray alloc] init];
 
-    NSUInteger neededItemViewCount = _itemViewsForGridSize([[self class] _gridSizeForLandscape:self->_landscape]);
+    NSUInteger neededItemViewCount = _itemViewsForGridSize([self _gridSize]);
     while (neededItemViewCount--) {
 
         OUIDocumentPickerItemView *itemView = [[itemViewClass alloc] initWithFrame:CGRectMake(0, 0, 1, 1)];
@@ -268,16 +218,8 @@ static NSArray *_newItemViews(OUIDocumentPickerScrollView *self, Class itemViewC
     return result;
 }
 
-@synthesize landscape = _landscape;
-- (void)setLandscape:(BOOL)landscape;
+- (void)retileItems;
 {
-    if (_fileItemViews && _groupItemViews && _landscape == landscape)
-        return;
-    
-    DEBUG_LAYOUT(@"setLandscape:%d", landscape);
-
-    _landscape = landscape;
-    
     if (_flags.isAnimatingRotationChange) {
         OBASSERT(self.window);
         // We are on screen and rotating, so -willRotate should have been called. Still, we'll try to handle this reasonably below.
@@ -351,6 +293,8 @@ static NSArray *_newItemViews(OUIDocumentPickerScrollView *self, Class itemViewC
     [_itemsBeingAdded minusSet:toAdd];
     
     for (ODSItem *item in toAdd) {
+        [self _beginObservingSortKeysForItem:item];
+        
         OUIDocumentPickerItemView *itemView = [self itemViewForItem:item];
         OBASSERT(!itemView || itemView.shrunken);
         itemView.shrunken = NO;
@@ -369,6 +313,8 @@ static NSArray *_newItemViews(OUIDocumentPickerScrollView *self, Class itemViewC
     [_itemsBeingRemoved unionSet:toRemove];
 
     for (ODSItem *item in toRemove) {
+        [self _endObservingSortKeysForItem:item];
+        
         OUIDocumentPickerItemView *itemView = [self itemViewForItem:item];
         itemView.shrunken = YES;
     }
@@ -392,21 +338,74 @@ static NSArray *_newItemViews(OUIDocumentPickerScrollView *self, Class itemViewC
 
 @synthesize itemsBeingRemoved = _itemsBeingRemoved;
 
-- (void)sortItems;
+static void * ItemSortKeyContext = &ItemSortKeyContext;
+- (void)_beginObservingSortKeysForItem:(ODSItem *)item;
+{
+    for (NSSortDescriptor *sortDescriptor in self.currentSortDescriptors) {
+        // Since not all sort descriptors are key-based (like block sort descriptors) we ignore the sort descriptor if it doesn't have a key. This isn't perfect, but it'll work for now.
+        NSString *key = sortDescriptor.key;
+        if (key) {
+            [item addObserver:self forKeyPath:key options:NSKeyValueObservingOptionNew context:ItemSortKeyContext];
+        }
+    }
+}
+
+- (void)_endObservingSortKeysForItem:(ODSItem *)item;
+{
+    for (NSSortDescriptor *sortDescriptor in self.currentSortDescriptors) {
+        NSString *key = sortDescriptor.key;
+        if (key) {
+            [item removeObserver:self forKeyPath:key context:ItemSortKeyContext];
+        }
+    }
+}
+
+- (void)_updateSortDescriptors;
+{
+    NSArray *newSortDescriptors = nil;
+    if ([[self delegate] respondsToSelector:@selector(sortDescriptorsForDocumentPickerScrollView:)]) {
+        newSortDescriptors = [[self delegate] sortDescriptorsForDocumentPickerScrollView:self];
+    }
+    else {
+        newSortDescriptors = [OUIDocumentPickerViewController sortDescriptors];
+    }
+
+    // Only refresh if the sort descriptors have actually changed.
+    if (OFNOTEQUAL(newSortDescriptors, self.currentSortDescriptors)) {
+        for (ODSItem *item in _items) {
+            [self _endObservingSortKeysForItem:item];
+        }
+        
+        self.currentSortDescriptors = newSortDescriptors;
+        
+        for (ODSItem *item in _items) {
+            [self _beginObservingSortKeysForItem:item];
+        }
+    }
+}
+
+- (void)_sortItems:(BOOL)updateDescriptors;
 {
     OBASSERT(_items);
-    if (!_items)
+    if (!_items) {
         return;
-    NSArray *sortDescriptors = nil;
-    if ([[self delegate] respondsToSelector:@selector(sortDescriptorsForDocumentPickerScrollView:)])
-        sortDescriptors = [[self delegate] sortDescriptorsForDocumentPickerScrollView:self];
-    else
-        sortDescriptors = [OUIDocumentPickerViewController sortDescriptors];
-    NSArray *newSort = [[_items allObjects] sortedArrayUsingDescriptors:sortDescriptors];
+    }
+
+    if (updateDescriptors) {
+        [self _updateSortDescriptors];
+    }
+    
+    NSArray *newSort = [[_items allObjects] sortedArrayUsingDescriptors:self.currentSortDescriptors];
     if (OFNOTEQUAL(newSort, _sortedItems)) {
         _sortedItems = [newSort copy];
         [self setNeedsLayout];
     }
+}
+
+- (void)sortItems;
+{
+    // This API was designed to ask it's delegate for the sort descriptors when -sortItems is called. We may want to move away from that design, but for now we need to leave it because external callers of this API might expect this.
+    [self _sortItems:YES];
 }
 
 - (void)setEditing:(BOOL)editing animated:(BOOL)animated;
@@ -422,13 +421,26 @@ static NSArray *_newItemViews(OUIDocumentPickerScrollView *self, Class itemViewC
 - (void)setItemSort:(OUIDocumentPickerItemSort)_sort;
 {
     _itemSort = _sort;
-    [self sortItems];
+    [self _sortItems:YES];
 
     if (self.window != nil) {
         [UIView animateWithDuration:0.3 delay:0 usingSpringWithDamping:0.75 initialSpringVelocity:0 options:0 animations:^{
             [self layoutIfNeeded];
         } completion:^(BOOL finished){
         }];
+    }
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context;
+{
+    if (context == ItemSortKeyContext) {
+        OBASSERT([_items containsObject:object]);
+        OBASSERT([_currentSortDescriptors first:^BOOL(NSSortDescriptor *desc){ return [desc.key isEqual:keyPath]; }]);
+        
+        [self _sortItems:NO];
+    }
+    else {
+        [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
     }
 }
 
@@ -702,15 +714,24 @@ static OUIDocumentPickerItemView *_itemViewHitByRecognizer(NSArray *itemViews, U
 }
 
 static LayoutInfo _updateLayout(OUIDocumentPickerScrollView *self)
-{    
-    CGSize gridSize = [[self class] _gridSizeForLandscape:self->_landscape];
+{
+    OBFinishPortingLater("<bug:///105447> (Unassigned: Stop using deprecated interfaceOrientation [adaptability])");
+    CGSize gridSize = [self _gridSize];
     OBASSERT(gridSize.width >= 1);
     OBASSERT(gridSize.width == trunc(gridSize.width));
     OBASSERT(gridSize.height >= 1);
     
+    if (_itemViewsForGridSize(gridSize) > self->_fileItemViews.count) {
+        [self retileItems];
+    }
+        
     NSUInteger itemsPerRow = gridSize.width;
     CGSize layoutSize = self.bounds.size;
-    CGSize itemSize = CGSizeMake(220.0, 220.0);
+    CGSize itemSize = CGSizeMake(kItemNormalSize, kItemNormalSize);
+    
+    // For devices where screen sizes are too small for our preferred items, here's a smaller size
+    if (layoutSize.width / gridSize.width < (itemSize.width + kItemHorizontalPadding))
+        itemSize = CGSizeMake(kItemSmallSize, kItemSmallSize);
     
     if (itemSize.width <= 0 || itemSize.height <= 0) {
         // We aren't sized right yet
@@ -771,7 +792,11 @@ static LayoutInfo _updateLayout(OUIDocumentPickerScrollView *self)
     [_renameSession layoutDimmingView];
     
     if (_topControls) {
-        _topControls.center = CGPointMake(CGRectGetWidth(contentRect) / 2, (CGRectGetHeight(_topControls.frame) / 2));
+        CGRect frame = _topControls.frame;
+        frame.origin.x = (CGRectGetWidth(contentRect) / 2) - (frame.size.width / 2);
+        frame.origin.y = (CGRectGetHeight(_topControls.frame) / 2) - (frame.size.height / 2);
+        frame = CGRectIntegral(frame);
+        _topControls.frame = frame;
         
         if ([_topControls superview] != self)
             [self addSubview:_topControls];
@@ -1013,20 +1038,24 @@ static LayoutInfo _updateLayout(OUIDocumentPickerScrollView *self)
 
 // The size of the document prevew grid in items. That is, if gridSize.width = 4, then 4 items will be shown across the width.
 // The width must be at least one and integral. The height must be at least one, but may be non-integral if you want to have a row of itemss peeking out.
-+ (CGSize)_gridSizeForLandscape:(BOOL)landscape;
+- (CGSize)_gridSize;
 {
-    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
-        if (landscape)
-            return CGSizeMake(3, 1.2);
-        else
-            return CGSizeMake(2, 2.2);
-    }
+    CGSize layoutSize = self.bounds.size;
+    if (layoutSize.width <= 0 || layoutSize.height <= 0)
+        return CGSizeMake(1,1); // placeholder because layoutSize not set yet
+
+    // Adding a single kItemHorizontalPadding here because we want to compute the space for itemWidth*nItems + padding*(nItems-1), moving padding*1 to the other side of the equation simplifies everything else
+    layoutSize.width += kItemHorizontalPadding;
     
-    // We could maybe make this configurable via a plist entry or delegate callback, but it needs to be relatively static so we can cache preview images at the exact right size (scaling preview images after the fact varies from slow to ugly based on the size of the original preview image).
-    if (landscape)
-        return CGSizeMake(4, 3.2);
-    else
-        return CGSizeMake(3, 3.175);
+    CGFloat itemWidth = kItemNormalSize;
+    CGFloat itemsAcross = floor(layoutSize.width / (itemWidth + kItemHorizontalPadding));
+    CGFloat rotatedItemsAcross = floor(layoutSize.height / (itemWidth + kItemHorizontalPadding));
+
+    if (itemsAcross < 2 || rotatedItemsAcross < 2) {
+        itemWidth = kItemSmallSize;
+        itemsAcross = floor(layoutSize.width / (itemWidth + kItemHorizontalPadding));
+    }
+    return CGSizeMake(itemsAcross, layoutSize.height / (itemWidth + kItemVerticalPadding));
 }
 
 - (void)_startDragRecognizer:(OUIDragGestureRecognizer *)recognizer;
