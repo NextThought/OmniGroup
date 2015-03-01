@@ -91,18 +91,16 @@ RCS_ID("$Id$")
 
 - (NSDictionary *)dictionaryByAddingObjectsFromDictionary:(NSDictionary *)otherDictionary;
 {
-    NSMutableDictionary *mutatedDictionary = nil;
-	
-	for(id key in otherDictionary.allKeys){
-		id otherValue = otherDictionary[key];
-		id value = self[key];
-		
-		if (value != otherValue) {
-			if (!mutatedDictionary)
-				mutatedDictionary = [[self mutableCopy] autorelease];
-			mutatedDictionary[key] = otherValue;
-		}
-	}
+    __block NSMutableDictionary *mutatedDictionary = nil;
+    
+    [otherDictionary enumerateKeysAndObjectsUsingBlock:^(id key, id otherValue, BOOL *stop) {
+        id value = self[key];
+        if (value != otherValue) {
+            if (!mutatedDictionary)
+                mutatedDictionary = [self mutableCopy];
+            mutatedDictionary[key] = otherValue;
+        }
+    }];
 
     if (mutatedDictionary) {
         [mutatedDictionary autorelease];
