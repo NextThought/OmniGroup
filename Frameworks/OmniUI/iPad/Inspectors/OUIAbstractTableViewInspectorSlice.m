@@ -54,8 +54,12 @@ RCS_ID("$Id$");
 
 - (UITableView *)tableView;
 {
-    if (!_tableView)
+	if (!_tableView){
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-getter-return-value"
         [self view];
+#pragma clang diagnostic pop
+	}
     OBASSERT(_tableView);
     return _tableView;
 }

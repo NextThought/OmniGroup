@@ -55,8 +55,12 @@ RCS_ID("$Id$");
 
 - (OUIInspectorTextWell *)textWell;
 {
-    if (!_textWell)
+	if (!_textWell){
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-getter-return-value"
         [self view];
+#pragma clang diagnostic pop
+	}
     return _textWell;
 }
 

@@ -314,8 +314,11 @@ RCS_ID("$Id$");
     childController.navigationItem.backBarButtonItem.title = self.title;
     
     UINavigationController *navigationController = self.navigationController;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-getter-return-value"
     [childController view];
-    
+#pragma clang diagnostic pop
+	
     navigationController.navigationBarHidden = NO;
     [navigationController pushViewController:childController animated:YES];
 }
