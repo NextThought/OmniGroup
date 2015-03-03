@@ -238,7 +238,10 @@ OBDEPRECATED_METHOD(-updateInterfaceFromInspectedObjects); // -> -updateInterfac
 - (UIView *)sliceBackgroundView;
 {
     if (!self.isViewLoaded) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-getter-return-value"
         [self view]; // The background view normally gets loaded when the content view does, so if that's not loaded yet, do so now.
+#pragma clang diagnostic pop
     }
     OBASSERT(_sliceBackgroundView != self.view);
     return _sliceBackgroundView;

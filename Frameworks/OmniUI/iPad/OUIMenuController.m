@@ -86,9 +86,11 @@ RCS_ID("$Id$");
     UINavigationItem *navItem = topMenu.navigationItem;
     navItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(cancelButton:)];
     navItem.title = self.title;
-    
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-getter-return-value"
     [topMenu view]; // So we can ask it its preferred content size
-    
+#pragma clang diagnostic pop
+	
     return topMenu;
 }
 

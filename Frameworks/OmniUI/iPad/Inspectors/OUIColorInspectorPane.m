@@ -164,7 +164,10 @@ RCS_ID("$Id$");
 
 - (UIView *)navigationBarAccessoryView;
 {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-getter-return-value"
     [self view]; // load view if we haven't yet
+#pragma clang diagnostic pop
     return _colorTypeSegmentedControl;
 }
 
