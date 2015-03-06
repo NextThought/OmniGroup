@@ -250,11 +250,15 @@ static inline void __attribute__((overloadable)) _OBUnusedValue(T v) { \
 }
 OB_UNUSED_VALUE_FOR_TYPE(int8_t)
 OB_UNUSED_VALUE_FOR_TYPE(int16_t)
+#if __LP64__
 OB_UNUSED_VALUE_FOR_TYPE(int32_t)
+#endif
 OB_UNUSED_VALUE_FOR_TYPE(int64_t)
 OB_UNUSED_VALUE_FOR_TYPE(uint8_t)
 OB_UNUSED_VALUE_FOR_TYPE(uint16_t)
+#if __LP64__
 OB_UNUSED_VALUE_FOR_TYPE(uint32_t)
+#endif
 OB_UNUSED_VALUE_FOR_TYPE(uint64_t)
 OB_UNUSED_VALUE_FOR_TYPE(NSUInteger)
 OB_UNUSED_VALUE_FOR_TYPE(NSInteger)
