@@ -1,4 +1,4 @@
-// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -137,8 +137,9 @@ RCS_ID("$Id$");
     UITableView *tableView = (UITableView *)self.view;
     
     // If we or our popover limited our height, make sure all the options are visible (most common on submenus).
-    CGRect bounds = tableView.bounds;
-    tableView.scrollEnabled = (tableView.contentSize.height > bounds.size.height);
+    CGFloat availableHeight = CGRectGetHeight(tableView.bounds);
+    availableHeight -= (tableView.contentInset.top + tableView.contentInset.bottom);
+    tableView.scrollEnabled = (tableView.contentSize.height > availableHeight);
 }
 
 - (void)_updatePreferredContentSizeFromOptions;
@@ -216,10 +217,9 @@ RCS_ID("$Id$");
         cell.backgroundColor = nil;
         cell.opaque = NO;
         
-        // We want this match UIActionSheet, but it doesn't use dynamic type. Also, none of the methods in UIInterface.h return the size to use.
         cell.textLabel.backgroundColor = nil;
         cell.textLabel.opaque = NO;
-        cell.textLabel.font = [UIFont systemFontOfSize:20];
+        cell.textLabel.font = [UIFont systemFontOfSize:17];
         cell.textLabel.textAlignment = _textAlignment;
     }
     
@@ -314,11 +314,8 @@ RCS_ID("$Id$");
     childController.navigationItem.backBarButtonItem.title = self.title;
     
     UINavigationController *navigationController = self.navigationController;
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-getter-return-value"
-    [childController view];
-#pragma clang diagnostic pop
-	
+    (void)[childController view];
+    
     navigationController.navigationBarHidden = NO;
     [navigationController pushViewController:childController animated:YES];
 }

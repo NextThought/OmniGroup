@@ -1,4 +1,4 @@
-// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -54,12 +54,8 @@ RCS_ID("$Id$");
 
 - (UITableView *)tableView;
 {
-	if (!_tableView){
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-getter-return-value"
-        [self view];
-#pragma clang diagnostic pop
-	}
+    if (!_tableView)
+        (void)[self view];
     OBASSERT(_tableView);
     return _tableView;
 }
