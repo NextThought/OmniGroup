@@ -19,7 +19,6 @@ RCS_ID("$Id$");
 @end
 
 @implementation OUIScalingScrollView
-@dynamic delegate;
 
 static id _commonInit(OUIScalingScrollView *self)
 {
