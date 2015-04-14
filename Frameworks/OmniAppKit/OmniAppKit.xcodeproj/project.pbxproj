@@ -3630,7 +3630,7 @@
 				34C12B11194FF90F005CB70B /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		34C12B16194FF90F005CB70B /* Build configuration list for PBXNativeTarget "OAUnitTests-iOS" */ = {
 			isa = XCConfigurationList;
@@ -3640,7 +3640,7 @@
 				34C12B14194FF90F005CB70B /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		4A4E085608AA75E90098FF0F /* Build configuration list for PBXProject "OmniAppKit" */ = {
 			isa = XCConfigurationList;
@@ -3650,7 +3650,7 @@
 				4A4E085908AA75E90098FF0F /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		4AA1E7F308AA764600E2FF6B /* Build configuration list for PBXNativeTarget "OmniAppKit" */ = {
 			isa = XCConfigurationList;
@@ -3660,7 +3660,7 @@
 				4AA1E7F608AA764600E2FF6B /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		4AA1E80B08AA764600E2FF6B /* Build configuration list for PBXNativeTarget "OAUnitTests" */ = {
 			isa = XCConfigurationList;
@@ -3670,7 +3670,7 @@
 				4AA1E80E08AA764600E2FF6B /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		4AA1E81908AA764700E2FF6B /* Build configuration list for PBXNativeTarget "OAMakeImageSizeIntegral" */ = {
 			isa = XCConfigurationList;
@@ -3680,7 +3680,7 @@
 				4AA1E81C08AA764700E2FF6B /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
