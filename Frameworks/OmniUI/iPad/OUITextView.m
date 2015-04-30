@@ -332,7 +332,7 @@ static void _scrollVerticallyInView(OUITextView *textView, CGRect viewRect, BOOL
     
     DEBUG_SCROLL(@" viewRect %@", NSStringFromCGRect(viewRect));
     
-    CGRect scrollBounds = textView.bounds;
+    CGRect scrollBounds = UIEdgeInsetsInsetRect(textView.bounds, textView.contentInset);
     
     OFExtent targetViewYExtent = OFExtentFromRectYRange(viewRect);
     OFExtent scrollBoundsYExtent = OFExtentFromRectYRange(scrollBounds);
