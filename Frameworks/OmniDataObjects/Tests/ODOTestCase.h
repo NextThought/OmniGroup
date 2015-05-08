@@ -1,4 +1,4 @@
-// Copyright 2008-2010 Omni Development, Inc.  All rights reserved.
+// Copyright 2008-2010, 2014 Omni Development, Inc.  All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -7,7 +7,6 @@
 //
 // $Id$
 
-#define STEnableDeprecatedAssertionMacros
 #import "OFTestCase.h"
 
 #import <OmniBase/rcsid.h>
@@ -34,29 +33,37 @@
 
 @interface ODOTestCaseMaster : ODOTestCaseObject
 @end
-#import "ODOTestCaseMaster-ODOTestCaseProperties.h"
+#import "ODOTestCaseMaster-Properties.h"
 @interface ODOTestCaseDetail : ODOTestCaseObject
 @end
-#import "ODOTestCaseDetail-ODOTestCaseProperties.h"
+#import "ODOTestCaseDetail-Properties.h"
 @interface ODOTestCaseAllAttributeTypes : ODOTestCaseObject
 @end
-#import "ODOTestCaseAllAttributeTypes-ODOTestCaseProperties.h"
+#import "ODOTestCaseAllAttributeTypes-Properties.h"
 
 @interface ODOTestCaseLeftHand : ODOTestCaseObject
 @end
-#import "ODOTestCaseLeftHand-ODOTestCaseProperties.h"
+#import "ODOTestCaseLeftHand-Properties.h"
 
 @interface ODOTestCaseRightHand : ODOTestCaseObject
 @end
-#import "ODOTestCaseRightHand-ODOTestCaseProperties.h"
+#import "ODOTestCaseRightHand-Properties.h"
 
 @interface ODOTestCaseLeftHandRequired : ODOTestCaseObject
 @end
-#import "ODOTestCaseLeftHandRequired-ODOTestCaseProperties.h"
+#import "ODOTestCaseLeftHandRequired-Properties.h"
 
 @interface ODOTestCaseRightHandRequired : ODOTestCaseObject
 @end
-#import "ODOTestCaseRightHandRequired-ODOTestCaseProperties.h"
+#import "ODOTestCaseRightHandRequired-Properties.h"
+
+@interface ODOTestCasePeerA : ODOTestCaseObject
+@end
+#import "ODOTestCasePeerA-Properties.h"
+
+@interface ODOTestCasePeerB : ODOTestCaseObject
+@end
+#import "ODOTestCasePeerB-Properties.h"
 
 static inline id _insertTestObject(ODOEditingContext *ctx, Class cls, NSString *entityName, NSString *pk)
 {

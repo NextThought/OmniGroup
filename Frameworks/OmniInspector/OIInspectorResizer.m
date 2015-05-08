@@ -12,6 +12,7 @@
 #import <OmniBase/OmniBase.h>
 #import <OmniFoundation/OmniFoundation.h>
 #import <OmniAppKit/NSImage-OAExtensions.h>
+#import <OmniAppKit/NSWindow-OAExtensions.h>
 
 RCS_ID("$Id$")
 
@@ -43,7 +44,7 @@ static NSImage *resizerImage = nil;
     NSRect windowFrame = [window frame];
     NSPoint topLeft = NSMakePoint(NSMinX(windowFrame), NSMaxY(windowFrame));
     NSSize startingSize = windowFrame.size;
-    NSPoint startingMouse = [window convertBaseToScreen:[event locationInWindow]];
+    NSPoint startingMouse = [window convertPointToScreen:[event locationInWindow]];
 
     if ([window respondsToSelector:@selector(resizerWillBeginResizing:)]) {
         [window resizerWillBeginResizing:self];
@@ -51,13 +52,13 @@ static NSImage *resizerImage = nil;
     while (1) {
         NSPoint point, change;
         
-        event = [NSApp nextEventMatchingMask:NSLeftMouseDraggedMask|NSLeftMouseUpMask untilDate:[NSDate distantFuture] inMode:NSEventTrackingRunLoopMode dequeue:NO];
+        event = [[NSApplication sharedApplication] nextEventMatchingMask:NSLeftMouseDraggedMask|NSLeftMouseUpMask untilDate:[NSDate distantFuture] inMode:NSEventTrackingRunLoopMode dequeue:NO];
 
         if ([event type] == NSLeftMouseUp)
             break;
            
-        [NSApp nextEventMatchingMask:NSLeftMouseDraggedMask untilDate:[NSDate distantFuture] inMode:NSEventTrackingRunLoopMode dequeue:YES];
-        point = [window convertBaseToScreen:[event locationInWindow]];
+        [[NSApplication sharedApplication] nextEventMatchingMask:NSLeftMouseDraggedMask untilDate:[NSDate distantFuture] inMode:NSEventTrackingRunLoopMode dequeue:YES];
+        point = [window convertPointToScreen:[event locationInWindow]];
         change.x = startingMouse.x - point.x;
         change.y = startingMouse.y - point.y;
         windowFrame.size.height = startingSize.height + change.y;

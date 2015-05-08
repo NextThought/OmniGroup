@@ -2,6 +2,7 @@
 "%@ points" = "%@ punten";
 
 /* title format for color component slider */
+
 "<alpha title+value>" = "Doorzichtigheid: %d%%";
 
 /* title format for color component slider */
@@ -50,7 +51,7 @@
 "No color selected" = "Geen kleur geselecteerd";
 
 /* popover inspector label title for no selected objects */
-"No Selection" = "Niets geselecteerd";
+"No Selection" = "Geen selectie";
 
 /* Title for section of font list */
 "Recommended Fonts" = "Aanbevolen lettertypen";
@@ -66,4 +67,3 @@
 
 /* Inspector title */
 "Text Style" = "Tekststijl";
-

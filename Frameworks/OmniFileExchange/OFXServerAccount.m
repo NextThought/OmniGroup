@@ -1,4 +1,4 @@
-// Copyright 2013-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2013-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -24,11 +24,11 @@ static NSString * const RemoteBaseURLKey = @"remoteBaseURL";
 static NSString * const DisplayNameKey = @"displayName";
 #if OFX_MAC_STYLE_ACCOUNT
 static NSString * const LastKnownDislpayNameKey = @"lastKnownDisplayName";
+static NSString * const LocalDocumentsBookmarkDataKey = @"localDocumentsBookmarkData";
 #else
 static NSString * const NicknameKey = @"nickname";
 #endif
-static NSString * const IsCloudSyncEnabledKey = @"isCloudSyncEnabled";
-static NSString * const IsImportExportEnabledKey = @"isImportExportEnabled";
+static NSString * const UsageModeKey = @"usageMode";
 static NSString * const CredentialServiceIdentifierKey = @"credentialServiceIdentifier";
 static NSString * const HasBeenPreparedForRemovalKey = @"hasBeenPreparedForRemoval";
 
@@ -45,7 +45,7 @@ static const NSUInteger ServerAccountPropertyListVersion = 1;
 
 #if OFX_MAC_STYLE_ACCOUNT
 
-static NSInteger OFXBookmarkDebug = 0;
+static OFDeclareDebugLogLevel(OFXBookmarkDebug);
 #define DEBUG_BOOKMARK(level, format, ...) do { \
     if (OFXBookmarkDebug >= (level)) \
         NSLog(@"BOOKMARK %@: " format, [self shortDescription], ## __VA_ARGS__); \
@@ -58,7 +58,7 @@ static BOOL IsRunningUnitTests(void)
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         NSString *pathExtension = [[[OFController controllingBundle] bundlePath] pathExtension];
-        runningUnitTests = [pathExtension isEqual:@"octest"] || [pathExtension isEqual:@"otest"];
+        runningUnitTests = [pathExtension isEqual:@"xctest"];
     });
     return runningUnitTests;
 }
@@ -73,7 +73,7 @@ static NSData *bookmarkDataWithURL(NSURL *url, NSError **outError)
     return [url bookmarkDataWithOptions:NSURLBookmarkCreationWithSecurityScope includingResourceValuesForKeys:nil relativeToURL:nil/*app scoped*/ error:outError];
 }
 
-static NSURL *URLWithBookmarkData(NSData *data, NSError **outError)
+static NSURL *URLWithBookmarkData(NSData *data, BOOL *outStale, NSError **outError)
 {
     if (IsRunningUnitTests()) {
         NSString *urlString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
@@ -81,14 +81,10 @@ static NSURL *URLWithBookmarkData(NSData *data, NSError **outError)
         assert(url); // otherwise we need to fill out the outError
         return url;
     }
-    BOOL stale = NO;
-    NSURL *url = [NSURL URLByResolvingBookmarkData:data options:NSURLBookmarkResolutionWithoutUI|NSURLBookmarkResolutionWithSecurityScope relativeToURL:nil/*app-scoped*/ bookmarkDataIsStale:&stale error:outError];
+    NSURL *url = [NSURL URLByResolvingBookmarkData:data options:NSURLBookmarkResolutionWithoutUI|NSURLBookmarkResolutionWithSecurityScope relativeToURL:nil/*app-scoped*/ bookmarkDataIsStale:outStale error:outError];
     if (!url)
         return nil;
-    if (stale) {
-        NSLog(@"Archived bookmark data was flagged as stale");
-        OBFinishPortingLater("What does this mean? Original URL moved?");
-    }
+    
     return url;
 }
 #endif
@@ -108,14 +104,49 @@ static NSURL *URLWithBookmarkData(NSData *data, NSError **outError)
 }
 
 
-+ (void)initialize;
+static BOOL _validateNotDropbox(NSURL *url, NSError **outError)
 {
-    OBINITIALIZE;
-
-#if OFX_MAC_STYLE_ACCOUNT
-    OFInitializeDebugLogLevel(OFXBookmarkDebug);
-#endif
+    NSArray *components = [url pathComponents];
+    if ([components containsObject:@"Dropbox"]) { // Dropbox allows you to move your folder, but not to rename it.
+        if (outError) {
+            NSString *description = NSLocalizedStringFromTableInBundle(@"Local documents folder cannot be used.", @"OmniFileExchange", OMNI_BUNDLE, @"error description");
+            NSString *reason = NSLocalizedStringFromTableInBundle(@"The proposed local documents folder appears to be inside a Dropbox folder. Using two file synchronization systems on the same folder can result in data loss.", @"OmniFileExchange", OMNI_BUNDLE, @"error description");
+            OFXError(outError, OFXLocalAccountDirectoryNotUsable, description, reason);
+        }
+        return NO;
+    }
+    
+    return YES;
 }
+
+#if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
+static BOOL _validateLocalFileSystem(NSURL *url, NSError **outError)
+{
+    struct statfs fs_info = {0};
+    if (statfs([[url path] UTF8String], &fs_info) < 0) {
+        if (outError) {
+            OBErrorWithErrno(outError, errno, "statfs", [url path], @"statfs failed for proposed local documents URL");
+            
+            NSString *description = NSLocalizedStringFromTableInBundle(@"Local documents folder cannot be used.", @"OmniFileExchange", OMNI_BUNDLE, @"error description");
+            NSString *reason = NSLocalizedStringFromTableInBundle(@"Unable to determine the filesystem properties of the proposed documents folder.", @"OmniFileExchange", OMNI_BUNDLE, @"error description");
+            OFXError(outError, OFXLocalAccountDirectoryNotUsable, description, reason);
+        }
+        return NO;
+    }
+    
+    // Require local filesystems so that we don't have cache coherency issues between clients over NFS/AFP/webdav_fs (making it look like files are missing that really should be there, leading to us deleting them from the server). Also, we don't want network issues to cause us to think files have gone missing, possibly leading to us issuing deletes.
+    if ((fs_info.f_flags & MNT_LOCAL) == 0) {
+        if (outError) {
+            NSString *description = NSLocalizedStringFromTableInBundle(@"Local documents folder cannot be used.", @"OmniFileExchange", OMNI_BUNDLE, @"error description");
+            NSString *reason = NSLocalizedStringFromTableInBundle(@"The proposed local documents folder is not on a local volume. Please pick a location that is local to your computer.", @"OmniFileExchange", OMNI_BUNDLE, @"error description");
+            OFXError(outError, OFXLocalAccountDirectoryNotUsable, description, reason);
+        }
+        return NO;
+    }
+    
+    return YES;
+}
+#endif
 
 + (BOOL)validateLocalDocumentsURL:(NSURL *)documentsURL reason:(OFXServerAccountLocalDirectoryValidationReason)reason error:(NSError **)outError;
 {
@@ -143,33 +174,12 @@ static NSURL *URLWithBookmarkData(NSData *data, NSError **outError)
     }
     
     // Make sure the proposed URL isn't located inside other synchronized folders.
-    NSArray *components = [documentsURL pathComponents];
-    if ([components containsObject:@"Dropbox"]) { // Dropbox allows you to move your folder, but not to rename it.
-        NSString *description = NSLocalizedStringFromTableInBundle(@"Local documents folder cannot be used.", @"OmniFileExchange", OMNI_BUNDLE, @"error description");
-        NSString *reason = NSLocalizedStringFromTableInBundle(@"The proposed local documents folder appears to be inside a Dropbox folder. Using two file synchronization systems on the same folder can result in data loss.", @"OmniFileExchange", OMNI_BUNDLE, @"error description");
-        OFXError(outError, OFXLocalAccountDirectoryNotUsable, description, reason);
+    if (!_validateNotDropbox(documentsURL, outError))
         return NO;
-    }
-    
     
 #if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
-    struct statfs fs_info = {0};
-    if (statfs([[documentsURL path] UTF8String], &fs_info) < 0) {
-        OBErrorWithErrno(outError, errno, "statfs", [documentsURL path], @"statfs failed for proposed local documents URL");
-        
-        NSString *description = NSLocalizedStringFromTableInBundle(@"Local documents folder cannot be used.", @"OmniFileExchange", OMNI_BUNDLE, @"error description");
-        NSString *reason = NSLocalizedStringFromTableInBundle(@"Unable to determine the filesystem properties of the proposed documents folder.", @"OmniFileExchange", OMNI_BUNDLE, @"error description");
-        OFXError(outError, OFXLocalAccountDirectoryNotUsable, description, reason);
+    if (!_validateLocalFileSystem(documentsURL, outError))
         return NO;
-    }
-    
-    // Require local filesystems so that we don't have cache coherency issues between clients over NFS/AFP/webdav_fs (making it look like files are missing that really should be there, leading to us deleting them from the server). Also, we don't want network issues to cause us to think files have gone missing, possibly leading to us issuing deletes.
-    if ((fs_info.f_flags & MNT_LOCAL) == 0) {
-        NSString *description = NSLocalizedStringFromTableInBundle(@"Local documents folder cannot be used.", @"OmniFileExchange", OMNI_BUNDLE, @"error description");
-        NSString *reason = NSLocalizedStringFromTableInBundle(@"The proposed local documents folder is not on a local volume. Please pick a location that is local to your computer.", @"OmniFileExchange", OMNI_BUNDLE, @"error description");
-        OFXError(outError, OFXLocalAccountDirectoryNotUsable, description, reason);
-        return NO;
-    }
 #endif
     
     // Make sure we can create a temporary items folder on this filesystem. We may not have permission to create <FS_ROOT>/.TemporaryItems, but we want to be able to atomically move stuff into the documents directory. If we get this too often, we could make our own <DOC_DIR>/.com.omnigroup.OmniPresence.TemporaryItems/ folder and exclude it from scanning.
@@ -178,6 +188,33 @@ static NSURL *URLWithBookmarkData(NSData *data, NSError **outError)
         if (!temporaryURL) {
             NSString *description = NSLocalizedStringFromTableInBundle(@"Local documents folder cannot be used.", @"OmniFileExchange", OMNI_BUNDLE, @"error description");
             NSString *reason = NSLocalizedStringFromTableInBundle(@"Unable to create temporary items in the proposed location.", @"OmniFileExchange", OMNI_BUNDLE, @"error description");
+            OFXError(outError, OFXLocalAccountDirectoryNotUsable, description, reason);
+            return NO;
+        }
+    }
+    
+    return YES;
+}
+
++ (BOOL)validatePotentialLocalDocumentsParentURL:(NSURL *)documentsURL registry:(OFXServerAccountRegistry *)registry error:(NSError **)outError;
+{
+    if (!_validateNotDropbox(documentsURL, outError))
+        return NO;
+    
+#if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
+    if (!_validateLocalFileSystem(documentsURL, outError))
+        return NO;
+#endif
+
+    NSArray *syncAccounts = [[registry validCloudSyncAccounts] copy];
+    for (OFXServerAccount *account in syncAccounts) {
+#if OFX_MAC_STYLE_ACCOUNT
+        if (![account resolveLocalDocumentsURL:NULL])
+            continue;
+#endif
+        if (OFURLContainsURL(account.localDocumentsURL, documentsURL)) {
+            NSString *description = NSLocalizedStringFromTableInBundle(@"Local documents folder cannot be used.", @"OmniFileExchange", OMNI_BUNDLE, @"error description");
+            NSString *reason = NSLocalizedStringFromTableInBundle(@"Another account is syncing to this folder already.", @"OmniFileExchange", OMNI_BUNDLE, @"error description");
             OFXError(outError, OFXLocalAccountDirectoryNotUsable, description, reason);
             return NO;
         }
@@ -399,7 +436,7 @@ static NSURL *URLWithBookmarkData(NSData *data, NSError **outError)
     return nil;
 }
 
-- initWithType:(OFXServerAccountType *)type remoteBaseURL:(NSURL *)remoteBaseURL localDocumentsURL:(NSURL *)localDocumentsURL error:(NSError **)outError;
+- initWithType:(OFXServerAccountType *)type usageMode:(OFXServerAccountUsageMode)usageMode remoteBaseURL:(NSURL *)remoteBaseURL localDocumentsURL:(NSURL *)localDocumentsURL error:(NSError **)outError;
 {
     OBPRECONDITION(type);
     OBPRECONDITION(remoteBaseURL);
@@ -443,10 +480,9 @@ static NSURL *URLWithBookmarkData(NSData *data, NSError **outError)
     _nickname = nil;
 #endif
     
-    _isCloudSyncEnabled = YES;
-    _isImportExportEnabled = YES;
+    _usageMode = usageMode;
     
-    OBPOSTCONDITION([[self.localDocumentsURL absoluteString] hasSuffix:@"/"]);
+    OBASSERT_IF(_usageMode == OFXServerAccountUsageModeCloudSync, [[self.localDocumentsURL absoluteString] hasSuffix:@"/"]);
     return self;
 }
 
@@ -533,12 +569,15 @@ static NSURL *URLWithBookmarkData(NSData *data, NSError **outError)
     
     if (_localDocumentsBookmarkURL) {
         DEBUG_BOOKMARK(1, @"Stopping security scoped access of %@", _localDocumentsBookmarkURL);
+        DEBUG_BOOKMARK(3, @"from:\n%@", OFCopySymbolicBacktrace());
         [_localDocumentsBookmarkURL stopAccessingSecurityScopedResource];
         _localDocumentsBookmarkURL = nil;
         _accessedLocalDocumentsBookmarkURL = nil;
     }
         
-    _localDocumentsBookmarkURL = URLWithBookmarkData(_localDocumentsBookmarkData,  outError);
+    BOOL stale = NO;
+    _localDocumentsBookmarkURL = URLWithBookmarkData(_localDocumentsBookmarkData, &stale, outError);
+
     DEBUG_BOOKMARK(1, @"Resolved bookmark data to %@", _localDocumentsBookmarkURL);
     if (!_localDocumentsBookmarkURL) {
         OFXError(outError, OFXCannotResolveLocalDocumentsURL,
@@ -546,8 +585,10 @@ static NSURL *URLWithBookmarkData(NSData *data, NSError **outError)
                  NSLocalizedStringFromTableInBundle(@"Could not resolve archived bookmark for synchronized documents folder.", @"OmniFileExchange", OMNI_BUNDLE, @"error reason"));
         return NO;
     }
-        
+    
     DEBUG_BOOKMARK(1, @"Starting security scoped access of %@", _localDocumentsBookmarkURL);
+    DEBUG_BOOKMARK(3, @"from:\n%@", OFCopySymbolicBacktrace());
+    
     if (![_localDocumentsBookmarkURL startAccessingSecurityScopedResource]) {
         OFXError(outError, OFXCannotResolveLocalDocumentsURL,
                  ERROR_DESCRIPTION,
@@ -560,9 +601,26 @@ static NSURL *URLWithBookmarkData(NSData *data, NSError **outError)
     _accessedLocalDocumentsBookmarkURL = [[NSURL fileURLWithPath:[[_localDocumentsBookmarkURL absoluteURL] path]] URLByStandardizingPath];
     DEBUG_BOOKMARK(1, @"Resolved local documents URL to %@", _accessedLocalDocumentsBookmarkURL);
 
+    if (stale) {
+        // We have to wait until we have access to the URL in order to make a new bookmark.
+        NSLog(@"Bookmark data flagged as stale for %@ -- will rearchive.", _accessedLocalDocumentsBookmarkURL);
+        
+        // We are supposed to re-create our bookmark data in this case. In case of some system craziness, don't clobber our current data (since it gave us a URL...) and instead try next time.
+        __autoreleasing NSError *error;
+        NSData *updatedData = bookmarkDataWithURL(_accessedLocalDocumentsBookmarkURL, &error);
+        if (!updatedData) {
+            [error log:@"Error attempting to refresh bookmark data for stale bookmark at %@", _accessedLocalDocumentsBookmarkURL];
+        } else {
+            // Trigger a save of the plist.
+            [self willChangeValueForKey:LocalDocumentsBookmarkDataKey];
+            _localDocumentsBookmarkData = [updatedData copy];
+            [self didChangeValueForKey:LocalDocumentsBookmarkDataKey];
+        }
+    }
+    
     NSString *displayName = [_accessedLocalDocumentsBookmarkURL lastPathComponent];
     if (OFNOTEQUAL(_lastKnownDisplayName, displayName))
-        self.lastKnownDisplayName = displayName;
+        self.lastKnownDisplayName = displayName; // Trigger a save of the plist
     
     return YES;
 }
@@ -603,7 +661,7 @@ static NSURL *URLWithBookmarkData(NSData *data, NSError **outError)
 
 - (NSURL *)localDocumentsURL;
 {
-    assert(_isCloudSyncEnabled); // We shouldn't be calling this for non-syncing accounts
+    assert(_usageMode == OFXServerAccountUsageModeCloudSync); // We shouldn't be calling this for non-syncing accounts
 #if OFX_MAC_STYLE_ACCOUNT
     NSURL *localDocumentsURL;
     @synchronized(self) {
@@ -736,9 +794,16 @@ static NSURL *URLWithBookmarkData(NSData *data, NSError **outError)
     OBPRECONDITION([_type.identifier isEqualToString:propertyList[@"type"]]);
     
     // CANNOT USE SETTERS HERE. The setters flag the account as needing to be written.
-        
-    _isCloudSyncEnabled = [propertyList boolForKey:@"cloudSyncEnabled" defaultValue:YES];
-    _isImportExportEnabled = [propertyList boolForKey:@"importExportEnabled" defaultValue:YES];
+    
+    // <bug:///107243> (Feature: Completely separate OmniPresence accounts from WebDAV import/export accounts)
+    // Convert legacy dual-mode accounts into cloud sync only accounts.
+    BOOL isCloudAccount = [propertyList boolForKey:@"cloudSyncEnabled" defaultValue:YES];
+    if (isCloudAccount)
+        _usageMode = OFXServerAccountUsageModeCloudSync;
+    else {
+        OBASSERT([propertyList boolForKey:@"importExportEnabled" defaultValue:YES], "Deserialized an account that is neither for cloud sync nor for import/export");
+        _usageMode = OFXServerAccountUsageModeImportExport;
+    }
 
 #if OFX_MAC_STYLE_ACCOUNT
     OBASSERT(_lastKnownDisplayName == nil, @"should not have resolved the local documents URL yet");
@@ -757,12 +822,15 @@ static NSURL *URLWithBookmarkData(NSData *data, NSError **outError)
     // uuid, type, and remoteBaseURL not included since they can't change.
     return [NSSet setWithObjects:
 #if OFX_MAC_STYLE_ACCOUNT
-            // On Mac, the whole local documents folder can be renamed or moved using the Finder. But we don't change the bookmark data, so this doesn't need to be re-archived.
+            // On Mac, the whole local documents folder can be renamed or moved using the Finder.
             LastKnownDislpayNameKey,
+            
+            // This can get reset when our bookmark is flagged as 'stale'.
+            LocalDocumentsBookmarkDataKey,
 #else
             NicknameKey, // On iOS, the nickname can be changed by the user
 #endif
-            IsCloudSyncEnabledKey, IsImportExportEnabledKey, CredentialServiceIdentifierKey, HasBeenPreparedForRemovalKey, nil];
+            UsageModeKey, CredentialServiceIdentifierKey, HasBeenPreparedForRemovalKey, nil];
 }
 
 - (NSDictionary *)propertyList;
@@ -791,11 +859,13 @@ static NSURL *URLWithBookmarkData(NSData *data, NSError **outError)
         [plist setObject:_nickname forKey:@"displayName"];
 #endif
 
-    if (!_isCloudSyncEnabled)
-        plist[@"cloudSyncEnabled"] = @NO;
-    
-    if (!_isImportExportEnabled)
-        plist[@"importExportEnabled"] = @NO;
+    switch (_usageMode) {
+        case OFXServerAccountUsageModeCloudSync:
+            plist[@"importExportEnabled"] = @NO;
+            break;
+        case OFXServerAccountUsageModeImportExport:
+            plist[@"cloudSyncEnabled"] = @NO;
+    }
     
     if (_credentialServiceIdentifier)
         [plist setObject:_credentialServiceIdentifier forKey:@"serviceIdentifier"];

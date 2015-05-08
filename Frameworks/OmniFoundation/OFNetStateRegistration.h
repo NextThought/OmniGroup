@@ -1,4 +1,4 @@
-// Copyright 2008-2013 The Omni Group. All rights reserved.
+// Copyright 2008-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -20,7 +20,7 @@
 
 + (BOOL)netServiceName:(NSString *)serviceName matchesAnyGroup:(NSSet *)groupIdentifiers;
 
-- initWithGroupIdentifier:(NSString *)groupIdentifier memberIdentifier:(NSString *)memberIdentifier name:(NSString *)name state:(NSData *)state;
+- initWithGroupIdentifier:(NSString *)groupIdentifier memberIdentifier:(NSString *)memberIdentifier name:(NSString *)name state:(NSData *)state NS_EXTENSION_UNAVAILABLE_IOS("This depends on UIApplication, which isn't available in application extensions");
 
 - (void)invalidate;
 
@@ -29,8 +29,8 @@
 @property(nonatomic,readonly) NSString *groupIdentifier;
 @property(nonatomic,readonly) NSString *memberIdentifier;
 
-// Some state describing the local state. If this is too long, its SHA-1 will be used instead.
-@property(nonatomic,copy) NSData *state;
+// Some opaque data describing the current local state. If this is too long, its SHA-1 will be used instead.
+@property(nonatomic,copy) NSData *localState;
 
 @end
 

@@ -1,4 +1,4 @@
-// Copyright 2013 Omni Development, Inc.  All rights reserved.
+// Copyright 2013-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -69,16 +69,16 @@ void OSUInstallerSetUpAuthorizationRights(void)
     }
     
     NSArray *rightsArray = OSUInstallerAuthoriziationRights();
-    for (NSDictionary *right in rightsArray) {
+    for (NSDictionary *_right in rightsArray) {
         // Attempt to get the right. If we get back errAuthorizationDenied that means there's no current definition, so we add our default one.
-        NSString *authRightName = right[OSUInstallerRightNameKey];
-        NSDictionary *authRightDefault = right[OSUInstallerRightDefaultKey];
-        NSString *authRightDescription = right[OSUInstallerRightDescriptionKey];
+        NSString *authRightName = _right[OSUInstallerRightNameKey];
+        NSDictionary *authRightDefault = _right[OSUInstallerRightDefaultKey];
+        NSString *authRightDescription = _right[OSUInstallerRightDescriptionKey];
         CFDictionaryRef right = NULL;
         
         status = AuthorizationRightGet([authRightName UTF8String], &right);
         if (status == errAuthorizationDenied) {
-            status = AuthorizationRightSet(authRef, [authRightName UTF8String], (CFTypeRef)authRightDefault, (CFStringRef)authRightDescription,  NULL, CFSTR("OSUInstallerRights"));
+            status = AuthorizationRightSet(authRef, [authRightName UTF8String], (__bridge CFTypeRef)authRightDefault, (__bridge CFStringRef)authRightDescription,  NULL, CFSTR("OSUInstallerRights"));
             if (status != errAuthorizationSuccess) {
                 NSLog(@"AuthorizationRightSet failed with (%d).", status);
             }
@@ -86,14 +86,14 @@ void OSUInstallerSetUpAuthorizationRights(void)
             // If a right already exists (status == errAuthorizationSuccess) check to see if the version is current.
             NSCAssert(right != NULL, @"Expected non-NULL right.");
             if (right != NULL) {
-                NSDictionary *rightDictionary = (NSDictionary *)right;
+                NSDictionary *rightDictionary = (__bridge NSDictionary *)right;
                 NSInteger version = [rightDictionary[@"version"] integerValue];
                 if (version < [authRightDefault[@"version"] integerValue]) {
                     // Update the right to the current version
                     status = AuthorizationRightRemove(authRef, [authRightName UTF8String]);
                     NSLog(@"AuthorizationRightRemove failed with (%d).", status);
 
-                    status = AuthorizationRightSet(authRef, [authRightName UTF8String], (CFTypeRef)authRightDefault, (CFStringRef)authRightDescription,  NULL, CFSTR("OSUInstallerRights"));
+                    status = AuthorizationRightSet(authRef, [authRightName UTF8String], (__bridge CFTypeRef)authRightDefault, (__bridge CFStringRef)authRightDescription,  NULL, CFSTR("OSUInstallerRights"));
                     NSLog(@"AuthorizationRightSet failed with (%d).", status);
                 }
             }

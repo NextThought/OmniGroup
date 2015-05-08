@@ -1,4 +1,4 @@
-// Copyright 2008, 2010 Omni Development, Inc.  All rights reserved.
+// Copyright 2008-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -9,6 +9,15 @@
 #import <OmniDataObjects/NSPredicate-ODOExtensions.h>
 
 RCS_ID("$Id$")
+
+// Same as 'SELF <op> %@'
+
+NSPredicate *ODOCompareSelfToValuePredicate(NSPredicateOperatorType op, id value)
+{
+    NSExpression *selfExpression = [NSExpression expressionForEvaluatedObject];
+    NSExpression *valueExpression = [NSExpression expressionForConstantValue:value];
+    return [[[NSComparisonPredicate alloc] initWithLeftExpression:selfExpression rightExpression:valueExpression modifier:0 type:op options:0] autorelease];
+}
 
 // Same as '%K <op> %@'
 NSPredicate *ODOKeyPathCompareToValuePredicate(NSString *keyPath, NSPredicateOperatorType op, id value)
@@ -67,3 +76,20 @@ NSPredicate *ODOOrPredicates(NSPredicate *firstPredicate, ...)
     va_end(argList);
     return result;
 }
+
+BOOL ODOIsTruePredicate(NSPredicate *predicate)
+{
+    OBPRECONDITION(predicate != nil);
+    if (predicate == nil) {
+        return NO;
+    }
+    
+    static NSPredicate *truePredicate = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        truePredicate = [NSPredicate predicateWithValue:YES];
+    });
+    
+    return [predicate isEqual:truePredicate];
+}
+

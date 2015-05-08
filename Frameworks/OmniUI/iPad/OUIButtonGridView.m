@@ -1,4 +1,4 @@
-// Copyright 2010-2013 Omni Development, Inc. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -14,7 +14,7 @@ RCS_ID("$Id$");
     NSUInteger _borderMask;
 }
 
-@property (nonatomic, copy) NSArray *buttons;
+@property (nonatomic, readwrite, copy) NSArray *buttons;
 @property (nonatomic, copy) NSArray *buttonConstraints;
 @property (nonatomic, assign) NSUInteger numberOfRows;
 
@@ -33,14 +33,50 @@ RCS_ID("$Id$");
 
 - (void)setDataSource:(id<OUIButtonGridViewDataSource>)dataSource;
 {
-    _dataSource = dataSource;
-    self.numberOfRows = [dataSource numberOfRowsInButtonGridView:self];
+    if (_dataSource != dataSource) {
+        _dataSource = dataSource;
+
+        [self.buttons enumerateObjectsUsingBlock:^(UIButton *button, NSUInteger index, BOOL *stop) {
+            [button removeFromSuperview];
+        }];
+        
+        self.buttons = nil;
+        self.buttonConstraints = nil;
+        
+        self.numberOfRows = [dataSource numberOfRowsInButtonGridView:self];
+
+        [self setNeedsUpdateConstraints];
+        [self setNeedsLayout];
+    }
 }
 
 - (void)setBorderMask:(NSUInteger)borderMask;
 {
     _borderMask = borderMask;
     [self setNeedsDisplay];
+}
+
+- (UIButton *)buttonAtIndexPath:(NSIndexPath *)indexPath;
+{
+    if (self.buttons == nil) {
+        return nil;
+    }
+
+    NSInteger row = [indexPath buttonGridViewRow];
+    NSUInteger index = 0;
+    
+    for (NSInteger i = 0; i < row; i++) {
+        index += [self.dataSource buttonGridView:self numberOfColumnsInRow:i];
+    }
+    
+    index += [indexPath buttonGridViewColumn];
+    OBASSERT(index >= 0 && index < self.buttons.count);
+    
+    if (index < self.buttons.count) {
+        return self.buttons[index];
+    }
+    
+    return nil;
 }
 
 #pragma mark - UIView subclass
@@ -68,6 +104,10 @@ RCS_ID("$Id$");
 
     if (self.buttons == nil) {
         [self createButtons];
+    }
+    
+    if (self.buttons.count == 0) {
+        return;
     }
     
     NSUInteger buttonHeight = [self buttonHeight];
@@ -104,8 +144,12 @@ RCS_ID("$Id$");
     [[UIColor colorWithHue:0.0 saturation:0.0 brightness:0.8 alpha:1.0] setFill];
     CGRect bounds = self.bounds;
 
-    NSUInteger numberOfRows = self.numberOfRows;
     NSUInteger buttonHeight = [self buttonHeight];
+    if (buttonHeight <= 0) {
+        return;
+    }
+    
+    NSUInteger numberOfRows = self.numberOfRows;
     NSUInteger height = floor(CGRectGetHeight(self.frame));
     NSUInteger buttonHeightRemainder = height % buttonHeight;
     
@@ -157,6 +201,11 @@ static void _DrawButtonBorder(CGContextRef ctx, CGRect lineRect)
 
 - (NSUInteger)buttonHeight;
 {
+    OBPRECONDITION(self.numberOfRows > 0);
+    if (self.numberOfRows == 0) {
+        return 0;
+    }
+    
     NSUInteger height = floor(CGRectGetHeight(self.frame));
     NSUInteger buttonHeight = floor(height / self.numberOfRows);
     return buttonHeight;
@@ -185,7 +234,8 @@ static void _DrawButtonBorder(CGContextRef ctx, CGRect lineRect)
         NSUInteger numberOfColumnsInRow = [self numberOfColumnsInRow:row];
         NSUInteger column = [self.buttons indexOfObjectIdenticalTo:sender inRange:NSMakeRange(index, numberOfColumnsInRow)];
         if (column != NSNotFound) {
-            [self.dataSource buttonGridView:self didSelectRowAtIndexPath:[NSIndexPath indexPathForButtonGridViewColumn:column - index inButtonGridViewRow:row]];
+            NSIndexPath *indexPath = [NSIndexPath indexPathForButtonGridViewColumn:column - index inButtonGridViewRow:row];
+            [self.dataSource buttonGridView:self tappedButton:sender atIndexPath:indexPath];
             return;
         }
         

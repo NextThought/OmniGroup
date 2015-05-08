@@ -1,4 +1,4 @@
-// Copyright 2007-2008, 2010-2011, 2013-2014 Omni Development, Inc.All rights reserved.
+// Copyright 2007-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -14,13 +14,14 @@
 
 RCS_ID("$Id$")
 
-@interface OAWebPageViewer () <OAFindControllerTarget> {
+@interface OAWebPageViewer () <OAFindControllerTarget, NSWindowDelegate> {
   @private
     BOOL _usesWebPageTitleForWindowTitle;
     NSMutableDictionary *_scriptObjects;
 }
 
 @property (nonatomic, copy) NSString *name;
+@property (nonatomic, strong) NSView <WebDocumentView> *webDocumentView;
 
 @end
 
@@ -28,23 +29,23 @@ RCS_ID("$Id$")
 
 @implementation OAWebPageViewer
 
+static NSMutableDictionary *sharedViewerCache = nil;
+
 + (OAWebPageViewer *)sharedViewerNamed:(NSString *)name;
 {
-    static NSMutableDictionary *cache = nil;
-
     if (name == nil)
         return nil;
 
-    if (cache == nil)
-        cache = [[NSMutableDictionary alloc] init];
+    if (sharedViewerCache == nil)
+        sharedViewerCache = [[NSMutableDictionary alloc] init];
 
-    OAWebPageViewer *cachedViewer = cache[name];
+    OAWebPageViewer *cachedViewer = sharedViewerCache[name];
     if (cachedViewer != nil)
         return cachedViewer;
 
     OAWebPageViewer *newViewer = [[self alloc] init];
     newViewer.name = name;
-    cache[name] = newViewer;
+    sharedViewerCache[name] = newViewer;
     
     // PlugIns are disabled by default. They can be turned on per instance if necessary.
     // (If PlugIns are enabled, Adobe Acrobat will interfere with displaying inline PDFs in our help content.)
@@ -67,18 +68,28 @@ RCS_ID("$Id$")
 
 - (void)invalidate;
 {
-    OBPRECONDITION(_name == nil); // To invalidate a shared viewer, we'll need to remove it from the cache
+    @autoreleasepool {
+        // This cleanup can mean we'll be deallocated. Don't let that happen while we're still poking our ivars <bug:///114229> (Unassigned: Crash closing the About panel or other OAWebPageViewer (Help, typically))
+        OBRetainAutorelease(self);
+        
+        self.webDocumentView = nil;
 
-    [_scriptObjects removeAllObjects];
+        [_scriptObjects removeAllObjects];
 
-    _webView.UIDelegate = nil;
-    _webView.resourceLoadDelegate = nil;
-    _webView.downloadDelegate = nil;
-    _webView.frameLoadDelegate = nil;
-    _webView.policyDelegate = nil;
+        _webView.UIDelegate = nil;
+        _webView.resourceLoadDelegate = nil;
+        _webView.downloadDelegate = nil;
+        _webView.frameLoadDelegate = nil;
+        _webView.policyDelegate = nil;
+        _webView.hostWindow = nil;
 
-    [_webView removeFromSuperview];
-    _webView = nil;
+        [_webView close];
+        [_webView removeFromSuperview];
+        _webView = nil;
+        
+        if (_name != nil)
+            [sharedViewerCache removeObjectForKey:_name];
+    }
 }
 
 - (void)loadPath:(NSString *)path;
@@ -162,6 +173,18 @@ RCS_ID("$Id$")
     [super windowDidLoad];
     
     OBASSERT(_webView != nil);
+    _webView.layerUsesCoreImageFilters = YES;
+    _webView.preferences.usesPageCache = NO;
+    _webView.preferences.cacheModel = WebCacheModelDocumentBrowser;
+    _webView.preferences.suppressesIncrementalRendering = YES;
+    [_webView setMaintainsBackForwardList:NO];
+}
+
+- (void)windowWillClose:(NSNotification *)notification;
+{
+    @autoreleasepool {
+        [self invalidate];
+    }
 }
 
 #pragma mark -
@@ -191,7 +214,7 @@ RCS_ID("$Id$")
 {
     NSURL *url = [actionInformation objectForKey:WebActionOriginalURLKey];
     if (OFISEQUAL([url scheme], @"help")) {
-        [NSApp showHelpURL:[url resourceSpecifier]];
+        [[OAApplication sharedApplication] showHelpURL:[url resourceSpecifier]];
         [listener ignore];
         return;
     }
@@ -214,7 +237,7 @@ RCS_ID("$Id$")
     }
     
     // Open links in the user's browser
-    [[NSWorkspace sharedWorkspace] openURL:url];
+    [[OAController sharedController] openURL:url];
     [listener ignore];
 }
 
@@ -227,8 +250,17 @@ RCS_ID("$Id$")
     }
 }
 
+- (void)setWebDocumentView:(NSView <WebDocumentView> *)webDocumentView;
+{
+    _webDocumentView = webDocumentView;
+    _webDocumentView.wantsLayer = YES;
+}
+
 - (void)webView:(WebView *)sender didFinishLoadForFrame:(WebFrame *)frame;
 {
+    if (frame == [sender mainFrame])
+        self.webDocumentView = frame.frameView.documentView;
+
     [self showWindow:nil];
 }
 
@@ -340,6 +372,27 @@ RCS_ID("$Id$")
 - (void)_ensureWindowLoaded;
 {
     (void)[self window];
+}
+
+@end
+
+
+@interface OAWebPageContainerView : NSView
+@end
+
+@implementation OAWebPageContainerView
+
+- (void)resizeSubviewsWithOldSize:(NSSize)oldSize {
+
+    // <bug:///110229> (Unassigned: White line at top of Help window looks odd)
+    // For some reason a 1-point-tall line would sometimes appear between the WebView and the window title bar. This makes sure that that won't happen.
+
+    [super resizeSubviewsWithOldSize:oldSize];
+
+    WebView *webview = self.subviews.firstObject;
+    if (!NSEqualRects(webview.frame, self.bounds)) {
+        webview.frame = self.bounds;
+    }
 }
 
 @end

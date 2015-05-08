@@ -1,4 +1,4 @@
-// Copyright 1997-2008, 2010-2013 Omni Development, Inc. All rights reserved.
+// Copyright 1997-2008, 2010-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -35,8 +35,17 @@
 #endif
 
 #if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+- (BOOL)addExcludedFromBackupAttributeToItemAtURL:(NSURL *)url error:(NSError **)error;
 - (BOOL)addExcludedFromBackupAttributeToItemAtPath:(NSString *)path error:(NSError **)error;
+- (BOOL)removeExcludedFromBackupAttributeToItemAtURL:(NSURL *)url error:(NSError **)error;
+- (BOOL)removeExcludedFromBackupAttributeToItemAtPath:(NSString *)path error:(NSError **)error;
 #endif
+
+// Group containers
+
+// baseIdentifier should be 'com.mycompany.whatever'. Appropriate modifications will be made to that base identifier based on platform and sandboxing.
+- (NSString *)groupContainerIdentifierForBaseIdentifier:(NSString *)baseIdentifier;
+- (NSURL *)containerURLForBaseGroupContainerIdentifier:(NSString *)baseIdentifier;
 
 @end
 

@@ -1,4 +1,4 @@
-// Copyright 2010-2013 The Omni Group. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -55,7 +55,8 @@ typedef enum {
 
 @property(readonly,nonatomic) NSString *documentTypeForNewFiles;
 - (NSString *)documentTypeForNewFilesOfType:(ODSDocumentType)type;
-- (void)createNewDocumentInScope:(ODSScope *)scope folder:(ODSFolderItem *)folder documentType:(ODSDocumentType)type templateURL:(NSURL *)templateURL completionHandler:(void (^)(ODSFileItem *createdFileItem, NSError *error))handler;
-- (void)createNewDocumentInScope:(ODSScope *)scope folder:(ODSFolderItem *)folder templateURL:(NSURL *)templateURL completionHandler:(void (^)(ODSFileItem *createdFileItem, NSError *error))handler;
+- (NSString *)defaultFilenameForDocumentType:(ODSDocumentType)type isDirectory:(BOOL *)outIsDirectory;
+- (NSURL *)temporaryURLForCreatingNewDocumentOfType:(ODSDocumentType)type;
+- (void)moveNewTemporaryDocumentAtURL:(NSURL *)fileURL toScope:(ODSScope *)scope folder:(ODSFolderItem *)folder documentType:(ODSDocumentType)type completionHandler:(void (^)(ODSFileItem *createdFileItem, NSError *error))handler;
 
 @end

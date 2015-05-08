@@ -1,4 +1,4 @@
-// Copyright 2003-2005, 2010-2012 Omni Development, Inc. All rights reserved.
+// Copyright 2003-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -7,9 +7,10 @@
 //
 // $Id$
 
-#include <CoreFoundation/CFData.h>
-#include <CoreFoundation/CFPropertyList.h>
+#import <CoreFoundation/CFData.h>
+#import <CoreFoundation/CFPropertyList.h>
 #import <OmniBase/objc.h>
+#import <OmniBase/macros.h>
 
 CFPropertyListRef OFCreatePropertyListFromFile(CFStringRef filePath, CFPropertyListMutabilityOptions options, CFErrorRef *outError) CF_RETURNS_RETAINED;
 
@@ -20,7 +21,7 @@ static inline NSData *OFCreateNSDataFromPropertyList(id plist, CFPropertyListFor
     CFErrorRef cfError = NULL;
     CFDataRef data = CFPropertyListCreateData(kCFAllocatorDefault, (OB_BRIDGE CFPropertyListRef)plist, format, 0/*options*/, &cfError);
     if (data)
-        return (OB_BRIDGE NSData *)data;
+        return (OB_BRIDGE_TRANSFER NSData *)data;
 
     if (outError) {
         *outError = OB_AUTORELEASE((OB_BRIDGE NSError *)cfError);

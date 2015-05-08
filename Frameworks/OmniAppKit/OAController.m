@@ -27,7 +27,7 @@ RCS_ID("$Id$")
 - (void)gotPostponedTerminateResult:(BOOL)isReadyToTerminate;
 {
     if ([self status] == OFControllerPostponingTerminateStatus)
-        [NSApp replyToApplicationShouldTerminate:isReadyToTerminate];
+        [[NSApplication sharedApplication] replyToApplicationShouldTerminate:isReadyToTerminate];
     
     [super gotPostponedTerminateResult:isReadyToTerminate];
 }
@@ -96,13 +96,17 @@ RCS_ID("$Id$")
 {
     // Application developers should enter the feedback address in their main bundle's info dictionary.
     if (!feedbackAddress) {
-        NSRunAlertPanel(@"Unable to send feedback email.", @"No support email address configured in this application.", @"Cancel", nil, nil);
+        NSAlert *alert = [[[NSAlert alloc] init] autorelease];
+        alert.messageText = @"Unable to send feedback email.";
+        alert.informativeText = @"No support email address configured in this application.";
+        [alert addButtonWithTitle:@"Cancel"];
+        [alert runModal];
     } else {
         OAInternetConfig *internetConfig = [[[OAInternetConfig alloc] init] autorelease];
         
         NSError *error = nil;
         if (![internetConfig launchMailTo:feedbackAddress carbonCopy:nil subject:subjectLine body:body error:&error])
-            [NSApp presentError:error];
+            [[NSApplication sharedApplication] presentError:error];
     }
 }
 
@@ -111,6 +115,11 @@ RCS_ID("$Id$")
     NSString *feedbackAddress, *subjectLine;
     [self getFeedbackAddress:&feedbackAddress andSubject:&subjectLine];
     [self sendFeedbackEmailTo:feedbackAddress subject:subjectLine body:body];
+}
+
+- (BOOL)openURL:(NSURL *)url;
+{
+    return [[NSWorkspace sharedWorkspace] openURL:url];
 }
 
 #pragma mark -
@@ -147,8 +156,7 @@ RCS_ID("$Id$")
     [self willTerminate];
 }
 
-#pragma mark -
-#pragma mark Actions
+#pragma mark - Actions
 
 - (IBAction)showAboutPanel:(id)sender;
 {
@@ -195,7 +203,7 @@ RCS_ID("$Id$")
     NSString *scriptsFolder = paths[0];
     NSError *error = nil;
     if (![[NSFileManager defaultManager] createDirectoryAtPath:scriptsFolder withIntermediateDirectories:YES attributes:nil error:&error]) {
-        [NSApp presentError:error];
+        [[NSApplication sharedApplication] presentError:error];
         return;
     }
 

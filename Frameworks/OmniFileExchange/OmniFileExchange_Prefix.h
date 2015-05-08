@@ -1,11 +1,11 @@
-// Copyright 2013 Omni Development, Inc. All rights reserved.
+// Copyright 2013-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
 // distributed with this project and can also be found at
 // <http://www.omnigroup.com/developer/sourcecode/sourcelicense/>.
 //
-// RCS_ID("$Id$")
+// $Id$
 
 #import <Foundation/Foundation.h>
 
@@ -45,7 +45,7 @@ OB_HIDDEN extern NSInteger OFXTransferDebug;
 
 OB_HIDDEN extern NSInteger OFXConflictDebug;
 #define DEBUG_CONFLICT(level, format, ...) do { \
-    if (YES || OFXConflictDebug >= (level)) \
+    if (OFXConflictDebug >= (level)) \
         NSLog(@"CONFLICT %@ %@: " format, [self debugName], [self shortDescription], ## __VA_ARGS__); \
     } while (0)
 

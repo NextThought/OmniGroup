@@ -1,4 +1,4 @@
-// Copyright 2010-2013 The Omni Group. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -26,6 +26,7 @@ OBDEPRECATED_METHOD(-updateInterfaceFromInspectedObjects); // -> -updateInterfac
 
 @interface OUIInspectorSlice ()
 @property(nonatomic,retain) UIView *sliceBackgroundView;
+@property (readwrite, weak, nonatomic) OUIStackedSlicesInspectorPane *lastValidContainingPane;
 @end
 
 
@@ -132,7 +133,11 @@ OBDEPRECATED_METHOD(-updateInterfaceFromInspectedObjects); // -> -updateInterfac
 
 - (OUIStackedSlicesInspectorPane *)containingPane;
 {
-    return (OUIStackedSlicesInspectorPane *) self.parentViewController;
+    if (self.parentViewController) {
+        OBASSERT([self.parentViewController isKindOfClass:[OUIStackedSlicesInspectorPane class]]);
+        self.lastValidContainingPane = (OUIStackedSlicesInspectorPane *)self.parentViewController;
+    }
+    return self.lastValidContainingPane;
 }
 
 - (OUIInspector *)inspector;
@@ -233,7 +238,7 @@ OBDEPRECATED_METHOD(-updateInterfaceFromInspectedObjects); // -> -updateInterfac
 - (UIView *)sliceBackgroundView;
 {
     if (!self.isViewLoaded) {
-        [self view]; // The background view normally gets loaded when the content view does, so if that's not loaded yet, do so now.
+        (void)[self view]; // The background view normally gets loaded when the content view does, so if that's not loaded yet, do so now.
     }
     OBASSERT(_sliceBackgroundView != self.view);
     return _sliceBackgroundView;
@@ -304,7 +309,7 @@ static CGFloat _borderOffsetFromEdge(UIView *view, CGRectEdge fromEdge)
 
 - (CGFloat)paddingToInspectorBottom;
 {
-    CGFloat padding = 55 - _borderOffsetFromEdge(self._viewForVerticalPaddingCalculations, CGRectMaxYEdge);
+    CGFloat padding = 30 - _borderOffsetFromEdge(self._viewForVerticalPaddingCalculations, CGRectMaxYEdge);
     if (self.includesInspectorSliceGroupSpacerOnBottom) {
         padding -= [[self class] paddingBetweenSliceGroups];
     }
@@ -561,6 +566,8 @@ static CGFloat _borderOffsetFromEdge(UIView *view, CGRectEdge fromEdge)
 
 - (void)didReceiveMemoryWarning;
 {
+    [super didReceiveMemoryWarning];
+    
     // We do nothing here. We let our stacked slices inspector handle it so it can perform an orderly teardown.
     if (self.containingPane)
         return;

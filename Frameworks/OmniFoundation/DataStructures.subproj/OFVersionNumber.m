@@ -1,4 +1,4 @@
-// Copyright 2004-2005, 2007-2008, 2010-2013 Omni Development, Inc. All rights reserved.
+// Copyright 2004-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -9,6 +9,7 @@
 
 #import <OmniBase/OBObject.h> // For -debugDictionary
 #import <OmniFoundation/OFStringScanner.h>
+#import <OmniFoundation/NSString-OFReplacement.h>
 
 #if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
 #import <UIKit/UIDevice.h>
@@ -59,23 +60,23 @@ static BOOL isOperatingSystemLaterThanVersionString(NSString *versionString)
 
 #if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
 
-+ (BOOL)isOperatingSystemiOS61OrLater; // iOS 6.1
++ (BOOL)isOperatingSystemiOS80OrLater; // iOS 8.0
 {
     static BOOL isLater;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        isLater = isOperatingSystemLaterThanVersionString(@"6.1");
+        isLater = isOperatingSystemLaterThanVersionString(@"8.0");
     });
     
     return isLater;
 }
 
-+ (BOOL)isOperatingSystemiOS7OrLater; // iOS 7
++ (BOOL)isOperatingSystemiOS90OrLater; // iOS 9.0
 {
     static BOOL isLater;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        isLater = isOperatingSystemLaterThanVersionString(@"7");
+        isLater = isOperatingSystemLaterThanVersionString(@"9.0");
     });
     
     return isLater;
@@ -83,23 +84,12 @@ static BOOL isOperatingSystemLaterThanVersionString(NSString *versionString)
 
 #else
 
-+ (BOOL)isOperatingSystemMountainLionOrLater; // 10.8
++ (BOOL)isOperatingSystemYosemiteOrLater; // 10.10
 {
     static BOOL isLater;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        isLater = isOperatingSystemLaterThanVersionString(@"10.8");
-    });
-
-    return isLater;
-}
-
-+ (BOOL)isOperatingSystemMavericksOrLater; // 10.9
-{
-    static BOOL isLater;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        isLater = isOperatingSystemLaterThanVersionString(@"10.9");
+        isLater = isOperatingSystemLaterThanVersionString(@"10.10");
     });
 
     return isLater;
@@ -130,7 +120,7 @@ static BOOL isOperatingSystemLaterThanVersionString(NSString *versionString)
         scannerSkipPeekedCharacter(scanner);
 
     NSUInteger componentsBufSize = 40; // big enough for five 64-bit version number components
-    _components = OBAllocateCollectable(componentsBufSize, 0);
+    _components = malloc(componentsBufSize);
     
     while (scannerHasData(scanner)) {
         // TODO: Add a OFCharacterScanner method that allows you specify the maximum uint32 value (and a parameterless version that uses UINT_MAX) and passes back a BOOL indicating success (since any uint32 would be valid).
@@ -146,7 +136,7 @@ static BOOL isOperatingSystemLaterThanVersionString(NSString *versionString)
         _componentCount++;
         if (_componentCount*sizeof(*_components) > componentsBufSize) {
             componentsBufSize = _componentCount*sizeof(*_components);
-            _components = OBReallocateCollectable(_components, componentsBufSize, 0);
+            _components = realloc(_components, componentsBufSize);
         }
         _components[_componentCount - 1] = component;
 
@@ -156,12 +146,19 @@ static BOOL isOperatingSystemLaterThanVersionString(NSString *versionString)
         scannerSkipPeekedCharacter(scanner);
     }
 
-    if ([cleanVersionString isEqualToString:_originalVersionString])
+    // If we got "x.y.0.0.0" as input, strip off the trailing .0 components.
+    NSString *trimmedVersionString = [[cleanVersionString copy] autorelease];
+    [cleanVersionString release];
+    
+    while ([trimmedVersionString hasSuffix:@".0"]) {
+        trimmedVersionString = [trimmedVersionString stringByRemovingSuffix:@".0"];
+    }
+    
+    if ([trimmedVersionString isEqualToString:_originalVersionString])
         _cleanVersionString = [_originalVersionString retain];
     else
-        _cleanVersionString = [cleanVersionString copy];
+        _cleanVersionString = [trimmedVersionString copy];
     
-    [cleanVersionString release];
     [scanner release];
 
     if (_componentCount == 0) {
@@ -299,6 +296,46 @@ static BOOL isOperatingSystemLaterThanVersionString(NSString *versionString)
     [dict setObject:components forKey:@"components"];
 
     return dict;
+}
+
+@end
+
+NSString * const OFVersionNumberTransformerName = @"OFVersionNumberTransformer";
+
+@interface OFVersionNumberTransformer : NSValueTransformer
+@end
+
+@implementation OFVersionNumberTransformer
+
++ (void)didLoad;
+{
+    OFVersionNumberTransformer *instance = [[self alloc] init];
+    [NSValueTransformer setValueTransformer:instance forName:@"OFVersionNumberTransformer"];
+    [instance release];
+}
+
++ (Class)transformedValueClass;
+{
+    return [NSString class];
+}
+
++ (BOOL)allowsReverseTransformation;
+{
+    return YES;
+}
+
+- (id)transformedValue:(id)value;
+{
+    if ([value isKindOfClass:[OFVersionNumber class]])
+        return [(OFVersionNumber *)value cleanVersionString];
+    return nil;
+}
+
+- (id)reverseTransformedValue:(id)value;
+{
+    if ([value isKindOfClass:[NSString class]])
+        return [[[OFVersionNumber alloc] initWithVersionString:value] autorelease];
+    return nil;
 }
 
 @end

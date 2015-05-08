@@ -1,4 +1,4 @@
-// Copyright 2003-2013 Omni Development, Inc. All rights reserved.
+// Copyright 2003-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -42,10 +42,12 @@ extern NSDictionary *attributesFromFont(OAFontDescriptorPlatformFont font);
 - initWithFontAttributes:(NSDictionary *)fontAttributes;
 - initWithFamily:(NSString *)family size:(CGFloat)size;
 - initWithFamily:(NSString *)family size:(CGFloat)size weight:(NSInteger)weight italic:(BOOL)italic condensed:(BOOL)condensed fixedPitch:(BOOL)fixedPitch;
-- initWithName:(NSString *)name size:(CGFloat)size;
+- initWithName:(NSString *)name size:(CGFloat)size; // Used when reading fonts from RTF
 - initWithFont:(OAFontDescriptorPlatformFont)font;
 
 - (NSDictionary *)fontAttributes;
+
+// These accessors return the value stored in the descriptor's attributes dictionary, if present, or else return the attributes of the font obtained by resolving the descriptor.
 - (NSString *)family;
 - (CGFloat)size;
 - (BOOL)hasExplicitWeight;

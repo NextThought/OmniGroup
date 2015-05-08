@@ -1,4 +1,4 @@
-// Copyright 2008, 2010-2013 Omni Development, Inc. All rights reserved.
+// Copyright 2008, 2010-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -10,13 +10,14 @@
 #import <OmniUnzip/OUErrors.h>
 #import <OmniUnzip/OUZipMember.h>
 #import <OmniBase/system.h> // S_IFDIR, etc.
+#import <OmniFoundation/OFByteProviderProtocol.h>
 #import "zip.h"
+#import "OUUtilities.h"
 
 RCS_ID("$Id$");
 
 @implementation OUZipArchive
 {
-    NSString *_path;
     struct TagzipFile__ *_zip;
 }
 
@@ -61,6 +62,26 @@ RCS_ID("$Id$");
     return [zip close:outError];
 }
 
++ (NSData *)zipDataFromFileWrappers:(NSArray *)fileWrappers error:(NSError **)outError;
+{
+    NSString *temporaryZipPath = [NSTemporaryDirectory() stringByAppendingPathComponent:[[NSUUID UUID] UUIDString]];
+    
+    @try {
+        if (![self createZipFile:temporaryZipPath fromFileWrappers:fileWrappers error:outError])
+            return nil;
+
+        NSData *zipData = [NSData dataWithContentsOfFile:temporaryZipPath options:0 error:outError];
+        return zipData;
+    }
+    @finally {
+        // Remove the temporary file we created
+        [[NSFileManager defaultManager] removeItemAtPath:temporaryZipPath error:NULL];
+    }
+    
+    OBASSERT_NOT_REACHED("unreachable");
+    return nil;
+}
+
 - initWithPath:(NSString *)path error:(NSError **)outError;
 {
     OBPRECONDITION(![NSString isEmptyString:path]);
@@ -68,8 +89,29 @@ RCS_ID("$Id$");
     if (!(self = [super init]))
         return nil;
 
-    _path = [path copy];
     _zip = zipOpen([[NSFileManager defaultManager] fileSystemRepresentationWithPath:path], 0/*append*/);
+    if (!_zip) {
+        NSString *reason = @"zipOpen returned NULL.";
+        NSString *description = NSLocalizedStringFromTableInBundle(@"Unable to create zip file.", @"OmniUnzip", OMNI_BUNDLE, @"error reason");
+        OmniUnzipError(outError, OmniUnzipUnableToCreateZipFile, description, reason);
+        return nil;
+    }
+    
+    return self;
+}
+
+- initWithByteAcceptor:(NSObject <OFByteAcceptor> *)fh error:(NSError **)outError;
+{
+    if (!fh)
+        OBRejectInvalidCall(self, _cmd, @"Byte acceptor must not be nil");
+    
+    if (!(self = [super init]))
+        return nil;
+    
+    _zip = zipOpen2((__bridge void *)fh,
+                    0 /* append */,
+                    NULL /* globalComment */,
+                    &OUWriteIOImpl);
     if (!_zip) {
         NSString *reason = @"zipOpen returned NULL.";
         NSString *description = NSLocalizedStringFromTableInBundle(@"Unable to create zip file.", @"OmniUnzip", OMNI_BUNDLE, @"error reason");
@@ -107,7 +149,7 @@ static BOOL _zipError(id self, const char *func, int err, NSError **outError)
     if (date == nil)
         date = [NSDate date];
 
-    NSDateComponents *components = [[NSCalendar currentCalendar] components:NSYearCalendarUnit|NSMonthCalendarUnit|NSDayCalendarUnit|NSHourCalendarUnit|NSMinuteCalendarUnit|NSSecondCalendarUnit fromDate:date];
+    NSDateComponents *components = [[NSCalendar currentCalendar] components:NSCalendarUnitYear|NSCalendarUnitMonth|NSCalendarUnitDay|NSCalendarUnitHour|NSCalendarUnitMinute|NSCalendarUnitSecond fromDate:date];
     
     zip_fileinfo info;
     memset(&info, 0, sizeof(info));
@@ -193,3 +235,4 @@ static BOOL _zipError(id self, const char *func, int err, NSError **outError)
 }
 
 @end
+

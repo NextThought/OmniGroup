@@ -1,4 +1,4 @@
-// Copyright 2010-2013 The Omni Group. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -59,9 +59,13 @@ RCS_ID("$Id$");
 - (void)setSelectionValue:(OUIInspectorSelectionValue *)selectionValue;
 {
     [super setSelectionValue:selectionValue];
-    
+    [self scrollToSelectionValueAnimated:self.view.window != nil];
+}
+
+- (void)scrollToSelectionValueAnimated:(BOOL)animated;
+{
     // Don't check every color, just the most important one.
-    OQColor *color = selectionValue.firstValue;
+    OQColor *color = self.selectionValue.firstValue;
     
     // Note the location of the first matching view, so we can scroll to it.
     CGRect rectToScrollTo = CGRectNull;
@@ -73,17 +77,14 @@ RCS_ID("$Id$");
             
             if (CGRectIsNull(rectToScrollTo) && [swatchPicker hasMatchForColor:color]) {
                 rectToScrollTo = [self.view convertRect:swatchPicker.bounds fromView:swatchPicker];
-                rectToScrollTo = CGRectInset(rectToScrollTo, 0, -16); // UIScrollView scrolls as little as needed; include some padding.
+                rectToScrollTo = CGRectInset(rectToScrollTo, 0, -32); // UIScrollView scrolls as little as needed; include some padding.
             }
         }
     }
     
-    if(!CGRectIsNull(rectToScrollTo))
-    {
-        BOOL animate = (self.view.window != nil);
-        [(UIScrollView *)self.view scrollRectToVisible:rectToScrollTo animated:animate];
+    if (!CGRectIsNull(rectToScrollTo)) {
+        [OB_CHECKED_CAST(UIScrollView, self.view) scrollRectToVisible:rectToScrollTo animated:animated];
     }
-
 }
 
 #pragma mark -
@@ -118,13 +119,15 @@ RCS_ID("$Id$");
     const CGFloat kLabelToPaletteSpacing = 5;
     const CGFloat kInterThemeSpacing = 12;
     
-    UIFont *labelFont = [UIFont fontWithName:@"Helvetica Neue" size:16];
+    UIFont *labelFont = [UIFont systemFontOfSize:[UIFont labelFontSize]];
     UIScrollView *view = (UIScrollView *)self.view;
     
     // Don't select every color, just the most important one.
     OQColor *singleSelectedColor = self.selectionValue.firstValue;
     
     CGRect viewBounds = view.bounds;
+    viewBounds.size.width = 320;
+    
     CGFloat xOffset = 8;
     CGFloat yOffset = CGRectGetMinY(view.bounds) + kInterThemeSpacing;
     NSMutableArray *themeViews = [NSMutableArray array];

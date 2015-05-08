@@ -1,4 +1,4 @@
-// Copyright 2010-2013 The Omni Group. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -10,8 +10,6 @@
 #import <OmniUI/OUIInspectorSlice.h>
 #import <OmniUI/OUIInspector.h>
 #import <OmniBase/OmniBase.h>
-
-#import <UIKit/UIPopoverController.h>
 
 RCS_ID("$Id$");
 
@@ -59,20 +57,40 @@ OBDEPRECATED_METHOD(-updateInterfaceFromInspectedObjects); // -> -updateInterfac
     OBPRECONDITION(_weak_inspector); // should have been set by now
     
     [super viewWillAppear:animated];
-    
     [self updateInterfaceFromInspectedObjects:OUIInspectorUpdateReasonDefault];
+}
+
+- (void)viewDidAppear:(BOOL)animated;
+{
+    [super viewDidAppear:animated];
+    self.inspector.animatingPushOrPop = NO;
 }
 
 - (void)viewWillDisappear:(BOOL)animated
 {
     [super viewWillDisappear:animated];
+    self.inspector.animatingPushOrPop = YES;
     
     [[self view] endEditing:YES];
+}
+
+- (void)viewDidDisappear:(BOOL)animated
+{
+    [super viewDidDisappear:animated];
+    self.inspector.animatingPushOrPop = NO;
 }
 
 - (BOOL)shouldAutorotate;
 {
     return YES;
+}
+
+- (void)willTransitionToTraitCollection:(UITraitCollection *)newCollection withTransitionCoordinator:(id <UIViewControllerTransitionCoordinator>)coordinator NS_AVAILABLE_IOS(8_0);
+{
+    // no fancy logic just dismiss the inspector
+    [self.inspector dismiss];
+
+    [super willTransitionToTraitCollection:newCollection withTransitionCoordinator:coordinator];
 }
 
 @end

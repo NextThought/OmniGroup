@@ -1,4 +1,4 @@
-// Copyright 2010-2013 The Omni Group. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -13,7 +13,9 @@
 #import <OmniUI/OUIInspector.h>
 #import <OmniUI/OUIInspectorSlice.h>
 #import <OmniUI/OUIInspectorSliceView.h>
+#import <OmniUI/OUIKeyboardNotifier.h>
 #import <OmniUI/OUIMinimalScrollNotifierImplementation.h>
+#import <OmniUI/UIViewController-OUIExtensions.h>
 
 #import "OUIParameters.h"
 
@@ -29,7 +31,7 @@ RCS_ID("$Id$");
 #endif
 
 
-static CGFloat _setSliceSizes(UIView *self, NSArray *_slices, NSSet *slicesToPostponeFrameSetting)
+static CGFloat _setSliceSizes(UIScrollView *self, NSArray *_slices, NSSet *slicesToPostponeFrameSetting)
 {
     CGFloat yOffset = 0.0;
     CGRect bounds = self.bounds;
@@ -93,7 +95,8 @@ static CGFloat _setSliceSizes(UIView *self, NSArray *_slices, NSSet *slicesToPos
     totalHeight += [[_slices lastObject] paddingToInspectorBottom];
     
     // 2) set the height of all UIViewAutoresizingFlexibleHeight slice views and set the yOffset of each slice
-    CGFloat remainingHeight = bounds.size.height - totalHeight;
+    UIEdgeInsets contentInset = self.contentInset;
+    CGFloat remainingHeight = bounds.size.height - totalHeight - contentInset.top - contentInset.bottom;
     NSUInteger resizableSliceCount = resizableSlices.count;
 
     // Make sure we have enough to hand out to the slices that want it.
@@ -216,7 +219,7 @@ static id _commonInit(OUIStackedSlicesInspectorPaneContentView *self)
     
     CGFloat yOffset = _setSliceSizes(self, _slices, nil);
     
-    self.contentSize = CGSizeMake(bounds.size.width, yOffset);
+    self.contentSize = CGSizeMake(bounds.size.width, yOffset + 50);
 
     // Have to do this after the previous adjustments or the background view can get stuck scrolled part way down when we become unscrollable.
     _backgroundView.frame = self.bounds;
@@ -232,16 +235,6 @@ static id _commonInit(OUIStackedSlicesInspectorPaneContentView *self)
 
 @property(nonatomic,copy) NSArray *slices;
 
-- (void)_stackedSlicesInspectorPane_keyboardWillShow:(NSNotification *)notification;
-- (void)_stackedSlicesInspectorPane_keyboardDidShow:(NSNotification *)notification;
-
-- (void)_stackedSlicesInspectorPane_textFieldTextDidBeginEditing:(NSNotification *)notification;
-- (void)_stackedSlicesInspectorPane_textViewTextDidBeginEditing:(NSNotification *)notification;
-- (void)_stackedSlicesInspectorPane_textViewDidBeginEditing:(NSNotification *)notification;
-
-- (void)_scrollFirstResponderIntoView;
-- (UIView *)_findFirstResponderStartingAtView:(UIView *)view;
-
 @end
 
 @implementation OUIStackedSlicesInspectorPane
@@ -249,7 +242,6 @@ static id _commonInit(OUIStackedSlicesInspectorPaneContentView *self)
     NSArray *_slices;
     id <OUIScrollNotifier> _scrollNotifier;
     BOOL _isAnimating;
-    BOOL _keyboardIsAppearing;
 }
 
 + (instancetype)stackedSlicesPaneWithAvailableSlices:(OUIInspectorSlice *)slice, ...;
@@ -280,12 +272,7 @@ static id _commonInit(OUIStackedSlicesInspectorPaneContentView *self)
 
 - (void)dealloc;
 {
-    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-    [nc removeObserver:self name:UIKeyboardWillShowNotification object:nil];
-    [nc removeObserver:self name:UIKeyboardDidShowNotification object:nil];
-    [nc removeObserver:self name:UITextFieldTextDidBeginEditingNotification object:nil];
-    [nc removeObserver:self name:UITextViewTextDidBeginEditingNotification object:nil];
-    [nc removeObserver:self name:UITextViewTextDidBeginEditingNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (void)setSliceAlignmentInsets:(UIEdgeInsets)newValue;
@@ -333,22 +320,8 @@ static id _commonInit(OUIStackedSlicesInspectorPaneContentView *self)
     }
 }
 
-- (NSArray *)appropriateSlicesForInspectedObjects;
+- (NSArray *)appropriateSlices:(NSArray *)availableSlices forInspectedObjects:(NSArray *)inspectedObjects;
 {
-    // Only fill the _availableSlices once. This allows the delegate/subclass to return an autoreleased array that isn't stored in a static (meaning that they can go away on a low memory warning). If we fill this multiple times, then we'll get confused and replace the slices constantly (since we do pointer equality in -setSlices:.
-    if (!_availableSlices) {
-        _availableSlices = [[self.inspector makeAvailableSlicesForStackedSlicesPane:self] copy];
-    }
-    
-    // TODO: Add support for this style of use in the superclass? There already is in the delegate-based path.
-    if (!_availableSlices) {
-        _availableSlices = [[self makeAvailableSlices] copy];
-        OBASSERT([_availableSlices count] > 0); // Didn't get slices from the delegate or a subclass!
-    }
-
-    // can be empty if the inspector is being closed
-    NSArray *inspectedObjects = self.inspectedObjects;
-    
     NSMutableArray *appropriateSlices = [NSMutableArray array];
     OUIInspectorSlice *previousSlice = nil;
     for (OUIInspectorSlice *slice in _availableSlices) {
@@ -358,7 +331,7 @@ static id _commonInit(OUIStackedSlicesInspectorPaneContentView *self)
                 continue;
             }
         }
-
+        
         if (![slice isAppropriateForInspectorPane:self]) {
             continue;
         }
@@ -378,8 +351,27 @@ static id _commonInit(OUIStackedSlicesInspectorPaneContentView *self)
     if ([appropriateSlices.lastObject isKindOfClass:[OUIEmptyPaddingInspectorSlice class]]) {
         [appropriateSlices removeLastObject];
     }
-
+    
     return appropriateSlices;
+}
+
+- (NSArray *)appropriateSlicesForInspectedObjects;
+{
+    // Only fill the _availableSlices once. This allows the delegate/subclass to return an autoreleased array that isn't stored in a static (meaning that they can go away on a low memory warning). If we fill this multiple times, then we'll get confused and replace the slices constantly (since we do pointer equality in -setSlices:.
+    if (!_availableSlices) {
+        _availableSlices = [[self.inspector makeAvailableSlicesForStackedSlicesPane:self] copy];
+    }
+    
+    // TODO: Add support for this style of use in the superclass? There already is in the delegate-based path.
+    if (!_availableSlices) {
+        _availableSlices = [[self makeAvailableSlices] copy];
+        OBASSERT([_availableSlices count] > 0); // Didn't get slices from the delegate or a subclass!
+    }
+    
+    // can be empty if the inspector is being closed
+    NSArray *inspectedObjects = self.inspectedObjects;
+    
+    return [self appropriateSlices:_availableSlices forInspectedObjects:inspectedObjects];
 }
 
 static void _removeSlice(OUIStackedSlicesInspectorPane *self, OUIStackedSlicesInspectorPaneContentView *view, OUIInspectorSlice *slice)
@@ -671,11 +663,7 @@ static void _removeSlice(OUIStackedSlicesInspectorPane *self, OUIStackedSlicesIn
     // It would be nice if we could just observe first responder changes, but there is no API for that.
     // We could probably swizzling UIResponder, and send out notifications ourselves. For now, just do it the duplicative way for the three common cases.
     NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-    [nc addObserver:self selector:@selector(_stackedSlicesInspectorPane_keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
-    [nc addObserver:self selector:@selector(_stackedSlicesInspectorPane_keyboardDidShow:) name:UIKeyboardDidShowNotification object:nil];
-    [nc addObserver:self selector:@selector(_stackedSlicesInspectorPane_textFieldTextDidBeginEditing:) name:UITextFieldTextDidBeginEditingNotification object:nil];
-    [nc addObserver:self selector:@selector(_stackedSlicesInspectorPane_textViewTextDidBeginEditing:) name:UITextViewTextDidBeginEditingNotification object:nil];
-    [nc addObserver:self selector:@selector(_stackedSlicesInspectorPane_textViewDidBeginEditing:) name:UITextViewTextDidBeginEditingNotification object:nil];
+    [nc addObserver:self selector:@selector(_stackedSlicesInspectorPane_keyboardWillChangeFrame:) name:OUIKeyboardNotifierKeyboardWillChangeFrameNotification object:[OUIKeyboardNotifier sharedNotifier]];
 }
 
 - (void)viewWillAppear:(BOOL)animated;
@@ -697,61 +685,38 @@ static void _removeSlice(OUIStackedSlicesInspectorPane *self, OUIStackedSlicesIn
 #pragma mark -
 #pragma mark Keyboard Interaction
 
-- (void)_stackedSlicesInspectorPane_keyboardWillShow:(NSNotification *)notification;
+- (void)_stackedSlicesInspectorPane_keyboardWillChangeFrame:(NSNotification *)note;
 {
-    _keyboardIsAppearing = YES;
-}
-
-- (void)_stackedSlicesInspectorPane_keyboardDidShow:(NSNotification *)notification;
-{
-    _keyboardIsAppearing = NO;
-    [self _scrollFirstResponderIntoView];
-}
-
-- (void)_stackedSlicesInspectorPane_textFieldTextDidBeginEditing:(NSNotification *)notification;
-{
-    if (!_keyboardIsAppearing)
-        [self _scrollFirstResponderIntoView];
-}
-
-- (void)_stackedSlicesInspectorPane_textViewTextDidBeginEditing:(NSNotification *)notification;
-{
-    if (!_keyboardIsAppearing)
-        [self _scrollFirstResponderIntoView];
-}
-
-- (void)_stackedSlicesInspectorPane_textViewDidBeginEditing:(NSNotification *)notification;
-{
-    if (!_keyboardIsAppearing)
-        [self _scrollFirstResponderIntoView];
-}
-
-- (void)_scrollFirstResponderIntoView;
-{
-    if (![self isViewLoaded] || !self.contentView.window)
+    // We want to add bottom content inset ONLY if we're not being presented as popover.
+    UIPresentationController *inspectorPresentationController = self.navigationController.presentationController;
+    UITraitCollection *presentingTraitCollection = inspectorPresentationController.presentingViewController.traitCollection;
+    
+    BOOL shouldTreatAsPopover = NO;
+    
+#if !defined(__IPHONE_8_3) || (__IPHONE_8_3 > __IPHONE_OS_VERSION_MAX_ALLOWED)
+    // iOS 8.2 and before
+    shouldTreatAsPopover = (presentingTraitCollection.horizontalSizeClass == UIUserInterfaceSizeClassRegular);
+#else
+    // iOS 8.3 and after
+    shouldTreatAsPopover = (presentingTraitCollection.horizontalSizeClass == UIUserInterfaceSizeClassRegular) && (presentingTraitCollection.verticalSizeClass == UIUserInterfaceSizeClassRegular);
+#endif
+    
+    if (shouldTreatAsPopover) {
         return;
-    
-    UIView *firstResponder = [self _findFirstResponderStartingAtView:self.contentView];
-    if (firstResponder) {
-        const CGFloat MARGIN_SLOP = 20;
-        OUIStackedSlicesInspectorPaneContentView *view = (OUIStackedSlicesInspectorPaneContentView *)self.contentView;
-        CGRect rect = CGRectInset([view convertRect:firstResponder.bounds fromView:firstResponder], -MARGIN_SLOP, -MARGIN_SLOP);
-        [view scrollRectToVisible:rect animated:YES];
-    }
-}
-
-- (UIView *)_findFirstResponderStartingAtView:(UIView *)view;
-{
-    if ([view isFirstResponder])
-        return view;
-
-    for (UIView *subview in view.subviews) {
-        UIView *firstResponder = [self _findFirstResponderStartingAtView:subview];
-        if (firstResponder)
-            return firstResponder;
     }
     
-    return nil;
+    // Add content inset to bottom of scroll view.
+    OUIStackedSlicesInspectorPaneContentView *view = (OUIStackedSlicesInspectorPaneContentView *)self.contentView;
+    
+    OUIKeyboardNotifier *notifier = [OUIKeyboardNotifier sharedNotifier];
+    UIEdgeInsets insets = view.contentInset;
+    insets.bottom = notifier.lastKnownKeyboardHeight;
+    
+    
+    [UIView animateWithDuration:notifier.lastAnimationDuration animations:^{
+        [UIView setAnimationCurve:notifier.lastAnimationCurve];
+        view.contentInset = insets;
+    }];
 }
 
 @end

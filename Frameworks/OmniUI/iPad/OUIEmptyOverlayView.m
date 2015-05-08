@@ -1,4 +1,4 @@
-// Copyright 2010-2013 The Omni Group. All rights reserved.
+// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -6,15 +6,17 @@
 // <http://www.omnigroup.com/developer/sourcecode/sourcelicense/>.
 
 #import <OmniUI/OUIEmptyOverlayView.h>
-
-#import "OUIParameters.h"
+#import <OmniUI/OUIAppearanceColors.h>
 
 RCS_ID(")$Id$");
 
 @interface OUIEmptyOverlayView ()
 
+- (IBAction)_buttonTapped:(id)sender;
+
 @property (nonatomic, retain) IBOutlet UILabel *messageLabel;
 @property (nonatomic, retain) IBOutlet UIButton *button;
+@property (nonatomic, strong) IBOutlet NSLayoutConstraint *buttonWidth;
 
 @end
 
@@ -48,13 +50,21 @@ RCS_ID(")$Id$");
 {
     OBASSERT_NOTNULL(_messageLabel);
     _messageLabel.text = message;
-    _messageLabel.preferredMaxLayoutWidth = kOUIEmptyOverlayViewMessagePreferredMaxLayoutWidth;
-    _messageLabel.textColor = [UIColor colorWithWhite:0.502 alpha:0.750];
+    _messageLabel.textColor = [OUIAppearanceDefaultColors appearance].omniNeutralPlaceholderColor;
     
     OBASSERT_NOTNULL(_button);
     [_button setTitle:buttonTitle forState:UIControlStateNormal];
-    _button.titleLabel.font = [UIFont boldSystemFontOfSize:18.0];
-    [_button addTarget:self action:@selector(_buttonTapped:) forControlEvents:UIControlEventTouchUpInside];
+    _button.titleLabel.textAlignment = NSTextAlignmentCenter;
+    _button.tintColor = [UIColor blackColor];
+    self.buttonWidth = [NSLayoutConstraint constraintWithItem:_button
+                                                    attribute:NSLayoutAttributeWidth
+                                                    relatedBy:NSLayoutRelationEqual
+                                                       toItem:nil
+                                                    attribute:NSLayoutAttributeNotAnAttribute
+                                                   multiplier:1.0f
+                                                     constant:[self preferredLayoutWidth]];
+    [self addConstraint:self.buttonWidth];
+    
     
 #if 0 && defined(DEBUG_jake)
     self.backgroundColor = [[UIColor redColor] colorWithAlphaComponent:0.4];
@@ -63,6 +73,29 @@ RCS_ID(")$Id$");
 #endif
     
     _action = action;
+}
+
+- (CGFloat)preferredLayoutWidth{
+    return self.bounds.size.width * [OUIAppearance appearance].emptyOverlayViewLabelMaxWidthRatio;
+}
+
+- (void)layoutSubviews;
+{
+    // -layoutSubviews should be called after our superview has been laid out (and our own frame has therefore been determined and set).
+    _messageLabel.preferredMaxLayoutWidth = [self preferredLayoutWidth];
+    if (self.buttonWidth.constant != _messageLabel.preferredMaxLayoutWidth) {
+        self.buttonWidth.constant = _messageLabel.preferredMaxLayoutWidth;
+    }
+    [super layoutSubviews];
+}
+
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event;
+{
+    UIView *hitView = [super hitTest:point withEvent:event];
+    if (hitView == self)
+        return nil;
+    else
+        return hitView;
 }
 
 #pragma mark - Helpers

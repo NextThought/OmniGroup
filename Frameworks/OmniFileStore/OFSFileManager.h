@@ -1,4 +1,4 @@
-// Copyright 2008-2013 Omni Development, Inc. All rights reserved.
+// Copyright 2008-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -10,6 +10,7 @@
 #import <Foundation/NSObject.h>
 
 @protocol ODAVAsynchronousOperation;
+@protocol OFByteProvider;
 
 extern NSInteger OFSFileManagerDebug;
 
@@ -23,6 +24,7 @@ extern NSInteger OFSFileManagerDebug;
 
 @property(nonatomic,readonly) NSURL *baseURL;
 @property(nonatomic,weak,readonly) id <OFSFileManagerDelegate> delegate;
+@property(nonatomic,readonly) NSString *locationDescription;
 
 - (void)invalidate;
 
@@ -63,6 +65,11 @@ extern NSInteger OFSFileManagerDebug;
 
 // Failure due to the URL not existing will be mapped to OFSNoSuchFile (with an underlying Cocoa/POSIX or HTTP error).
 - (BOOL)deleteURL:(NSURL *)url error:(NSError **)outError;
+
+@optional
+
+- (NSObject <OFByteProvider> *)byteProviderWithContentsOfURL:(NSURL *)url error:(NSError **)outError;
+
 
 @end
 

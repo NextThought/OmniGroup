@@ -1,4 +1,4 @@
-// Copyright 2000-2005, 2007-2008, 2010, 2013 Omni Development, Inc. All rights reserved.
+// Copyright 2000-2005, 2007-2008, 2010, 2013-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -12,14 +12,19 @@
 
 @class NSDictionary, NSMutableDictionary;
 @class OFXMLDocument, OFXMLCursor;
+@class OAColorSpaceManager;
 
 @interface NSColor (OAExtensions)
 
 + (NSColor *)colorFromPropertyListRepresentation:(NSDictionary *)dict; // When specifying colors by component, values for abbreviated keys (@"r", @"g", etc.) are floats in [0, 1]. Spelled-out keys (@"red", @"green") are integers in the natural range of the value ([0, 255] for RGB, [0, 100] for HSB and CMYK, [0, 100] for alpha).
 
++ (NSColor *)colorFromPropertyListRepresentation:(NSDictionary *)dict withColorSpaceManager:(OAColorSpaceManager *)manager;
+
 - (NSMutableDictionary *)propertyListRepresentationWithStringComponentsOmittingDefaultValues:(BOOL)omittingDefaultValues;
 - (NSMutableDictionary *)propertyListRepresentationWithNumberComponentsOmittingDefaultValues:(BOOL)omittingDefaultValues;
 - (NSMutableDictionary *)propertyListRepresentation; // deprecated
+- (NSMutableDictionary *)propertyListRepresentationWithColorSpaceManager:(OAColorSpaceManager *)manager;
+// If 'manager' is nil, we use the old behavior of fully archiving colors with unknown colorspaces.
 
 - (BOOL)isSimilarToColor:(NSColor *)color;
 - (BOOL)isPatternSimilarToColorPattern:(NSColor *)color;
@@ -37,7 +42,6 @@
 + (NSString *)xmlElementName;
 - (void) appendXML:(OFXMLDocument *)doc;
 + (NSColor *)colorFromXML:(OFXMLCursor *)cursor;
-+ (NSColor *)colorFromXMLTreeRef:(CFXMLTreeRef)treeRef OB_DEPRECATED_ATTRIBUTE;
 
 @end
 

@@ -1,4 +1,4 @@
-// Copyright 2014 Omni Development, Inc. All rights reserved.
+// Copyright 2014-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -46,7 +46,7 @@ RCS_ID("$Id$")
         toView.frame = [transitionContext finalFrameForViewController:toController];
     } completion:^(BOOL finished) {
         if (finished) {
-            if (YES || self.fromTextView) {
+            if (/* DISABLES CODE */ (YES) || self.fromTextView) {
                 toController.textView.editable = YES; //[self.fromTextView isEditable];
             }
             
@@ -57,7 +57,7 @@ RCS_ID("$Id$")
             }
         }
         
-        [transitionContext completeTransition:finished];
+        [transitionContext completeTransition:![transitionContext transitionWasCancelled]];
     }];
 }
 
@@ -80,7 +80,7 @@ RCS_ID("$Id$")
         
     } completion:^(BOOL finished) {
         [self.fromTextView resignFirstResponder];
-        [transitionContext completeTransition:finished];
+        [transitionContext completeTransition:![transitionContext transitionWasCancelled]];
     }];
 }
 

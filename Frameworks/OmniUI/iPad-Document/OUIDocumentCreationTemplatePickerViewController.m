@@ -1,4 +1,4 @@
-// Copyright 2010-2013 Omni Development, Inc. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -17,6 +17,7 @@
 #import <OmniUIDocument/OUIDocumentPickerItemView.h>
 #import <OmniUIDocument/OUIDocumentPickerFileItemView.h>
 #import <OmniUIDocument/OUIDocumentPickerFilter.h>
+#import <OmniUI/OUIEmptyOverlayView.h>
 
 RCS_ID("$Id$");
 
@@ -26,7 +27,6 @@ RCS_ID("$Id$");
 @end
 
 @interface OUIDocumentCreationTemplatePickerViewController ()
-
 @end
 
 @implementation OUIDocumentCreationTemplatePickerViewController
@@ -39,6 +39,12 @@ RCS_ID("$Id$");
     _type = type;
 
     return self;
+}
+
+- (void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:YES];
+    self.displayedTitleString = NSLocalizedStringFromTableInBundle(@"Choose a Template", @"OmniUIDocument", OMNI_BUNDLE, @"toolbar prompt when choosing a template");
+    [self scrollToTopAnimated:YES];
 }
 
 - (void)_cancelChooseTemplate:(id)sender;
@@ -59,10 +65,16 @@ RCS_ID("$Id$");
     return nil;
 }
 
-- (OUIEmptyOverlayView *)emptyOverlayView;
+- (OUIEmptyOverlayView *)newEmptyOverlayView;
 {
-    // TODO: It might be nice to show a 'no templates' bit here, or just not show this view controller at all in the case that there are no templates.
-    return nil;
+    NSString *buttonTitle = NSLocalizedStringFromTableInBundle(@"Tap here to add a document without a template.", @"OmniUIDocument", OMNI_BUNDLE, @"empty template picker button text");
+    
+    __weak OUIDocumentPickerViewController *weakSelf = self;
+    OUIEmptyOverlayView *_templatePickerEmptyOverlayView = [OUIEmptyOverlayView overlayViewWithMessage:nil buttonTitle:buttonTitle action:^{
+        [weakSelf newDocumentWithTemplateFileItem:nil];
+    }];
+    
+    return _templatePickerEmptyOverlayView;
 }
 
 + (OUIDocumentPickerFilter *)selectedFilterForPicker:(OUIDocumentPicker *)picker;
@@ -70,9 +82,10 @@ RCS_ID("$Id$");
     id <OUIDocumentPickerDelegate> delegate = picker.delegate;
     if ([delegate respondsToSelector:@selector(documentPickerTemplateDocumentFilter:)]) {
         OUIDocumentPickerFilter *templateFilter = [delegate documentPickerTemplateDocumentFilter:picker];
-        NSPredicate *predicate = templateFilter.predicate;
-        templateFilter.predicate = [NSPredicate predicateWithBlock:^BOOL(id evaluatedObject, NSDictionary *bindings) {
-            if (![predicate evaluateWithObject:evaluatedObject])
+
+        // Return a new filter with an extra not-in-trash check in the predicate. The new document template picker should never show any of the strings, but we'll keep the other properties too.
+        NSPredicate *predicate = [NSPredicate predicateWithBlock:^BOOL(id evaluatedObject, NSDictionary *bindings) {
+            if (![templateFilter.predicate evaluateWithObject:evaluatedObject])
                 return NO;
             // filter out fileItems in the trash.
             ODSItem *item = evaluatedObject;
@@ -82,7 +95,7 @@ RCS_ID("$Id$");
                 return YES;
         }];
 
-        return templateFilter;
+        return [[OUIDocumentPickerFilter alloc] initWithIdentifier:templateFilter.identifier imageName:templateFilter.identifier predicate:predicate localizedFilterChooserButtonLabel:templateFilter.localizedFilterChooserButtonLabel localizedFilterChooserShortButtonLabel:templateFilter.localizedFilterChooserShortButtonLabel localizedMatchingObjectsDescription:templateFilter.localizedMatchingObjectsDescription];
     }
     return nil;
 }
@@ -116,7 +129,6 @@ RCS_ID("$Id$");
 
     UINavigationItem *navigationItem = self.navigationItem;
 
-    navigationItem.title = NSLocalizedStringFromTableInBundle(@"Choose a Template", @"OmniUIDocument", OMNI_BUNDLE, @"toolbar prompt when choosing a template");
     [navigationItem setLeftBarButtonItem:[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel target:self action:@selector(_cancelChooseTemplate:)] animated:animated];
     [navigationItem setRightBarButtonItem:nil animated:animated];
 }
@@ -149,7 +161,7 @@ RCS_ID("$Id$");
         }
 
         [self _beginIgnoringDocumentsDirectoryUpdates]; // prevent the possibility of the newly created document showing up in the template chooser.  This will only happen if you are creating a new template.
-        [self newDocumentWithTemplateURL:fileItem.fileURL documentType:self.type];
+        [self newDocumentWithTemplateFileItem:fileItem documentType:self.type];
         // do not call _endIgnoringDocumentsDirectoryUpdates.  Otherwise we will get updates before we animate away opening the document.  We will not be returning to this view controller so this should not be an issue.
     }
 }

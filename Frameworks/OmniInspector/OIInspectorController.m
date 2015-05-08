@@ -1,4 +1,4 @@
-// Copyright 2002-2008, 2010-2012, 2014 Omni Development, Inc. All rights reserved.
+// Copyright 2002-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -46,7 +46,7 @@ NSString * const OIInspectorControllerDidChangeExpandednessNotification = @"OIIn
 
 @end
 
-NSComparisonResult sortByDefaultDisplayOrderInGroup(OIInspectorController *a, OIInspectorController *b, void *context)
+NSComparisonResult OISortByDefaultDisplayOrderInGroup(OIInspectorController *a, OIInspectorController *b)
 {
     NSUInteger aOrder = [[a inspector] defaultOrderingWithinGroup];
     NSUInteger bOrder = [[b inspector] defaultOrderingWithinGroup];
@@ -447,6 +447,10 @@ NSComparisonResult sortByDefaultDisplayOrderInGroup(OIInspectorController *a, OI
 {
     [self _buildHeadingView];
     
+    if (!self.isExpanded && self.interfaceType == OIInspectorInterfaceTypeFloating) {
+        [window setContentSize:headingButton.frame.size];
+    }
+
     [[self containerView] addSubview:headingButton];
     
     headingBackground = [[OIInspectorHeaderBackground alloc] initWithFrame:[headingButton frame]];
@@ -456,12 +460,18 @@ NSComparisonResult sortByDefaultDisplayOrderInGroup(OIInspectorController *a, OI
 }
 
 #pragma mark - Private
+// Added this so that Graffle could update it's header look to yosemite
+// Can go away when that is resolved
+- (Class)headingButtonClass;
+{
+    return [OIInspectorHeaderView class];
+}
 
 - (void)_buildHeadingView;
 {
     OBPRECONDITION(headingButton == nil);
     
-    headingButton = [[OIInspectorHeaderView alloc] initWithFrame:NSMakeRect(0.0f, OIInspectorSpaceBetweenButtons,
+    headingButton = [[[self headingButtonClass] alloc] initWithFrame:NSMakeRect(0.0f, OIInspectorSpaceBetweenButtons,
                                                                             [self.inspectorRegistry inspectorWidth],
                                                                             OIInspectorStartingHeaderButtonHeight)];
     [headingButton setTitle:[inspector displayName]];
@@ -559,7 +569,7 @@ NSComparisonResult sortByDefaultDisplayOrderInGroup(OIInspectorController *a, OI
             // If no inspectors were previously visible, the inspector registry's selection set may not be up-to-date, so tell it to update
             // (an alternate approach would be to have the registry keep track of whether or not it was up to date, and here we would simply tell the registry to update if it needed to, rather than us basing this off of whether or not any inspectors were previously visible, thus requiring us to know that -[OIInspectorRegistry _recalculateInspectorsAndInspectWindow] doesn't do anything if no inspectors are visible)
             if (!hadVisibleInspectors)
-                [OIInspectorRegistry updateInspectorForWindow:[NSApp mainWindow]];
+                [OIInspectorRegistry updateInspectorForWindow:[[NSApplication sharedApplication] mainWindow]];
             [self updateInspector]; // call this first because the view could change sizes based on the selection in -updateInspector
         }
             
@@ -746,20 +756,27 @@ NSComparisonResult sortByDefaultDisplayOrderInGroup(OIInspectorController *a, OI
 
 - (NSUndoManager *)windowWillReturnUndoManager:(NSWindow *)aWindow;
 {
-    NSWindow *mainWindow;
-    NSResponder *nextResponder;
-    NSUndoManager *undoManager = nil;
-    
-    mainWindow = [NSApp mainWindow];
-    nextResponder = [mainWindow firstResponder];
+    NSWindow *mainWindow = [[NSApplication sharedApplication] mainWindow];
+    NSResponder *nextResponder = [mainWindow firstResponder];
     if (nextResponder == nil)
         nextResponder = mainWindow;
     
+    NSUndoManager *(^getUndoManager)(id object) = ^NSUndoManager *(id object){
+        if ([object respondsToSelector:@selector(undoManager)])
+            return [object undoManager];
+        
+        if ([nextResponder respondsToSelector:@selector(delegate)]) {
+            id delegate = [(id)nextResponder delegate];
+            if ([delegate respondsToSelector:@selector(undoManager)]) {
+                return [delegate undoManager];
+            }
+        }
+        return nil;
+    };
+    
+    NSUndoManager *undoManager = nil;
     do {
-        if ([nextResponder respondsToSelector:@selector(undoManager)])
-            undoManager = [nextResponder undoManager];
-        else if ([nextResponder respondsToSelector:@selector(delegate)] && [[(id)nextResponder delegate] respondsToSelector:@selector(undoManager)])
-            undoManager = [[(id)nextResponder delegate] undoManager];
+        undoManager = getUndoManager(nextResponder);
         nextResponder = [nextResponder nextResponder];
     } while (nextResponder && !undoManager);
     

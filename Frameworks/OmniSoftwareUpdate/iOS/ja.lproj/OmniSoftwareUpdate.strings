@@ -1,44 +1,126 @@
-﻿/* error description */
-"%s is not reachable." = "%s に接続できません。";
+/* Software update report format for number of cores in the CPU */
+"%@ cores" = "%@ 個のコア";
+
+/* Software update report entry string for multiple crashes */
+"%ld crashes" = "クラッシュ %ld 回";
+
+/* Software update report entry string for a multiple hours of use */
+"%ld hours" = "%ld 時間";
+
+/* Software update report entry string for a single launch */
+"%ld launches" = "起動 %ld 回";
+
+/* Software update report entry string for a multiple minutes of use */
+"%ld minutes" = "%ld 分";
+
+/* Software update report entry name for information about the runs of all versions of the app */
+"All versions" = "すべてのバージョン";
+
+/* Software update report entry name */
+"App ID" = "アプリ ID";
+
+/* Software update report entry name */
+"App version" = "アプリのバージョン";
 
 /* error reason - tried to run a check operation to fetch software update information, but it exited with an error code */
-"Check operation failed." = "チェック操作に失敗しました。";
+"Check operation failed." = "確認操作に失敗しました。";
 
-/* error text generated when software update is unable to retrieve the list of current software versions */
-"Could not contact %s." = "%s に接続できませんでした。";
+/* Software update report entry name */
+"CPU" = "CPU";
+
+/* Software update report entry name */
+"Device" = "デバイス";
+
+/* software update settings section title
+   software update settings title */
+
+"Device Information" = "デバイス情報";
 
 /* error description */
-"Error fetching software update information." = "ソフトウェアアップデート情報の取得中にエラー";
+"Error fetching software update information." = "ソフトウェアアップデート情報を取得するときにエラー発生。";
 
 /* error description */
-"Error while checking for updated version." = "更新されたバージョンの確認中にエラー";
+"Error while checking for updated version." = "更新バージョンの有無を確認するときにエラー発生。";
 
 /* error reason */
-"Exception raised: %@" = "例外が発生: %@";
+"Exception raised: %@" = "例外処理： %@";
+
+/* software update settings cell detail text */
+"Help The Omni Group decide which devices and iOS versions to support" = "サポートするデバイスや iOS バージョンの決定にご協力ください";
+
+/* Settings preferences detail text */
+"If you choose to share this information, you’ll be helping keep us informed of which devices and iOS versions our software should support.\nThis information is kept entirely anonymous." = "この情報を提供していただくことにより、弊社はその情報を基にして、弊社ソフトウェアがサポートすべきデバイスおよび iOS バージョンを判断いたします。\nこの情報は完全に匿名として扱われます。";
+
+/* Software update report entry name */
+"iOS version" = "iOS バージョン";
+
+/* Software update report entry name */
+"Language" = "言語";
+
+/* Software update report entry name */
+"Memory" = "メモリ";
+
+/* Software update report entry string for a single crash */
+"One crash" = "クラッシュ 1 回";
+
+/* Software update report entry string for a single hour of use */
+"One hour" = "1 時間";
+
+/* Software update report entry string for a single launch */
+"One launch" = "起動 1 回";
+
+/* Software update report entry string for a single minute of use */
+"One minute" = "1 分";
 
 /* error reason */
-"Please try again later or contact us to let us know this is broken." = "後ほどやり直すか、テクニカルサポートまでご連絡ください。";
+"Please try again later or contact us to let us know this is broken." = "しばらくしてからやり直すか、またはサポートまでご連絡ください。";
+
+/* Software update report entry name */
+"Report ID" = "レポート ID";
+
+/* Software update report entry name */
+"Report version" = "レポートのバージョン";
+
+/* Settings option title
+   software update settings cell title */
+
+"Send Anonymous Data" = "匿名データを送信";
+
+/* software update settings menu title */
+"Settings" = "設定";
+
+/* Software update report entry name */
+"Storage" = "ストレージ";
+
+/* error reason */
+"The background software update service failed." = "バックグラウンドのソフトウェアアップデートサービスに失敗しました。";
 
 /* error description */
 "The data returned from <%@> was not a valid XML document." = "<%@> から返されたデータは有効な XML 書類ではありませんでした。";
 
+/* Settings option title */
+"The following information will be sent:" = "以下の情報が送信されます：";
+
 /* error description - the update information wasn't signed at all, but we require it to be signed */
-"The update information is not signed." = "アップデート情報に署名がありません。";
+"The update information is not signed." = "このアップデート情報には署名がありません。";
 
 /* error description - the checksum or signature didn't match - more info in underlying error */
 "There was a problem checking the signature." = "署名の確認で問題がありました。";
 
+/* Software update report entry name for information about the runs of the current version of the app */
+"This version" = "このバージョン";
+
+/* error reason */
+"Timed out waiting for the software update service." = "ソフトウェアアップデートサービスの待機中にタイムアウトしました。";
+
 /* error reason - we ran a helper tool to fetch software update information, but it didn't return any information */
-"Tool returned no data" = "ツールから何もデータが返されませんでした";
+"Tool returned no data" = "ツールからデータが返されませんでした";
 
 /* error description - we have some update information but it doesn't look authentic */
-"Unable to authenticate the response from the software update server." = "ソフトウェアアップデートサーバーからの応答を認証できません。";
+"Unable to authenticate the response from the software update server." = "ソフトウェアアップデートサーバからの応答を認証できません。";
 
 /* error description - will be followed by more detailed error reason */
-"Unable to fetch software update information." = "ソフトウェアアップデート情報を読み込めません。";
+"Unable to fetch software update information." = "ソフトウェアアップデート情報を取得できません。";
 
 /* error description */
-"Unable to parse response from the software update server." = "ソフトウェアアップデートサーバーからの応答を解釈できませんでした。";
-
-/* error text generated when software update is unable to retrieve the list of current software versions */
-"Your Internet connection might not be active, or there might be a problem somewhere along the network." = "インターネットへ接続していないか、ネットワークに問題がある可能性があります。";
+"Unable to parse response from the software update server." = "ソフトウェアアップデートサーバからの応答を解析できません。";

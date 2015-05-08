@@ -1,4 +1,4 @@
-// Copyright 2013 The Omni Group. All rights reserved.
+// Copyright 2013-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -18,6 +18,8 @@
 #import "OSUChecker.h"
 #import "OSUCheckOperation.h"
 #import "OSUHardwareInfo.h"
+#import "OSURunOperation.h"
+
 #import <mach-o/arch.h>
 
 RCS_ID("$Id$");
@@ -129,14 +131,24 @@ enum {
     OSUPreferencesTableViewLabel *_infoHeaderView;
 }
 
++ (NSString *)localizedSectionTitle;
+{
+    return NSLocalizedStringFromTableInBundle(@"Device Information", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"software update settings section title");
+}
+
 + (NSString *)localizedDisplayName;
 {
-    return NSLocalizedStringFromTableInBundle(@"Send anonymous device information", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"software update settings cell title");
+    return NSLocalizedStringFromTableInBundle(@"Send Anonymous Data", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"software update settings cell title");
 }
 
 + (NSString *)localizedDetailDescription;
 {
     return NSLocalizedStringFromTableInBundle(@"Help The Omni Group decide which devices and iOS versions to support", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"software update settings cell detail text");
+}
+
++ (NSString *)localizedLongDescription;
+{
+    return NSLocalizedStringFromTableInBundle(@"If you choose to share this information, you’ll be helping keep us informed of which devices and iOS versions our software should support.\nThis information is kept entirely anonymous.", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"Settings preferences detail text");
 }
 
 // Convenience to run w/o a parent navigation controller.
@@ -157,6 +169,11 @@ enum {
     }];
 }
 
++ (BOOL)sendAnonymousDeviceInformationEnabled;
+{
+    return [[OSUPreferences automaticSoftwareUpdateCheckEnabled] boolValue] && [[OSUPreferences includeHardwareDetails] boolValue];
+}
+
 - init;
 {
     return [self initWithStyle:UITableViewStyleGrouped];
@@ -169,8 +186,8 @@ enum {
     
     self.title = NSLocalizedStringFromTableInBundle(@"Device Information", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"software update settings title");
     
-    _settingFooterView = [[OSUPreferencesTableViewLabel alloc] initWithText:NSLocalizedStringFromTableInBundle(@"If you choose to share this information, you'll be helping keep us informed of which devices and iOS versions our software should support.\nThis information is kept entirely anonymous.", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"Settings preferences detail text") paddingOnTop:NO];
-    _settingFooterView.textAlignment = NSTextAlignmentCenter;
+    _settingFooterView = [[OSUPreferencesTableViewLabel alloc] initWithText:[[self class] localizedLongDescription] paddingOnTop:NO];
+    _settingFooterView.textAlignment = NSTextAlignmentLeft;
     
     _infoHeaderView = [[OSUPreferencesTableViewLabel alloc] initWithText:NSLocalizedStringFromTableInBundle(@"The following information will be sent:", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"Settings option title") paddingOnTop:YES];
 
@@ -207,8 +224,8 @@ enum {
         };
 
         addEntry(NSLocalizedStringFromTableInBundle(@"Report version", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"Software update report entry name"), [[OSUChecker OSUVersionNumber] originalVersionString]);
-        addEntry(NSLocalizedStringFromTableInBundle(@"Application identifier", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"Software update report entry name"), [checker applicationIdentifier]);
-        addEntry(NSLocalizedStringFromTableInBundle(@"Application version", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"Software update report entry name"), [checker applicationEngineeringVersion]);
+        addEntry(NSLocalizedStringFromTableInBundle(@"App ID", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"Software update report entry name"), [checker applicationIdentifier]);
+        addEntry(NSLocalizedStringFromTableInBundle(@"App version", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"Software update report entry name"), [checker applicationEngineeringVersion]);
     }
     
     // Entries from the report itself
@@ -271,7 +288,7 @@ enum {
             return [NSString abbreviatedStringForBytes:[bytes unsignedLongLongValue]];
         });
         
-        addEntry(OSUReportInfoUUIDKey, NSLocalizedStringFromTableInBundle(@"Report identifier", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"Software update report entry name"), nil);
+        addEntry(OSUReportInfoUUIDKey, NSLocalizedStringFromTableInBundle(@"Report ID", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"Software update report entry name"), nil);
 
         void (^addRun)(NSString *name, NSString *numberOfRunsKey, NSString *minutesRunKey, NSString *crashCountKey) = ^(NSString *name, NSString *numberOfRunsKey, NSString *minutesRunKey, NSString *crashCountKey){
             NSString *numberOfRuns = report[numberOfRunsKey];
@@ -404,11 +421,11 @@ enum {
                 [accessorySwitch sizeToFit];
                 cell.accessoryView = accessorySwitch;
 
-                cell.textLabel.text = NSLocalizedStringFromTableInBundle(@"Send anonymous device information?", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"Settings option title");
+                cell.textLabel.text = NSLocalizedStringFromTableInBundle(@"Send Anonymous Data", @"OmniSoftwareUpdate", OMNI_BUNDLE, @"Settings option title");
                 cell.detailTextLabel.textColor = [OUIInspector disabledLabelTextColor];
             }
             
-            BOOL enabled = [[OSUPreferences automaticSoftwareUpdateCheckEnabled] boolValue] && [[OSUPreferences includeHardwareDetails] boolValue];
+            BOOL enabled = [[self class] sendAnonymousDeviceInformationEnabled];
             ((UISwitch *)cell.accessoryView).on = enabled;
 
             return cell;
@@ -439,8 +456,10 @@ enum {
     UITableView *tableView = (UITableView *)self.view;
     
     UIEdgeInsets separatorInsets = tableView.separatorInset;
-    _settingFooterView.tableViewSeparatorInset = separatorInsets.left;
-    _infoHeaderView.tableViewSeparatorInset = separatorInsets.left;
+    CGFloat seperatorInset = separatorInsets.left + 6; // the separator inset LIES in iOS 8. (by lies, I mean that it does not measure the distance between the edge of the cell and the seperator. I'm not clear on what it IS measuring.) This is a fudge-factor to get it to line up. Sorry.
+
+    _settingFooterView.tableViewSeparatorInset = seperatorInset;
+    _infoHeaderView.tableViewSeparatorInset = seperatorInset;
 
     
     // UITableView doesn't call -sizeThatFits: on the header/footer views.
@@ -454,7 +473,7 @@ enum {
 
 - (void)_toggleEnabled:(UISwitch *)sender;
 {
-    BOOL enabled = [[OSUPreferences automaticSoftwareUpdateCheckEnabled] boolValue] && [[OSUPreferences automaticSoftwareUpdateCheckEnabled] boolValue];
+    BOOL enabled = [[OSUPreferences automaticSoftwareUpdateCheckEnabled] boolValue] && [[OSUPreferences includeHardwareDetails] boolValue];
     
     enabled = !enabled;
     [[OSUPreferences automaticSoftwareUpdateCheckEnabled] setBoolValue:enabled];

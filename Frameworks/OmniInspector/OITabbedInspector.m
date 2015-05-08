@@ -1,4 +1,4 @@
-// Copyright 2005-2007, 2010-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2005-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -26,22 +26,23 @@ RCS_ID("$Id$")
 + (NSColor *)toolbarBackgroundColor;
 @end
 
+@interface OITabbedInspectorView : NSView
+
+@property (nonatomic, weak) IBOutlet OITabbedInspector *inspector;
+
+@end
+
 @interface OITabbedInspector (/*Private*/)
-- (void)_selectTabBasedOnObjects:(NSArray *)objects;
-- (OIInspectorTabController *)_tabWithIdentifier:(NSString *)identifier;
-- (void)_updateDimmedForTab:(OIInspectorTabController *)tab;
-- (void)_updateSubInspectorObjects;
-- (void)_createButtonCellForAllTabs;
-- (void)_updateTrackingRects;
-- (void)_tabTitleDidChange:(NSNotification *)notification;
-- (void)_layoutSelectedTabs;
-- (void)_updateButtonsToMatchSelection;
-- (OIInspectorTabController *)_tabControllerForInspectorView:(NSView *)view;
+
+@property (nonatomic) NSTitlebarAccessoryViewController *titlebarAccessory;
+
 @end
 
 #pragma mark -
 
 @implementation OITabbedInspector
+
+@synthesize buttonMatrix = buttonMatrix;
 
 - (void)dealloc;
 {
@@ -389,6 +390,7 @@ RCS_ID("$Id$")
     
     _singleSelection = [dict boolForKey:@"single-selection" defaultValue:NO];
     _autoSelection = [dict boolForKey:@"auto-selection" defaultValue:_singleSelection];
+    _placesButtonsInTitlebar = [dict boolForKey:@"placesButtonsInTitlebar"];
     
     NSMutableArray *tabControllers = [[NSMutableArray alloc] init];
     
@@ -405,7 +407,9 @@ RCS_ID("$Id$")
         [tabControllers addObject:tabController];
     }
     
-    [tabControllers sortUsingFunction:sortByDefaultDisplayOrderInGroup context:NULL];
+    [tabControllers sortUsingComparator:^NSComparisonResult(OIInspectorController *obj1, OIInspectorController *obj2) {
+        return OISortByDefaultDisplayOrderInGroup(obj1, obj2);
+    }];
     
     _tabControllers = [[NSArray alloc] initWithArray:tabControllers];
     
@@ -436,7 +440,9 @@ RCS_ID("$Id$")
         return;
     
     NSMutableArray *newTabControllers = [[NSMutableArray alloc] initWithArray:_tabControllers];
-    [newTabControllers insertObject:tabController inArraySortedUsingFunction:sortByDefaultDisplayOrderInGroup context:NULL];
+    [newTabControllers insertObject:tabController inArraySortedUsingComparator:^NSComparisonResult(OIInspectorController *obj1, OIInspectorController *obj2) {
+        return OISortByDefaultDisplayOrderInGroup(obj1, obj2);
+    }];
     
     _tabControllers = [[NSArray alloc] initWithArray:newTabControllers];
     
@@ -559,7 +565,7 @@ RCS_ID("$Id$")
     OIInspectionSet *inspectionSet = [_weak_inspectorController.inspectorRegistry inspectionSet];
     NSArray *sortedObjects = [inspectionSet objectsSortedByInsertionOrder:objects];
     
-    if (0) {
+    if (/* DISABLES CODE */ (0)) {
         NSUInteger objectIndex, objectCount = [sortedObjects count];
         for (objectIndex = 0; objectIndex < objectCount; objectIndex++) {
             id object = [sortedObjects objectAtIndex:objectIndex];
@@ -721,7 +727,9 @@ RCS_ID("$Id$")
     [contentView setFrame:contentFrame];
     
     NSView *inspectorView = self.view;
-    size.height += [buttonMatrix frame].size.height + 2;
+    if (!self.placesButtonsInTitlebar) {
+        size.height += [buttonMatrix frame].size.height + 2.0;
+    }
     NSRect frame = [inspectorView frame];
     frame.size.height = size.height;
     [inspectorView setFrame:frame];
@@ -748,15 +756,14 @@ RCS_ID("$Id$")
 - (void)_updateButtonsToMatchSelection;
 {
     [buttonMatrix deselectAllCells];
-
+    
     NSArray *matrixCells = [buttonMatrix cells];
     NSUInteger tabIndex, tabCount = [_tabControllers count];
     for (tabIndex = 0; tabIndex < tabCount; tabIndex++) {
         OIInspectorTabController *tabController = [_tabControllers objectAtIndex:tabIndex];
-	if ([tabController isVisible])
-	    [buttonMatrix setSelectionFrom:tabIndex to:tabIndex anchor:tabIndex highlight:YES];
-	if ([tabController isPinned])
-            [[matrixCells objectAtIndex:tabIndex] setIsPinned:YES];
+        if ([tabController isVisible])
+            [buttonMatrix setSelectionFrom:tabIndex to:tabIndex anchor:tabIndex highlight:YES];
+        [[matrixCells objectAtIndex:tabIndex] setIsPinned:[tabController isPinned]];
     }
     [buttonMatrix setNeedsDisplay:YES];
 }
@@ -773,6 +780,49 @@ RCS_ID("$Id$")
     }
     OBASSERT_NOT_REACHED("Don't call this on an inspector that isn't an ancestor of the view in question.");
     return nil;
+}
+
+- (void)adjustContentFrame;
+{
+    NSView *view = contentView.window.contentView;
+    NSRect rect = view.frame;
+    OBASSERT(rect.origin.y == 0);
+    rect.origin.y = 0;
+    if (!NSEqualRects(view.frame, rect)) {
+        view.frame = rect;
+    }
+}
+
+- (void)viewWillMoveToWindow:(NSWindow *)window;
+{
+    if (window && !self.titlebarAccessory && self.placesButtonsInTitlebar) {
+        
+        NSView *accessory = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 296, 33)];
+        self.titlebarAccessory = [[NSTitlebarAccessoryViewController alloc] init];
+        self.titlebarAccessory.view = accessory;
+        [window addTitlebarAccessoryViewController:self.titlebarAccessory];
+        [self.titlebarAccessory.view addSubview:buttonMatrix.superview];
+        NSRect rButtonMatrixBackground = buttonMatrix.superview.frame;
+        rButtonMatrixBackground.origin = NSZeroPoint;
+        buttonMatrix.superview.frame = rButtonMatrixBackground;
+    }
+    
+    [self adjustContentFrame];
+}
+
+@end
+
+@implementation OITabbedInspectorView
+
+- (void)viewWillMoveToWindow:(NSWindow *)window;
+{
+    [self.inspector viewWillMoveToWindow:window];
+}
+
+- (void)drawRect:(NSRect)r;
+{
+    [[NSColor colorWithWhite:0.96 alpha:1.0] setFill];
+    NSRectFill(r);
 }
 
 @end

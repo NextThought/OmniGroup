@@ -7,33 +7,26 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		34045857194F674D00DAE9E1 /* OBErrorTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 34EE20ED14F035E700722491 /* OBErrorTests.m */; };
 		34172BA5119C88DB00F7FD6A /* OBRuntimeCheck.h in Headers */ = {isa = PBXBuildFile; fileRef = 34172BA3119C88DB00F7FD6A /* OBRuntimeCheck.h */; };
 		34172BA6119C88DB00F7FD6A /* OBRuntimeCheck.m in Sources */ = {isa = PBXBuildFile; fileRef = 34172BA4119C88DB00F7FD6A /* OBRuntimeCheck.m */; };
-		34172BAA119C892800F7FD6A /* OBRuntimeCheck.h in Headers */ = {isa = PBXBuildFile; fileRef = 34172BA3119C88DB00F7FD6A /* OBRuntimeCheck.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		34172BAB119C892900F7FD6A /* OBRuntimeCheck.m in Sources */ = {isa = PBXBuildFile; fileRef = 34172BA4119C88DB00F7FD6A /* OBRuntimeCheck.m */; };
-		342163B711907C6700C06E45 /* OmniBase.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C2CFE8AAE2511C9CC38 /* OmniBase.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		342163B811907C6700C06E45 /* NSException-OBExtensions.h in Headers */ = {isa = PBXBuildFile; fileRef = 07AA829000D177F4C697A14A /* NSException-OBExtensions.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		342163B911907C6700C06E45 /* NSError-OBExtensions.h in Headers */ = {isa = PBXBuildFile; fileRef = 347049730CFB6612007025F7 /* NSError-OBExtensions.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		342163BA11907C6700C06E45 /* NSError-OBUtilities.h in Headers */ = {isa = PBXBuildFile; fileRef = 3469EF080FEB5E29002FEBC5 /* NSError-OBUtilities.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		342163BB11907C6700C06E45 /* OBObject.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C29FE8AAE2511C9CC38 /* OBObject.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		342163BC11907C6700C06E45 /* OBUtilities.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C2BFE8AAE2511C9CC38 /* OBUtilities.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		342163BD11907C6700C06E45 /* assertions.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C23FE8AAE2511C9CC38 /* assertions.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		342163BE11907C6700C06E45 /* macros.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C25FE8AAE2511C9CC38 /* macros.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		342163BF11907C6700C06E45 /* rcsid.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C2DFE8AAE2511C9CC38 /* rcsid.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		342163C011907C6700C06E45 /* system.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C2EFE8AAE2511C9CC38 /* system.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		342163C111907C6700C06E45 /* objc.h in Headers */ = {isa = PBXBuildFile; fileRef = 34BBACA80BA76AA2002DA71E /* objc.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		342163C211907C6700C06E45 /* OBBacktraceBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = A2E007850E5CA926007709A5 /* OBBacktraceBuffer.h */; settings = {ATTRIBUTES = (Private, ); }; };
-		342163C311907C7200C06E45 /* NSException-OBExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = 07AA829100D177F4C697A14A /* NSException-OBExtensions.m */; };
-		342163C411907C7200C06E45 /* NSError-OBExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = 347049740CFB6612007025F7 /* NSError-OBExtensions.m */; };
-		342163C511907C7200C06E45 /* NSError-OBUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 3469EF090FEB5E29002FEBC5 /* NSError-OBUtilities.m */; };
-		342163C611907C7200C06E45 /* OBObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E51C20FE8AAE2511C9CC38 /* OBObject.m */; };
-		342163C711907C7200C06E45 /* OBUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E51C32FE8AAE2511C9CC38 /* OBUtilities.m */; };
-		342163C811907C7200C06E45 /* assertions.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E51C31FE8AAE2511C9CC38 /* assertions.m */; };
-		342163C911907C7200C06E45 /* OBBacktraceBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = A2581A620E2D36DD001ABDA6 /* OBBacktraceBuffer.m */; };
 		344E67081845535E00BEFCE3 /* OBExpectedDeallocation.h in Headers */ = {isa = PBXBuildFile; fileRef = 344E67061845535E00BEFCE3 /* OBExpectedDeallocation.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		344E67091845535E00BEFCE3 /* OBExpectedDeallocation.h in Headers */ = {isa = PBXBuildFile; fileRef = 344E67061845535E00BEFCE3 /* OBExpectedDeallocation.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		344E670A1845535E00BEFCE3 /* OBExpectedDeallocation.m in Sources */ = {isa = PBXBuildFile; fileRef = 344E67071845535E00BEFCE3 /* OBExpectedDeallocation.m */; };
-		344E670B1845535E00BEFCE3 /* OBExpectedDeallocation.m in Sources */ = {isa = PBXBuildFile; fileRef = 344E67071845535E00BEFCE3 /* OBExpectedDeallocation.m */; };
+		34571D281AB1E9310072E0F0 /* OBBacktraceBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = 34571D271AB1E9310072E0F0 /* OBBacktraceBuffer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		34571D291AB1E9310072E0F0 /* OBBacktraceBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = 34571D271AB1E9310072E0F0 /* OBBacktraceBuffer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		34637CD7194F448F009B51C5 /* OmniBase.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34637CCC194F448F009B51C5 /* OmniBase.framework */; };
+		34637CEF194F46B6009B51C5 /* OmniBase.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C2CFE8AAE2511C9CC38 /* OmniBase.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		34637CF2194F46C6009B51C5 /* NSException-OBExtensions.h in Headers */ = {isa = PBXBuildFile; fileRef = 07AA829000D177F4C697A14A /* NSException-OBExtensions.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		34637CF3194F46C9009B51C5 /* NSException-OBExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = 07AA829100D177F4C697A14A /* NSException-OBExtensions.m */; };
+		34637CF4194F46CC009B51C5 /* NSError-OBExtensions.h in Headers */ = {isa = PBXBuildFile; fileRef = 347049730CFB6612007025F7 /* NSError-OBExtensions.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		34637CF5194F46CF009B51C5 /* NSError-OBExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = 347049740CFB6612007025F7 /* NSError-OBExtensions.m */; };
+		34637CF6194F46D2009B51C5 /* NSError-OBUtilities.h in Headers */ = {isa = PBXBuildFile; fileRef = 3469EF080FEB5E29002FEBC5 /* NSError-OBUtilities.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		34637CF7194F46D6009B51C5 /* NSError-OBUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 3469EF090FEB5E29002FEBC5 /* NSError-OBUtilities.m */; };
+		34637CF8194F46D8009B51C5 /* OBExpectedDeallocation.h in Headers */ = {isa = PBXBuildFile; fileRef = 344E67061845535E00BEFCE3 /* OBExpectedDeallocation.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		34637CF9194F46E3009B51C5 /* OBExpectedDeallocation.m in Sources */ = {isa = PBXBuildFile; fileRef = 344E67071845535E00BEFCE3 /* OBExpectedDeallocation.m */; };
+		34637CFA194F46E7009B51C5 /* OBObject.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C29FE8AAE2511C9CC38 /* OBObject.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		34637CFB194F46EB009B51C5 /* OBObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E51C20FE8AAE2511C9CC38 /* OBObject.m */; };
+		34637CFC194F4707009B51C5 /* OBRuntimeCheck.h in Headers */ = {isa = PBXBuildFile; fileRef = 34172BA3119C88DB00F7FD6A /* OBRuntimeCheck.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		3469EF0A0FEB5E29002FEBC5 /* NSError-OBUtilities.h in Headers */ = {isa = PBXBuildFile; fileRef = 3469EF080FEB5E29002FEBC5 /* NSError-OBUtilities.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		3469EF0B0FEB5E29002FEBC5 /* NSError-OBUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 3469EF090FEB5E29002FEBC5 /* NSError-OBUtilities.m */; };
 		347049750CFB6612007025F7 /* NSError-OBExtensions.h in Headers */ = {isa = PBXBuildFile; fileRef = 347049730CFB6612007025F7 /* NSError-OBExtensions.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -41,15 +34,33 @@
 		34778CE211810C1800EC28C1 /* OBLoadBundle.m in Sources */ = {isa = PBXBuildFile; fileRef = 34778CE111810C1800EC28C1 /* OBLoadBundle.m */; };
 		34778CE911810D5700EC28C1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00E51C3EFE8AAE2511C9CC38 /* Foundation.framework */; };
 		34778CED11810D5B00EC28C1 /* OmniBase.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A33D42808A0191B003A3FA5 /* OmniBase.framework */; };
-		349D7D1511E546A4005B8C5D /* OBTestCase.h in Headers */ = {isa = PBXBuildFile; fileRef = 34759FE50DE22FDD00FB73CC /* OBTestCase.h */; };
-		349D7D1611E546A5005B8C5D /* OBTestCase.m in Sources */ = {isa = PBXBuildFile; fileRef = 34759FE60DE22FDD00FB73CC /* OBTestCase.m */; };
+		3483FAE3192CFE140072D3FE /* OBUtilities-NonARC.m in Sources */ = {isa = PBXBuildFile; fileRef = 3483FAE2192CFE140072D3FE /* OBUtilities-NonARC.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		348A2FF31A646FC700D540F3 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 348A2FF21A646FC700D540F3 /* CFNetwork.framework */; };
+		34AA206C194F64BE003564CD /* OBTestCase.m in Sources */ = {isa = PBXBuildFile; fileRef = 34759FE60DE22FDD00FB73CC /* OBTestCase.m */; };
+		34AA206E194F64EE003564CD /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 34EE20DE14F0354300722491 /* InfoPlist.strings */; };
+		34AA206F194F664F003564CD /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34ED2D9C194679C6005643C9 /* XCTest.framework */; };
 		34BBACA90BA76AA2002DA71E /* objc.h in Headers */ = {isa = PBXBuildFile; fileRef = 34BBACA80BA76AA2002DA71E /* objc.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		34EE20D414F0354300722491 /* SenTestingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34EE20D314F0354300722491 /* SenTestingKit.framework */; };
+		34C40F61194F48FC001A4399 /* OBRuntimeCheck.m in Sources */ = {isa = PBXBuildFile; fileRef = 34172BA4119C88DB00F7FD6A /* OBRuntimeCheck.m */; };
+		34C40F62194F4901001A4399 /* OBUtilities.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C2BFE8AAE2511C9CC38 /* OBUtilities.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		34C40F63194F4904001A4399 /* OBUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E51C32FE8AAE2511C9CC38 /* OBUtilities.m */; };
+		34C40F64194F4907001A4399 /* OBUtilities-NonARC.m in Sources */ = {isa = PBXBuildFile; fileRef = 3483FAE2192CFE140072D3FE /* OBUtilities-NonARC.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		34C40F65194F4909001A4399 /* assertions.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C23FE8AAE2511C9CC38 /* assertions.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		34C40F66194F490D001A4399 /* assertions.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E51C31FE8AAE2511C9CC38 /* assertions.m */; };
+		34C40F67194F4911001A4399 /* OBBacktraceBuffer-Internal.h in Headers */ = {isa = PBXBuildFile; fileRef = A2E007850E5CA926007709A5 /* OBBacktraceBuffer-Internal.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		34C40F68194F4914001A4399 /* OBBacktraceBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = A2581A620E2D36DD001ABDA6 /* OBBacktraceBuffer.m */; };
+		34C40F69194F4917001A4399 /* macros.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C25FE8AAE2511C9CC38 /* macros.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		34C40F6A194F491B001A4399 /* rcsid.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C2DFE8AAE2511C9CC38 /* rcsid.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		34C40F6B194F491F001A4399 /* system.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C2EFE8AAE2511C9CC38 /* system.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		34C40F6C194F4923001A4399 /* objc.h in Headers */ = {isa = PBXBuildFile; fileRef = 34BBACA80BA76AA2002DA71E /* objc.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		34C40F6D194F4928001A4399 /* OBLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = 4DA2E34D17A064420073144A /* OBLogger.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		34C40F6E194F492C001A4399 /* OBLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DA2E34E17A064420073144A /* OBLogger.m */; };
+		34ED2D9D194679C6005643C9 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34ED2D9C194679C6005643C9 /* XCTest.framework */; };
 		34EE20D614F0354300722491 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34EE20D514F0354300722491 /* Cocoa.framework */; };
 		34EE20E014F0354300722491 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 34EE20DE14F0354300722491 /* InfoPlist.strings */; };
 		34EE20EB14F035CD00722491 /* OBTestCase.m in Sources */ = {isa = PBXBuildFile; fileRef = 34759FE60DE22FDD00FB73CC /* OBTestCase.m */; };
 		34EE20EE14F035E700722491 /* OBErrorTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 34EE20ED14F035E700722491 /* OBErrorTests.m */; };
 		34EE20EF14F037C000722491 /* OmniBase.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A33D42808A0191B003A3FA5 /* OmniBase.framework */; };
+		34EF25371A64881A00C0073A /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34EF25361A64881A00C0073A /* CFNetwork.framework */; };
 		4A33D40808A0191B003A3FA5 /* assertions.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C23FE8AAE2511C9CC38 /* assertions.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		4A33D40A08A0191B003A3FA5 /* macros.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C25FE8AAE2511C9CC38 /* macros.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		4A33D40C08A0191B003A3FA5 /* NSData-OBObjectCompatibility.h in Headers */ = {isa = PBXBuildFile; fileRef = 00E51C27FE8AAE2511C9CC38 /* NSData-OBObjectCompatibility.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -68,14 +79,117 @@
 		4A33D41E08A0191B003A3FA5 /* NSException-OBExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = 07AA829100D177F4C697A14A /* NSException-OBExtensions.m */; };
 		4A33D42008A0191B003A3FA5 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00E51C3EFE8AAE2511C9CC38 /* Foundation.framework */; };
 		4DA2E34F17A064420073144A /* OBLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = 4DA2E34D17A064420073144A /* OBLogger.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		4DA2E35017A064420073144A /* OBLogger.h in Headers */ = {isa = PBXBuildFile; fileRef = 4DA2E34D17A064420073144A /* OBLogger.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		4DA2E35117A064420073144A /* OBLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DA2E34E17A064420073144A /* OBLogger.m */; };
-		4DA2E35217A064420073144A /* OBLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = 4DA2E34E17A064420073144A /* OBLogger.m */; };
 		A2581A630E2D36DD001ABDA6 /* OBBacktraceBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = A2581A620E2D36DD001ABDA6 /* OBBacktraceBuffer.m */; };
-		A2E007860E5CA926007709A5 /* OBBacktraceBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = A2E007850E5CA926007709A5 /* OBBacktraceBuffer.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		A2E007860E5CA926007709A5 /* OBBacktraceBuffer-Internal.h in Headers */ = {isa = PBXBuildFile; fileRef = A2E007850E5CA926007709A5 /* OBBacktraceBuffer-Internal.h */; settings = {ATTRIBUTES = (Private, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		34045858194F679C00DAE9E1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4A33D40608A0191B003A3FA5;
+			remoteInfo = OmniBase;
+		};
+		3404585A194F679D00DAE9E1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4A33D40608A0191B003A3FA5;
+			remoteInfo = OmniBase;
+		};
+		3404585C194F67A000DAE9E1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4A33D40608A0191B003A3FA5;
+			remoteInfo = OmniBase;
+		};
+		3404585E194F67A300DAE9E1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 34637CCB194F448F009B51C5;
+			remoteInfo = "OmniBase-iOS";
+		};
+		34045860194F67A700DAE9E1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4A33D40608A0191B003A3FA5;
+			remoteInfo = OmniBase;
+		};
+		34199175195000A500BA8113 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4A33D40608A0191B003A3FA5;
+			remoteInfo = OmniBase;
+		};
+		34199177195000A500BA8113 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4A33D40608A0191B003A3FA5;
+			remoteInfo = OmniBase;
+		};
+		34199179195000A800BA8113 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 34637CCB194F448F009B51C5;
+			remoteInfo = "OmniBase-iOS";
+		};
+		3419917B195000AE00BA8113 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4A33D40608A0191B003A3FA5;
+			remoteInfo = OmniBase;
+		};
+		3419917D195000AF00BA8113 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 34637CCB194F448F009B51C5;
+			remoteInfo = "OmniBase-iOS";
+		};
+		34637CD8194F448F009B51C5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 34637CCB194F448F009B51C5;
+			remoteInfo = "OmniBase-iOS";
+		};
+		34637CE7194F4490009B51C5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 34637CCB194F448F009B51C5;
+			remoteInfo = "OmniBase-iOS";
+		};
+		34637CE9194F4490009B51C5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 34637CCB194F448F009B51C5;
+			remoteInfo = "OmniBase-iOS";
+		};
+		34637CEB194F44A0009B51C5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 34637CCB194F448F009B51C5;
+			remoteInfo = "OmniBase-iOS";
+		};
+		34637CED194F4602009B51C5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4A33D40608A0191B003A3FA5;
+			remoteInfo = OmniBase;
+		};
 		34778CD711810BEE00EC28C1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
@@ -83,12 +197,26 @@
 			remoteGlobalIDString = 4A33D40608A0191B003A3FA5;
 			remoteInfo = OmniBase;
 		};
-		3481F5F111E65B8400428943 /* PBXContainerItemProxy */ = {
+		349DBEFD1947615400787860 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 342163B111907BF600C06E45;
-			remoteInfo = OmniBaseTouch;
+			remoteGlobalIDString = 4A33D40608A0191B003A3FA5;
+			remoteInfo = OmniBase;
+		};
+		34C40F6F194F4C33001A4399 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 34637CCB194F448F009B51C5;
+			remoteInfo = "OmniBase-iOS";
+		};
+		34C40F71194F4C33001A4399 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00E51C1BFE8AAE2511C9CC38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 34637CCB194F448F009B51C5;
+			remoteInfo = "OmniBase-iOS";
 		};
 		34EE20E914F0354C00722491 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -115,13 +243,11 @@
 		00E51C31FE8AAE2511C9CC38 /* assertions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = assertions.m; sourceTree = "<group>"; };
 		00E51C32FE8AAE2511C9CC38 /* OBUtilities.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OBUtilities.m; sourceTree = "<group>"; };
 		00E51C3AFE8AAE2511C9CC38 /* OmniSourceLicense.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = OmniSourceLicense.html; sourceTree = "<group>"; };
-		00E51C3EFE8AAE2511C9CC38 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
+		00E51C3EFE8AAE2511C9CC38 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		07AA829000D177F4C697A14A /* NSException-OBExtensions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSException-OBExtensions.h"; sourceTree = "<group>"; };
 		07AA829100D177F4C697A14A /* NSException-OBExtensions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSException-OBExtensions.m"; sourceTree = "<group>"; };
-		340115B011E515790016ADB3 /* libOmniBaseTouchTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libOmniBaseTouchTests.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		34172BA3119C88DB00F7FD6A /* OBRuntimeCheck.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OBRuntimeCheck.h; sourceTree = "<group>"; };
 		34172BA4119C88DB00F7FD6A /* OBRuntimeCheck.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OBRuntimeCheck.m; sourceTree = "<group>"; };
-		342163B211907BF600C06E45 /* libOmniBase.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libOmniBase.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		34354D151190BFC700FE1BEB /* Omni-Library-Common.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "Omni-Library-Common.xcconfig"; sourceTree = "<group>"; };
 		34354D161190BFC700FE1BEB /* Omni-Library-Coverage.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "Omni-Library-Coverage.xcconfig"; sourceTree = "<group>"; };
 		34354D171190BFC700FE1BEB /* Omni-Library-Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "Omni-Library-Debug.xcconfig"; sourceTree = "<group>"; };
@@ -138,6 +264,9 @@
 		34354D221190BFC700FE1BEB /* Touch-Library-Release.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "Touch-Library-Release.xcconfig"; sourceTree = "<group>"; };
 		344E67061845535E00BEFCE3 /* OBExpectedDeallocation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OBExpectedDeallocation.h; sourceTree = "<group>"; };
 		344E67071845535E00BEFCE3 /* OBExpectedDeallocation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OBExpectedDeallocation.m; sourceTree = "<group>"; };
+		34571D271AB1E9310072E0F0 /* OBBacktraceBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OBBacktraceBuffer.h; sourceTree = "<group>"; };
+		34637CCC194F448F009B51C5 /* OmniBase.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = OmniBase.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		34637CD6194F448F009B51C5 /* OBUnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OBUnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3469EF080FEB5E29002FEBC5 /* NSError-OBUtilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSError-OBUtilities.h"; sourceTree = "<group>"; };
 		3469EF090FEB5E29002FEBC5 /* NSError-OBUtilities.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSError-OBUtilities.m"; sourceTree = "<group>"; };
 		347049730CFB6612007025F7 /* NSError-OBExtensions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSError-OBExtensions.h"; sourceTree = "<group>"; };
@@ -146,11 +275,31 @@
 		34759FE60DE22FDD00FB73CC /* OBTestCase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = OBTestCase.m; path = ../OBTestCase.m; sourceTree = "<group>"; };
 		34778CD211810BE700EC28C1 /* OBLoadBundle */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = OBLoadBundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		34778CE111810C1800EC28C1 /* OBLoadBundle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OBLoadBundle.m; sourceTree = "<group>"; };
+		3483FAE2192CFE140072D3FE /* OBUtilities-NonARC.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "OBUtilities-NonARC.m"; sourceTree = "<group>"; };
+		348A2FF21A646FC700D540F3 /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
 		34A159450564081F0097A113 /* OmniBase.order */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = OmniBase.order; sourceTree = "<group>"; };
 		34BBACA80BA76AA2002DA71E /* objc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = objc.h; sourceTree = "<group>"; };
-		34EE20D114F0354300722491 /* OBUnitTests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OBUnitTests.octest; sourceTree = BUILT_PRODUCTS_DIR; };
-		34EE20D314F0354300722491 /* SenTestingKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SenTestingKit.framework; path = Library/Frameworks/SenTestingKit.framework; sourceTree = DEVELOPER_DIR; };
-		34EE20D514F0354300722491 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		34C40F73194F4C84001A4399 /* Omni-Application-Common-AppStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Omni-Application-Common-AppStore.xcconfig"; sourceTree = "<group>"; };
+		34C40F74194F4C84001A4399 /* Omni-Application-Common-MacAppStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Omni-Application-Common-MacAppStore.xcconfig"; sourceTree = "<group>"; };
+		34C40F75194F4C84001A4399 /* Omni-Application-Common-MacAppStorePro.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Omni-Application-Common-MacAppStorePro.xcconfig"; sourceTree = "<group>"; };
+		34C40F76194F4C84001A4399 /* Omni-Application-Common-OmniStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Omni-Application-Common-OmniStore.xcconfig"; sourceTree = "<group>"; };
+		34C40F77194F4C84001A4399 /* Omni-Application-Common-OmniStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Omni-Application-Common-OmniStore.xcconfig"; sourceTree = "<group>"; };
+		34C40F78194F4C84001A4399 /* Omni-Global-Common-AppStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Omni-Global-Common-AppStore.xcconfig"; sourceTree = "<group>"; };
+		34C40F79194F4C84001A4399 /* Omni-Global-Common-MacAppStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Omni-Global-Common-MacAppStore.xcconfig"; sourceTree = "<group>"; };
+		34C40F7A194F4C84001A4399 /* Omni-Global-Common-MacAppStorePro.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Omni-Global-Common-MacAppStorePro.xcconfig"; sourceTree = "<group>"; };
+		34C40F7B194F4C84001A4399 /* Omni-Global-Common-OmniStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Omni-Global-Common-OmniStore.xcconfig"; sourceTree = "<group>"; };
+		34C40F7C194F4C84001A4399 /* Omni-Global-Common-OmniStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Omni-Global-Common-OmniStore.xcconfig"; sourceTree = "<group>"; };
+		34C40F7D194F4C84001A4399 /* Touch-Bundle-Common.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Touch-Bundle-Common.xcconfig"; sourceTree = "<group>"; };
+		34C40F7E194F4C84001A4399 /* Touch-Bundle-Coverage.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Touch-Bundle-Coverage.xcconfig"; sourceTree = "<group>"; };
+		34C40F7F194F4C84001A4399 /* Touch-Bundle-Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Touch-Bundle-Debug.xcconfig"; sourceTree = "<group>"; };
+		34C40F80194F4C84001A4399 /* Touch-Bundle-Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Touch-Bundle-Release.xcconfig"; sourceTree = "<group>"; };
+		34C40F81194F4C84001A4399 /* Touch-Framework-Common.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Touch-Framework-Common.xcconfig"; sourceTree = "<group>"; };
+		34C40F82194F4C84001A4399 /* Touch-Framework-Coverage.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Touch-Framework-Coverage.xcconfig"; sourceTree = "<group>"; };
+		34C40F83194F4C84001A4399 /* Touch-Framework-Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Touch-Framework-Debug.xcconfig"; sourceTree = "<group>"; };
+		34C40F84194F4C84001A4399 /* Touch-Framework-Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Touch-Framework-Release.xcconfig"; sourceTree = "<group>"; };
+		34ED2D9C194679C6005643C9 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
+		34EE20D114F0354300722491 /* OBUnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OBUnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		34EE20D514F0354300722491 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		34EE20D814F0354300722491 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		34EE20D914F0354300722491 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 		34EE20DA14F0354300722491 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -159,6 +308,7 @@
 		34EE20E414F0354300722491 /* OBUnitTests-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "OBUnitTests-Prefix.pch"; sourceTree = "<group>"; };
 		34EE20EC14F035E700722491 /* OBErrorTests.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OBErrorTests.h; sourceTree = "<group>"; };
 		34EE20ED14F035E700722491 /* OBErrorTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OBErrorTests.m; sourceTree = "<group>"; };
+		34EF25361A64881A00C0073A /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
 		4A33D42808A0191B003A3FA5 /* OmniBase.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = OmniBase.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4AAFAE1808A0216200E04045 /* Omni-Framework-Coverage.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "Omni-Framework-Coverage.xcconfig"; sourceTree = "<group>"; };
 		4AAFAE1908A0216200E04045 /* Omni-Framework-Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "Omni-Framework-Debug.xcconfig"; sourceTree = "<group>"; };
@@ -185,23 +335,26 @@
 		A2581A620E2D36DD001ABDA6 /* OBBacktraceBuffer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OBBacktraceBuffer.m; sourceTree = "<group>"; };
 		A27426261293799F00674569 /* OBPatchTrap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OBPatchTrap.h; sourceTree = "<group>"; };
 		A27426271293799F00674569 /* OBPatchTrap.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OBPatchTrap.m; sourceTree = "<group>"; };
-		A2E007850E5CA926007709A5 /* OBBacktraceBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OBBacktraceBuffer.h; sourceTree = "<group>"; };
+		A2E007850E5CA926007709A5 /* OBBacktraceBuffer-Internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "OBBacktraceBuffer-Internal.h"; sourceTree = "<group>"; };
 		BFE2186805ED3B330097A147 /* Info.plist */ = {isa = PBXFileReference; explicitFileType = text.xml; fileEncoding = 4; path = Info.plist; sourceTree = "<group>"; };
 		BFE2186905ED3B330097A147 /* OmniBase_Prefix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OmniBase_Prefix.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		340115AE11E515790016ADB3 /* Frameworks */ = {
+		34637CC8194F448F009B51C5 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				34EF25371A64881A00C0073A /* CFNetwork.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		342163B011907BF600C06E45 /* Frameworks */ = {
+		34637CD3194F448F009B51C5 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				34AA206F194F664F003564CD /* XCTest.framework in Frameworks */,
+				34637CD7194F448F009B51C5 /* OmniBase.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -218,8 +371,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				34ED2D9D194679C6005643C9 /* XCTest.framework in Frameworks */,
 				34EE20EF14F037C000722491 /* OmniBase.framework in Frameworks */,
-				34EE20D414F0354300722491 /* SenTestingKit.framework in Frameworks */,
 				34EE20D614F0354300722491 /* Cocoa.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -228,6 +381,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				348A2FF31A646FC700D540F3 /* CFNetwork.framework in Frameworks */,
 				4A33D42008A0191B003A3FA5 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -276,9 +430,11 @@
 				A27426271293799F00674569 /* OBPatchTrap.m */,
 				00E51C2BFE8AAE2511C9CC38 /* OBUtilities.h */,
 				00E51C32FE8AAE2511C9CC38 /* OBUtilities.m */,
+				3483FAE2192CFE140072D3FE /* OBUtilities-NonARC.m */,
 				00E51C23FE8AAE2511C9CC38 /* assertions.h */,
 				00E51C31FE8AAE2511C9CC38 /* assertions.m */,
-				A2E007850E5CA926007709A5 /* OBBacktraceBuffer.h */,
+				A2E007850E5CA926007709A5 /* OBBacktraceBuffer-Internal.h */,
+				34571D271AB1E9310072E0F0 /* OBBacktraceBuffer.h */,
 				A2581A620E2D36DD001ABDA6 /* OBBacktraceBuffer.m */,
 				00E51C25FE8AAE2511C9CC38 /* macros.h */,
 				00E51C2DFE8AAE2511C9CC38 /* rcsid.h */,
@@ -304,9 +460,9 @@
 			children = (
 				4A33D42808A0191B003A3FA5 /* OmniBase.framework */,
 				34778CD211810BE700EC28C1 /* OBLoadBundle */,
-				342163B211907BF600C06E45 /* libOmniBase.a */,
-				340115B011E515790016ADB3 /* libOmniBaseTouchTests.a */,
-				34EE20D114F0354300722491 /* OBUnitTests.octest */,
+				34EE20D114F0354300722491 /* OBUnitTests.xctest */,
+				34637CCC194F448F009B51C5 /* OmniBase.framework */,
+				34637CD6194F448F009B51C5 /* OBUnitTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -332,7 +488,9 @@
 		34EE20D214F0354300722491 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				34EE20D314F0354300722491 /* SenTestingKit.framework */,
+				348A2FF21A646FC700D540F3 /* CFNetwork.framework */,
+				34EF25361A64881A00C0073A /* CFNetwork.framework */,
+				34ED2D9C194679C6005643C9 /* XCTest.framework */,
 				34EE20D514F0354300722491 /* Cocoa.framework */,
 				34EE20D714F0354300722491 /* Other Frameworks */,
 			);
@@ -372,6 +530,11 @@
 		4AAC8E0F08A01C5900C4DE8E /* Configurations */ = {
 			isa = PBXGroup;
 			children = (
+				34C40F73194F4C84001A4399 /* Omni-Application-Common-AppStore.xcconfig */,
+				34C40F74194F4C84001A4399 /* Omni-Application-Common-MacAppStore.xcconfig */,
+				34C40F75194F4C84001A4399 /* Omni-Application-Common-MacAppStorePro.xcconfig */,
+				34C40F76194F4C84001A4399 /* Omni-Application-Common-OmniStore.xcconfig */,
+				34C40F77194F4C84001A4399 /* Omni-Application-Common-OmniStore.xcconfig */,
 				A2411320108D430A00F8F1D5 /* Omni-Application-Common.xcconfig */,
 				4AB8F0E508AD0B7000DBB061 /* Omni-Application-Coverage.xcconfig */,
 				4AB8F0E608AD0B7000DBB061 /* Omni-Application-Debug.xcconfig */,
@@ -384,6 +547,11 @@
 				4AAFAE1808A0216200E04045 /* Omni-Framework-Coverage.xcconfig */,
 				4AAFAE1908A0216200E04045 /* Omni-Framework-Debug.xcconfig */,
 				4AAFAE1A08A0216200E04045 /* Omni-Framework-Release.xcconfig */,
+				34C40F78194F4C84001A4399 /* Omni-Global-Common-AppStore.xcconfig */,
+				34C40F79194F4C84001A4399 /* Omni-Global-Common-MacAppStore.xcconfig */,
+				34C40F7A194F4C84001A4399 /* Omni-Global-Common-MacAppStorePro.xcconfig */,
+				34C40F7B194F4C84001A4399 /* Omni-Global-Common-OmniStore.xcconfig */,
+				34C40F7C194F4C84001A4399 /* Omni-Global-Common-OmniStore.xcconfig */,
 				A2411319108D42AA00F8F1D5 /* Omni-Global-Common.xcconfig */,
 				4AB8F0EB08AD0B7000DBB061 /* Omni-Global-Coverage.xcconfig */,
 				4AB8F0EC08AD0B7000DBB061 /* Omni-Global-Debug.xcconfig */,
@@ -402,6 +570,14 @@
 				34354D1C1190BFC700FE1BEB /* Touch-Application-Coverage.xcconfig */,
 				34354D1D1190BFC700FE1BEB /* Touch-Application-Debug.xcconfig */,
 				34354D1E1190BFC700FE1BEB /* Touch-Application-Release.xcconfig */,
+				34C40F7D194F4C84001A4399 /* Touch-Bundle-Common.xcconfig */,
+				34C40F7E194F4C84001A4399 /* Touch-Bundle-Coverage.xcconfig */,
+				34C40F7F194F4C84001A4399 /* Touch-Bundle-Debug.xcconfig */,
+				34C40F80194F4C84001A4399 /* Touch-Bundle-Release.xcconfig */,
+				34C40F81194F4C84001A4399 /* Touch-Framework-Common.xcconfig */,
+				34C40F82194F4C84001A4399 /* Touch-Framework-Coverage.xcconfig */,
+				34C40F83194F4C84001A4399 /* Touch-Framework-Debug.xcconfig */,
+				34C40F84194F4C84001A4399 /* Touch-Framework-Release.xcconfig */,
 				34354D1F1190BFC700FE1BEB /* Touch-Library-Common.xcconfig */,
 				34354D201190BFC700FE1BEB /* Touch-Library-Coverage.xcconfig */,
 				34354D211190BFC700FE1BEB /* Touch-Library-Debug.xcconfig */,
@@ -414,33 +590,26 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
-		340115AC11E515790016ADB3 /* Headers */ = {
+		34637CC9194F448F009B51C5 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				349D7D1511E546A4005B8C5D /* OBTestCase.h in Headers */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		342163AE11907BF600C06E45 /* Headers */ = {
-			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				342163B711907C6700C06E45 /* OmniBase.h in Headers */,
-				342163B811907C6700C06E45 /* NSException-OBExtensions.h in Headers */,
-				342163B911907C6700C06E45 /* NSError-OBExtensions.h in Headers */,
-				342163BA11907C6700C06E45 /* NSError-OBUtilities.h in Headers */,
-				342163BB11907C6700C06E45 /* OBObject.h in Headers */,
-				4DA2E35017A064420073144A /* OBLogger.h in Headers */,
-				342163BC11907C6700C06E45 /* OBUtilities.h in Headers */,
-				342163BD11907C6700C06E45 /* assertions.h in Headers */,
-				342163BE11907C6700C06E45 /* macros.h in Headers */,
-				342163BF11907C6700C06E45 /* rcsid.h in Headers */,
-				342163C011907C6700C06E45 /* system.h in Headers */,
-				344E67091845535E00BEFCE3 /* OBExpectedDeallocation.h in Headers */,
-				342163C111907C6700C06E45 /* objc.h in Headers */,
-				342163C211907C6700C06E45 /* OBBacktraceBuffer.h in Headers */,
-				34172BAA119C892800F7FD6A /* OBRuntimeCheck.h in Headers */,
+				34637CFA194F46E7009B51C5 /* OBObject.h in Headers */,
+				34C40F6D194F4928001A4399 /* OBLogger.h in Headers */,
+				34637CFC194F4707009B51C5 /* OBRuntimeCheck.h in Headers */,
+				34637CEF194F46B6009B51C5 /* OmniBase.h in Headers */,
+				34571D291AB1E9310072E0F0 /* OBBacktraceBuffer.h in Headers */,
+				34637CF4194F46CC009B51C5 /* NSError-OBExtensions.h in Headers */,
+				34637CF2194F46C6009B51C5 /* NSException-OBExtensions.h in Headers */,
+				34637CF8194F46D8009B51C5 /* OBExpectedDeallocation.h in Headers */,
+				34C40F6A194F491B001A4399 /* rcsid.h in Headers */,
+				34C40F62194F4901001A4399 /* OBUtilities.h in Headers */,
+				34C40F65194F4909001A4399 /* assertions.h in Headers */,
+				34637CF6194F46D2009B51C5 /* NSError-OBUtilities.h in Headers */,
+				34C40F6C194F4923001A4399 /* objc.h in Headers */,
+				34C40F67194F4911001A4399 /* OBBacktraceBuffer-Internal.h in Headers */,
+				34C40F69194F4917001A4399 /* macros.h in Headers */,
+				34C40F6B194F491F001A4399 /* system.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -456,13 +625,14 @@
 				4A33D40D08A0191B003A3FA5 /* NSException-OBExtensions.h in Headers */,
 				4A33D40F08A0191B003A3FA5 /* OBObject.h in Headers */,
 				4A33D41008A0191B003A3FA5 /* OBPostLoader.h in Headers */,
+				34571D281AB1E9310072E0F0 /* OBBacktraceBuffer.h in Headers */,
 				4A33D41108A0191B003A3FA5 /* OBUtilities.h in Headers */,
 				4A33D41208A0191B003A3FA5 /* OmniBase.h in Headers */,
 				4A33D41308A0191B003A3FA5 /* rcsid.h in Headers */,
 				4A33D41408A0191B003A3FA5 /* system.h in Headers */,
 				34BBACA90BA76AA2002DA71E /* objc.h in Headers */,
 				347049750CFB6612007025F7 /* NSError-OBExtensions.h in Headers */,
-				A2E007860E5CA926007709A5 /* OBBacktraceBuffer.h in Headers */,
+				A2E007860E5CA926007709A5 /* OBBacktraceBuffer-Internal.h in Headers */,
 				3469EF0A0FEB5E29002FEBC5 /* NSError-OBUtilities.h in Headers */,
 				34172BA5119C88DB00F7FD6A /* OBRuntimeCheck.h in Headers */,
 			);
@@ -471,40 +641,49 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		340115AF11E515790016ADB3 /* OmniBaseTouchTests */ = {
+		34637CCB194F448F009B51C5 /* OmniBase-iOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 340115C111E515C40016ADB3 /* Build configuration list for PBXNativeTarget "OmniBaseTouchTests" */;
+			buildConfigurationList = 34637CE5194F448F009B51C5 /* Build configuration list for PBXNativeTarget "OmniBase-iOS" */;
 			buildPhases = (
-				340115AC11E515790016ADB3 /* Headers */,
-				340115AD11E515790016ADB3 /* Sources */,
-				340115AE11E515790016ADB3 /* Frameworks */,
+				34637CC9194F448F009B51C5 /* Headers */,
+				34637CC7194F448F009B51C5 /* Sources */,
+				34637CC8194F448F009B51C5 /* Frameworks */,
+				34637CCA194F448F009B51C5 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				3481F5F211E65B8400428943 /* PBXTargetDependency */,
 			);
-			name = OmniBaseTouchTests;
-			productName = OmniBaseTouchTests;
-			productReference = 340115B011E515790016ADB3 /* libOmniBaseTouchTests.a */;
-			productType = "com.apple.product-type.library.static";
+			name = "OmniBase-iOS";
+			productName = "OmniBase-iOS";
+			productReference = 34637CCC194F448F009B51C5 /* OmniBase.framework */;
+			productType = "com.apple.product-type.framework";
 		};
-		342163B111907BF600C06E45 /* OmniBaseTouch */ = {
+		34637CD5194F448F009B51C5 /* OBUnitTests-iOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 342163B611907C1900C06E45 /* Build configuration list for PBXNativeTarget "OmniBaseTouch" */;
+			buildConfigurationList = 34637CE6194F448F009B51C5 /* Build configuration list for PBXNativeTarget "OBUnitTests-iOS" */;
 			buildPhases = (
-				342163AE11907BF600C06E45 /* Headers */,
-				342163AF11907BF600C06E45 /* Sources */,
-				342163B011907BF600C06E45 /* Frameworks */,
+				34637CD2194F448F009B51C5 /* Sources */,
+				34637CD3194F448F009B51C5 /* Frameworks */,
+				34637CD4194F448F009B51C5 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				34637CD9194F448F009B51C5 /* PBXTargetDependency */,
+				34637CE8194F4490009B51C5 /* PBXTargetDependency */,
+				34637CEA194F4490009B51C5 /* PBXTargetDependency */,
+				34637CEC194F44A0009B51C5 /* PBXTargetDependency */,
+				34C40F70194F4C33001A4399 /* PBXTargetDependency */,
+				34C40F72194F4C33001A4399 /* PBXTargetDependency */,
+				3404585F194F67A300DAE9E1 /* PBXTargetDependency */,
+				3419917A195000A800BA8113 /* PBXTargetDependency */,
+				3419917E195000AF00BA8113 /* PBXTargetDependency */,
 			);
-			name = OmniBaseTouch;
-			productName = OmniBaseTouch;
-			productReference = 342163B211907BF600C06E45 /* libOmniBase.a */;
-			productType = "com.apple.product-type.library.static";
+			name = "OBUnitTests-iOS";
+			productName = "OmniBase-iOSTests";
+			productReference = 34637CD6194F448F009B51C5 /* OBUnitTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		34778CD111810BE700EC28C1 /* OBLoadBundle */ = {
 			isa = PBXNativeTarget;
@@ -536,11 +715,20 @@
 			);
 			dependencies = (
 				34EE20EA14F0354C00722491 /* PBXTargetDependency */,
+				349DBEFE1947615400787860 /* PBXTargetDependency */,
+				34637CEE194F4602009B51C5 /* PBXTargetDependency */,
+				34045859194F679C00DAE9E1 /* PBXTargetDependency */,
+				3404585B194F679D00DAE9E1 /* PBXTargetDependency */,
+				3404585D194F67A000DAE9E1 /* PBXTargetDependency */,
+				34045861194F67A700DAE9E1 /* PBXTargetDependency */,
+				34199176195000A500BA8113 /* PBXTargetDependency */,
+				34199178195000A500BA8113 /* PBXTargetDependency */,
+				3419917C195000AE00BA8113 /* PBXTargetDependency */,
 			);
 			name = OBUnitTests;
 			productName = OBUnitTests;
-			productReference = 34EE20D114F0354300722491 /* OBUnitTests.octest */;
-			productType = "com.apple.product-type.bundle";
+			productReference = 34EE20D114F0354300722491 /* OBUnitTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		4A33D40608A0191B003A3FA5 /* OmniBase */ = {
 			isa = PBXNativeTarget;
@@ -567,8 +755,20 @@
 		00E51C1BFE8AAE2511C9CC38 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0510;
-				LastTestingUpgradeCheck = 0510;
+				LastTestingUpgradeCheck = 0600;
+				LastUpgradeCheck = 0630;
+				TargetAttributes = {
+					34637CCB194F448F009B51C5 = {
+						CreatedOnToolsVersion = 6.0;
+					};
+					34637CD5194F448F009B51C5 = {
+						CreatedOnToolsVersion = 6.0;
+						TestTargetID = 34637CCB194F448F009B51C5;
+					};
+					34EE20D014F0354300722491 = {
+						TestTargetID = 4A33D40608A0191B003A3FA5;
+					};
+				};
 			};
 			buildConfigurationList = 4AA3CEDC08A01555004389CD /* Build configuration list for PBXProject "OmniBase" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -583,14 +783,29 @@
 			targets = (
 				4A33D40608A0191B003A3FA5 /* OmniBase */,
 				34778CD111810BE700EC28C1 /* OBLoadBundle */,
-				342163B111907BF600C06E45 /* OmniBaseTouch */,
-				340115AF11E515790016ADB3 /* OmniBaseTouchTests */,
 				34EE20D014F0354300722491 /* OBUnitTests */,
+				34637CCB194F448F009B51C5 /* OmniBase-iOS */,
+				34637CD5194F448F009B51C5 /* OBUnitTests-iOS */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		34637CCA194F448F009B51C5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		34637CD4194F448F009B51C5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				34AA206E194F64EE003564CD /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		34EE20CE14F0354300722491 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -625,28 +840,30 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		340115AD11E515790016ADB3 /* Sources */ = {
+		34637CC7194F448F009B51C5 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				349D7D1611E546A5005B8C5D /* OBTestCase.m in Sources */,
+				34C40F6E194F492C001A4399 /* OBLogger.m in Sources */,
+				34637CF9194F46E3009B51C5 /* OBExpectedDeallocation.m in Sources */,
+				34C40F66194F490D001A4399 /* assertions.m in Sources */,
+				34637CF7194F46D6009B51C5 /* NSError-OBUtilities.m in Sources */,
+				34C40F68194F4914001A4399 /* OBBacktraceBuffer.m in Sources */,
+				34C40F64194F4907001A4399 /* OBUtilities-NonARC.m in Sources */,
+				34637CFB194F46EB009B51C5 /* OBObject.m in Sources */,
+				34637CF3194F46C9009B51C5 /* NSException-OBExtensions.m in Sources */,
+				34C40F63194F4904001A4399 /* OBUtilities.m in Sources */,
+				34C40F61194F48FC001A4399 /* OBRuntimeCheck.m in Sources */,
+				34637CF5194F46CF009B51C5 /* NSError-OBExtensions.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		342163AF11907BF600C06E45 /* Sources */ = {
+		34637CD2194F448F009B51C5 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				344E670B1845535E00BEFCE3 /* OBExpectedDeallocation.m in Sources */,
-				342163C311907C7200C06E45 /* NSException-OBExtensions.m in Sources */,
-				342163C411907C7200C06E45 /* NSError-OBExtensions.m in Sources */,
-				342163C511907C7200C06E45 /* NSError-OBUtilities.m in Sources */,
-				342163C611907C7200C06E45 /* OBObject.m in Sources */,
-				342163C711907C7200C06E45 /* OBUtilities.m in Sources */,
-				342163C811907C7200C06E45 /* assertions.m in Sources */,
-				342163C911907C7200C06E45 /* OBBacktraceBuffer.m in Sources */,
-				4DA2E35217A064420073144A /* OBLogger.m in Sources */,
-				34172BAB119C892900F7FD6A /* OBRuntimeCheck.m in Sources */,
+				34AA206C194F64BE003564CD /* OBTestCase.m in Sources */,
+				34045857194F674D00DAE9E1 /* OBErrorTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -681,6 +898,7 @@
 				4A33D41E08A0191B003A3FA5 /* NSException-OBExtensions.m in Sources */,
 				347049760CFB6612007025F7 /* NSError-OBExtensions.m in Sources */,
 				A2581A630E2D36DD001ABDA6 /* OBBacktraceBuffer.m in Sources */,
+				3483FAE3192CFE140072D3FE /* OBUtilities-NonARC.m in Sources */,
 				3469EF0B0FEB5E29002FEBC5 /* NSError-OBUtilities.m in Sources */,
 				34172BA6119C88DB00F7FD6A /* OBRuntimeCheck.m in Sources */,
 			);
@@ -689,15 +907,100 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		34045859194F679C00DAE9E1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4A33D40608A0191B003A3FA5 /* OmniBase */;
+			targetProxy = 34045858194F679C00DAE9E1 /* PBXContainerItemProxy */;
+		};
+		3404585B194F679D00DAE9E1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4A33D40608A0191B003A3FA5 /* OmniBase */;
+			targetProxy = 3404585A194F679D00DAE9E1 /* PBXContainerItemProxy */;
+		};
+		3404585D194F67A000DAE9E1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4A33D40608A0191B003A3FA5 /* OmniBase */;
+			targetProxy = 3404585C194F67A000DAE9E1 /* PBXContainerItemProxy */;
+		};
+		3404585F194F67A300DAE9E1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 34637CCB194F448F009B51C5 /* OmniBase-iOS */;
+			targetProxy = 3404585E194F67A300DAE9E1 /* PBXContainerItemProxy */;
+		};
+		34045861194F67A700DAE9E1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4A33D40608A0191B003A3FA5 /* OmniBase */;
+			targetProxy = 34045860194F67A700DAE9E1 /* PBXContainerItemProxy */;
+		};
+		34199176195000A500BA8113 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4A33D40608A0191B003A3FA5 /* OmniBase */;
+			targetProxy = 34199175195000A500BA8113 /* PBXContainerItemProxy */;
+		};
+		34199178195000A500BA8113 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4A33D40608A0191B003A3FA5 /* OmniBase */;
+			targetProxy = 34199177195000A500BA8113 /* PBXContainerItemProxy */;
+		};
+		3419917A195000A800BA8113 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 34637CCB194F448F009B51C5 /* OmniBase-iOS */;
+			targetProxy = 34199179195000A800BA8113 /* PBXContainerItemProxy */;
+		};
+		3419917C195000AE00BA8113 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4A33D40608A0191B003A3FA5 /* OmniBase */;
+			targetProxy = 3419917B195000AE00BA8113 /* PBXContainerItemProxy */;
+		};
+		3419917E195000AF00BA8113 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 34637CCB194F448F009B51C5 /* OmniBase-iOS */;
+			targetProxy = 3419917D195000AF00BA8113 /* PBXContainerItemProxy */;
+		};
+		34637CD9194F448F009B51C5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 34637CCB194F448F009B51C5 /* OmniBase-iOS */;
+			targetProxy = 34637CD8194F448F009B51C5 /* PBXContainerItemProxy */;
+		};
+		34637CE8194F4490009B51C5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 34637CCB194F448F009B51C5 /* OmniBase-iOS */;
+			targetProxy = 34637CE7194F4490009B51C5 /* PBXContainerItemProxy */;
+		};
+		34637CEA194F4490009B51C5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 34637CCB194F448F009B51C5 /* OmniBase-iOS */;
+			targetProxy = 34637CE9194F4490009B51C5 /* PBXContainerItemProxy */;
+		};
+		34637CEC194F44A0009B51C5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 34637CCB194F448F009B51C5 /* OmniBase-iOS */;
+			targetProxy = 34637CEB194F44A0009B51C5 /* PBXContainerItemProxy */;
+		};
+		34637CEE194F4602009B51C5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4A33D40608A0191B003A3FA5 /* OmniBase */;
+			targetProxy = 34637CED194F4602009B51C5 /* PBXContainerItemProxy */;
+		};
 		34778CD811810BEE00EC28C1 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 4A33D40608A0191B003A3FA5 /* OmniBase */;
 			targetProxy = 34778CD711810BEE00EC28C1 /* PBXContainerItemProxy */;
 		};
-		3481F5F211E65B8400428943 /* PBXTargetDependency */ = {
+		349DBEFE1947615400787860 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 342163B111907BF600C06E45 /* OmniBaseTouch */;
-			targetProxy = 3481F5F111E65B8400428943 /* PBXContainerItemProxy */;
+			target = 4A33D40608A0191B003A3FA5 /* OmniBase */;
+			targetProxy = 349DBEFD1947615400787860 /* PBXContainerItemProxy */;
+		};
+		34C40F70194F4C33001A4399 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 34637CCB194F448F009B51C5 /* OmniBase-iOS */;
+			targetProxy = 34C40F6F194F4C33001A4399 /* PBXContainerItemProxy */;
+		};
+		34C40F72194F4C33001A4399 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 34637CCB194F448F009B51C5 /* OmniBase-iOS */;
+			targetProxy = 34C40F71194F4C33001A4399 /* PBXContainerItemProxy */;
 		};
 		34EE20EA14F0354C00722491 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -718,69 +1021,87 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
-		340115B111E5157A0016ADB3 /* Debug */ = {
+		34637CDF194F448F009B51C5 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 34354D211190BFC700FE1BEB /* Touch-Library-Debug.xcconfig */;
+			baseConfigurationReference = 34C40F83194F4C84001A4399 /* Touch-Framework-Debug.xcconfig */;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(DEVELOPER_DIR)/Library/Frameworks",
-					"$(value)",
-				);
-				PRODUCT_NAME = OmniBaseTouchTests;
+				INFOPLIST_FILE = Info.plist;
+				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniBase;
+				PRODUCT_NAME = OmniBase;
 			};
 			name = Debug;
 		};
-		340115B211E5157A0016ADB3 /* Release */ = {
+		34637CE0194F448F009B51C5 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 34354D221190BFC700FE1BEB /* Touch-Library-Release.xcconfig */;
+			baseConfigurationReference = 34C40F84194F4C84001A4399 /* Touch-Framework-Release.xcconfig */;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(DEVELOPER_DIR)/Library/Frameworks",
-					"$(value)",
-				);
-				PRODUCT_NAME = OmniBaseTouchTests;
+				INFOPLIST_FILE = Info.plist;
+				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniBase;
+				PRODUCT_NAME = OmniBase;
 			};
 			name = Release;
 		};
-		340115B311E5157A0016ADB3 /* Coverage */ = {
+		34637CE1194F448F009B51C5 /* Coverage */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 34354D201190BFC700FE1BEB /* Touch-Library-Coverage.xcconfig */;
+			baseConfigurationReference = 34C40F82194F4C84001A4399 /* Touch-Framework-Coverage.xcconfig */;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(DEVELOPER_DIR)/Library/Frameworks",
-					"$(value)",
-				);
-				PRODUCT_NAME = OmniBaseTouchTests;
+				INFOPLIST_FILE = Info.plist;
+				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniBase;
+				PRODUCT_NAME = OmniBase;
 			};
 			name = Coverage;
 		};
-		342163B311907BF700C06E45 /* Debug */ = {
+		34637CE2194F448F009B51C5 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 34354D211190BFC700FE1BEB /* Touch-Library-Debug.xcconfig */;
+			baseConfigurationReference = 34C40F7F194F4C84001A4399 /* Touch-Bundle-Debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
-				PRODUCT_NAME = OmniBase;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(value)",
+					"$(TEST_FRAMEWORK_SEARCH_PATHS)",
+				);
+				GCC_PREFIX_HEADER = "Tests/OBUnitTests/OBUnitTests-Prefix.pch";
+				INFOPLIST_FILE = "Tests/OBUnitTests/OBUnitTests-Info.plist";
+				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniBase.UnitTests;
+				PRODUCT_NAME = OBUnitTests;
 			};
 			name = Debug;
 		};
-		342163B411907BF700C06E45 /* Release */ = {
+		34637CE3194F448F009B51C5 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 34354D221190BFC700FE1BEB /* Touch-Library-Release.xcconfig */;
+			baseConfigurationReference = 34C40F80194F4C84001A4399 /* Touch-Bundle-Release.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
-				PRODUCT_NAME = OmniBase;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(value)",
+					"$(TEST_FRAMEWORK_SEARCH_PATHS)",
+				);
+				GCC_PREFIX_HEADER = "Tests/OBUnitTests/OBUnitTests-Prefix.pch";
+				INFOPLIST_FILE = "Tests/OBUnitTests/OBUnitTests-Info.plist";
+				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniBase.UnitTests;
+				PRODUCT_NAME = OBUnitTests;
 			};
 			name = Release;
 		};
-		342163B511907BF700C06E45 /* Coverage */ = {
+		34637CE4194F448F009B51C5 /* Coverage */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 34354D201190BFC700FE1BEB /* Touch-Library-Coverage.xcconfig */;
+			baseConfigurationReference = 34C40F7E194F4C84001A4399 /* Touch-Bundle-Coverage.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
-				PRODUCT_NAME = OmniBase;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(value)",
+					"$(TEST_FRAMEWORK_SEARCH_PATHS)",
+				);
+				GCC_PREFIX_HEADER = "Tests/OBUnitTests/OBUnitTests-Prefix.pch";
+				INFOPLIST_FILE = "Tests/OBUnitTests/OBUnitTests-Info.plist";
+				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniBase.UnitTests;
+				PRODUCT_NAME = OBUnitTests;
 			};
 			name = Coverage;
 		};
@@ -814,13 +1135,13 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
 				FRAMEWORK_SEARCH_PATHS = (
-					"$(DEVELOPER_DIR)/Library/Frameworks",
 					"$(value)",
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
 				);
 				GCC_PREFIX_HEADER = "Tests/OBUnitTests/OBUnitTests-Prefix.pch";
 				INFOPLIST_FILE = "Tests/OBUnitTests/OBUnitTests-Info.plist";
+				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniBase.UnitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				WRAPPER_EXTENSION = octest;
 			};
 			name = Debug;
 		};
@@ -830,13 +1151,13 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
 				FRAMEWORK_SEARCH_PATHS = (
-					"$(DEVELOPER_DIR)/Library/Frameworks",
 					"$(value)",
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
 				);
 				GCC_PREFIX_HEADER = "Tests/OBUnitTests/OBUnitTests-Prefix.pch";
 				INFOPLIST_FILE = "Tests/OBUnitTests/OBUnitTests-Info.plist";
+				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniBase.UnitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				WRAPPER_EXTENSION = octest;
 			};
 			name = Release;
 		};
@@ -846,13 +1167,13 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
 				FRAMEWORK_SEARCH_PATHS = (
-					"$(DEVELOPER_DIR)/Library/Frameworks",
 					"$(value)",
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
 				);
 				GCC_PREFIX_HEADER = "Tests/OBUnitTests/OBUnitTests-Prefix.pch";
 				INFOPLIST_FILE = "Tests/OBUnitTests/OBUnitTests-Info.plist";
+				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniBase.UnitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				WRAPPER_EXTENSION = octest;
 			};
 			name = Coverage;
 		};
@@ -860,6 +1181,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 4AAFAE1908A0216200E04045 /* Omni-Framework-Debug.xcconfig */;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "";
@@ -878,6 +1200,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 4AAFAE1A08A0216200E04045 /* Omni-Framework-Release.xcconfig */;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				INFOPLIST_FILE = Info.plist;
 				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniBase;
@@ -895,6 +1218,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 4AAFAE1808A0216200E04045 /* Omni-Framework-Coverage.xcconfig */;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				INFOPLIST_FILE = Info.plist;
 				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniBase;
@@ -936,22 +1260,22 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		340115C111E515C40016ADB3 /* Build configuration list for PBXNativeTarget "OmniBaseTouchTests" */ = {
+		34637CE5194F448F009B51C5 /* Build configuration list for PBXNativeTarget "OmniBase-iOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				340115B111E5157A0016ADB3 /* Debug */,
-				340115B211E5157A0016ADB3 /* Release */,
-				340115B311E5157A0016ADB3 /* Coverage */,
+				34637CDF194F448F009B51C5 /* Debug */,
+				34637CE0194F448F009B51C5 /* Release */,
+				34637CE1194F448F009B51C5 /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		342163B611907C1900C06E45 /* Build configuration list for PBXNativeTarget "OmniBaseTouch" */ = {
+		34637CE6194F448F009B51C5 /* Build configuration list for PBXNativeTarget "OBUnitTests-iOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				342163B311907BF700C06E45 /* Debug */,
-				342163B411907BF700C06E45 /* Release */,
-				342163B511907BF700C06E45 /* Coverage */,
+				34637CE2194F448F009B51C5 /* Debug */,
+				34637CE3194F448F009B51C5 /* Release */,
+				34637CE4194F448F009B51C5 /* Coverage */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

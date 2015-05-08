@@ -1,4 +1,4 @@
-// Copyright 2000-2008, 2010-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2000-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -6,7 +6,7 @@
 // <http://www.omnigroup.com/developer/sourcecode/sourcelicense/>.
 
 #import "NSColor-OAExtensions.h"
-
+#import "OAColorSpaceManager.h"
 #import <Foundation/Foundation.h>
 #import <AppKit/AppKit.h>
 #import <OmniBase/OmniBase.h>
@@ -111,7 +111,7 @@ static NSData *_dictionaryDataGetter(void *container, NSString *key)
     return result;
 }
 
-+ (NSColor *)_colorFromContainer:(void *)container getters:(OAColorGetters)getters;
++ (NSColor *)_colorFromContainer:(void *)container getters:(OAColorGetters)getters withColorSpaceManager:(OAColorSpaceManager *)manager;
 {
     NSData *data = getters.data(container, @"archive");
     if (data) {
@@ -124,11 +124,17 @@ static NSData *_dictionaryDataGetter(void *container, NSString *key)
                 NSLog(@"Exception unarchiving NSColor: %@", exc);
             }
             
-            if ([unarchived isKindOfClass:[NSColor class]])
+            if (unarchived)
                 return unarchived;
         }
-        
         // otherwise, fallback -- might be a rgb color in the plist too.
+    }
+    
+    NSString *colorSpaceName = getters.string(container, @"space");
+    NSColorSpace *colorSpace = nil;
+    
+    if (colorSpaceName) {
+        colorSpace = (manager) ? [manager colorSpaceForName:colorSpaceName] : [OAColorSpaceManager colorSpaceForName:colorSpaceName];
     }
     
     CGFloat alpha = 1.0f;
@@ -137,13 +143,22 @@ static NSData *_dictionaryDataGetter(void *container, NSString *key)
         getters.component(container, @"alpha", &alphaPercent);
         alpha = alphaPercent / 100.0f;
     }
-
-    CGFloat v0;
-    if (getters.component(container, @"w", &v0))
-        return [NSColor colorWithCalibratedWhite:v0 alpha:alpha];
-    else if (getters.component(container, @"white", &v0))
-        return [NSColor colorWithCalibratedWhite:(v0 / 255.0f) alpha:alpha];
+    CGFloat v0 = 0, v1 = 0, v2 = 0, v3 = 0;
+    BOOL white = NO;
+    if (getters.component(container, @"w", &v0)) {
+        white = YES;
+    } else if (getters.component(container, @"white", &v0)) {
+        white = YES;
+        v0 = v0/255.0f;
+    }
     
+    if (white) {
+        if (!colorSpace || [colorSpace colorSpaceModel] != NSGrayColorSpaceModel)
+            return [NSColor colorWithCalibratedWhite:v0 alpha:alpha];
+        CGFloat components[2] = {v0,alpha};
+        return [NSColor colorWithColorSpace:colorSpace components:components count:2];
+    }
+
     NSString *catalog = getters.string(container, @"catalog");
     if (catalog) {
         NSString *name = getters.string(container, @"name");
@@ -156,51 +171,61 @@ static NSData *_dictionaryDataGetter(void *container, NSString *key)
         // otherwise, fallback -- might be a rgb color in the plist too.
     }
     
+    BOOL RGB = NO;
     if (getters.component(container, @"r", &v0)) {
-        CGFloat v1 = 0.0f, v2 = 0.0f;
         getters.component(container, @"g", &v1);
         getters.component(container, @"b", &v2);
-        return OARGBA(v0, v1, v2, alpha);
+        RGB = YES;
     } else if (getters.component(container, @"red", &v0)) {
-        CGFloat v1 = 0.0f, v2 = 0.0f;
         getters.component(container, @"green", &v1);
         getters.component(container, @"blue", &v2);
-        return OARGBA(v0 / 255.0f, v1 / 255.0f, v2 / 255.0f, alpha);
+        v0/=255.0f;
+        v1/=255.0f;
+        v2/=255.0f;
+        RGB = YES;
     }
     
-    if (getters.component(container, @"c", &v0)) {
-        // No global name for the calibrated CMYK color space
+    if (RGB) {
+        if (!colorSpace || [colorSpace colorSpaceModel] != NSRGBColorSpaceModel)
+            return [NSColor colorWithCalibratedRed:v0 green:v1 blue:v2 alpha:alpha];
+        CGFloat components[4] = {v0,v1,v2,alpha};
+        return [NSColor colorWithColorSpace:colorSpace components:components count:4];
+    }
 
-        CGFloat components[5];
-        components[0] = v0;
-        getters.component(container, @"m", &components[1]);
-        getters.component(container, @"y", &components[2]);
-        getters.component(container, @"k", &components[3]);
-        components[4] = alpha;
-        
-        return [NSColor colorWithColorSpace:[NSColorSpace genericCMYKColorSpace] components:components count:5];
+    BOOL CMYK = NO;
+    
+    if (getters.component(container, @"c", &v0)) {
+        getters.component(container, @"m", &v1);
+        getters.component(container, @"y", &v2);
+        getters.component(container, @"k", &v3);
+        CMYK = YES;
     } else if (getters.component(container, @"cyan", &v0)) {
-        // No global name for the calibrated CMYK color space
-        
-        CGFloat v1 = 0.0f, v2 = 0.0f, v3 = 0.0f;
         getters.component(container, @"magenta", &v1);
         getters.component(container, @"yellow", &v2);
         getters.component(container, @"black", &v3);
-        
-        CGFloat components[5] = {v0 / 100.0f, v1 / 100.0f, v2 / 100.0f, v3 / 100.0f, alpha};
-        return [NSColor colorWithColorSpace:[NSColorSpace genericCMYKColorSpace] components:components count:5];
+        v0 /= 100.0f;
+        v1 /= 100.0f;
+        v2 /= 100.0f;
+        v3 /= 100.0f;
+        CMYK = YES;
+    }
+    
+    if (CMYK) {
+        CGFloat components[5] = {v0, v1, v2, v3, alpha};
+        // No global name for the calibrated CMYK color space
+        if (!colorSpace || [colorSpace colorSpaceModel] != NSCMYKColorSpaceModel)
+            return [NSColor colorWithColorSpace:[NSColorSpace genericCMYKColorSpace] components:components count:5];
+        return [NSColor colorWithColorSpace:colorSpace components:components count:5];
     }
     
     // There is no HSB/HSV colorspace, but lets allow specifying colors in property lists (for defaults in Info.plist) that way
     if (getters.component(container, @"h", &v0)) {
-        CGFloat v1 = 0.0f, v2 = 0.0f;
         getters.component(container, @"s", &v1);
         if (!getters.component(container, @"v", &v2))
             getters.component(container, @"b", &v2);
         
         return [NSColor colorWithCalibratedHue:v0 saturation:v1 brightness:v2 alpha:alpha];
     } else if (getters.component(container, @"hue", &v0)) {
-        CGFloat v1 = 0.0f, v2 = 0.0f;
         getters.component(container, @"saturation", &v1);
         if (!getters.component(container, @"value", &v2))
             getters.component(container, @"brightness", &v2);
@@ -233,14 +258,18 @@ static NSData *_dictionaryDataGetter(void *container, NSString *key)
 
 + (NSColor *)colorFromPropertyListRepresentation:(NSDictionary *)dict;
 {
+    return [self colorFromPropertyListRepresentation:dict withColorSpaceManager:nil];
+}
+
++ (NSColor *)colorFromPropertyListRepresentation:(NSDictionary *)dict withColorSpaceManager:(OAColorSpaceManager *)manager;
+{
     OAColorGetters getters = {
         .component = _dictionaryComponentGetter,
         .string = _dictionaryStringGetter,
         .data = _dictionaryDataGetter,
     };
-    return [self _colorFromContainer:dict getters:getters];
+    return [self _colorFromContainer:dict getters:getters withColorSpaceManager:manager];
 }
-
 
 typedef struct {
     void (*component)(id container, NSString *key, double component);
@@ -278,52 +307,75 @@ static void _dictionaryDataAdder(id container, NSString *key, NSData *data)
 
 
 // Allow for including default values, particular for scripting so that users don't have to check for missing values
-- (void)_addComponentsToContainer:(id)container adders:(OAColorAdders)adders omittingDefaultValues:(BOOL)omittingDefaultValues;
+- (void)_addComponentsToContainer:(id)container adders:(OAColorAdders)adders omittingDefaultValues:(BOOL)omittingDefaultValues withColorSpaceManager:(OAColorSpaceManager *)manager;
 {
     BOOL hasAlpha = NO;
     
     NSString *colorSpaceName = [self colorSpaceName];
     NSColorSpace *colorSpace = nil;
+    BOOL archiveConvertedColor = NO;
     
     if (OFNOTEQUAL(colorSpaceName, NSPatternColorSpace) && OFNOTEQUAL(colorSpaceName, NSNamedColorSpace)) // This will raise if it is a pattern or catalog
         colorSpace = [self colorSpace];
-    
-    if ([colorSpaceName isEqualToString:NSCalibratedWhiteColorSpace] || [colorSpaceName isEqualToString:NSDeviceWhiteColorSpace]) {
-        NSColor *calibratedColor = [self colorUsingColorSpaceName:NSCalibratedWhiteColorSpace]; // don't archive device colors if at all possible
-        adders.component(container, @"w", [calibratedColor whiteComponent]);
-        hasAlpha = YES;
-    } else if ([colorSpaceName isEqualToString:NSCalibratedRGBColorSpace] || [colorSpaceName isEqualToString:NSDeviceRGBColorSpace]) {
-        NSColor *calibratedColor = [self colorUsingColorSpaceName:NSCalibratedRGBColorSpace]; // don't archive device colors if at all possible
-        adders.component(container, @"r", [calibratedColor redComponent]);
-        adders.component(container, @"g", [calibratedColor greenComponent]);
-        adders.component(container, @"b", [calibratedColor blueComponent]);
-        hasAlpha = YES;
-    } else if ([colorSpaceName isEqualToString:NSNamedColorSpace]) {
-        adders.string(container, @"catalog", [self catalogNameComponent]);
-        adders.string(container, @"name", [self colorNameComponent]);
-    } else if (OFISEQUAL(colorSpace, [NSColorSpace genericCMYKColorSpace])) { // There is no global name for calibrated CMYK
-        // The -{cyan,magenta,yellow,black}Component methods are only valid for RGB colors, intuitively.
-        CGFloat components[5]; // Assuming that it'll write out alpha too.
-        [self getComponents:components];
 
-        adders.component(container, @"c", components[0]);
-        adders.component(container, @"m", components[1]);
-        adders.component(container, @"y", components[2]);
-        adders.component(container, @"k", components[3]);
-        hasAlpha = YES;
-    } else if ([colorSpaceName isEqualToString:NSPatternColorSpace]) {
-        adders.data(container, @"tiff", [[self patternImage] TIFFRepresentation]);
-    } else {
-        NSColor *rgbColor = [self colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
-        if (rgbColor) {
-            [rgbColor _addComponentsToContainer:container adders:adders omittingDefaultValues:omittingDefaultValues];
+    if (colorSpace) {
+        // NOTE: we used to convert device colors to calibrated colors, but now the user can explicitly pick device colors so we preserve them
+        BOOL archiveCustomSpace = NO;
+        
+        if (![OAColorSpaceManager isColorSpaceGeneric:colorSpace]) {
+            NSString *name = (manager) ? [manager nameForColorSpace:colorSpace] : [OAColorSpaceManager nameForColorSpace:colorSpace];
+            if (name)
+                adders.string(container, @"space", name);
+            else
+                archiveCustomSpace = YES;
+        }
+        
+        if ([colorSpace colorSpaceModel] == NSGrayColorSpaceModel) {
+            adders.component(container, @"w", [self whiteComponent]);
+            hasAlpha = YES;
+        } else if ([colorSpace colorSpaceModel] == NSRGBColorSpaceModel) {
+            adders.component(container, @"r", [self redComponent]);
+            adders.component(container, @"g", [self greenComponent]);
+            adders.component(container, @"b", [self blueComponent]);
+            hasAlpha = YES;
+        } else if ([colorSpace colorSpaceModel] == NSCMYKColorSpaceModel) {
+            CGFloat components[5]; // Assuming that it'll write out alpha too.
+            [self getComponents:components];
+            
+            adders.component(container, @"c", components[0]);
+            adders.component(container, @"m", components[1]);
+            adders.component(container, @"y", components[2]);
+            adders.component(container, @"k", components[3]);
+            hasAlpha = YES;
         } else {
+            archiveCustomSpace = YES;
+            archiveConvertedColor = YES;
+            // The right way to do this is probably to ask the colorSpace for the numberOfComponents, the write them out as something like C0 = x, C1 = y, ...and then add reading of CN
+            // For now we are just going to keep archiving the entire color
+        }
+        
+        if (archiveCustomSpace) {
             NSData *archive = [NSKeyedArchiver archivedDataWithRootObject:self];
             if (archive != nil && [archive length] > 0)
                 adders.data(container, @"archive", archive);
         }
-        return;
+    } else if ([colorSpaceName isEqualToString:NSNamedColorSpace]) {
+        adders.string(container, @"catalog", [self catalogNameComponent]);
+        adders.string(container, @"name", [self colorNameComponent]);
+    } else if ([colorSpaceName isEqualToString:NSPatternColorSpace]) {
+        adders.data(container, @"tiff", [[self patternImage] TIFFRepresentation]);
+    } else {
+        // No colorspace, not a pattern or named color.
+        archiveConvertedColor = YES;
     }
+    
+    if (archiveConvertedColor) {
+        NSColor *rgbColor = [self colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+        if (!rgbColor)
+            rgbColor = [NSColor colorWithCalibratedRed:1 green:1 blue:1 alpha:1];
+        [rgbColor _addComponentsToContainer:container adders:adders omittingDefaultValues:omittingDefaultValues withColorSpaceManager:manager];
+    }
+
     if (hasAlpha) {
         double alpha = [self alphaComponent];
         if (alpha != 1.0 || !omittingDefaultValues)
@@ -339,7 +391,7 @@ static void _dictionaryDataAdder(id container, NSString *key, NSData *data)
         .data = _dictionaryDataAdder
     };
     NSMutableDictionary *plist = [NSMutableDictionary dictionary];
-    [self _addComponentsToContainer:plist adders:adders omittingDefaultValues:omittingDefaultValues];
+    [self _addComponentsToContainer:plist adders:adders omittingDefaultValues:omittingDefaultValues withColorSpaceManager:nil];
     return plist;
 }
 
@@ -351,7 +403,7 @@ static void _dictionaryDataAdder(id container, NSString *key, NSData *data)
         .data = _dictionaryDataAdder
     };
     NSMutableDictionary *plist = [NSMutableDictionary dictionary];
-    [self _addComponentsToContainer:plist adders:adders omittingDefaultValues:omittingDefaultValues];
+    [self _addComponentsToContainer:plist adders:adders omittingDefaultValues:omittingDefaultValues withColorSpaceManager:nil];
     return plist;
 }
 
@@ -359,6 +411,18 @@ static void _dictionaryDataAdder(id container, NSString *key, NSData *data)
 - (NSMutableDictionary *)propertyListRepresentation;
 {
     return [self propertyListRepresentationWithStringComponentsOmittingDefaultValues:YES];
+}
+
+- (NSMutableDictionary *)propertyListRepresentationWithColorSpaceManager:(OAColorSpaceManager *)manager;
+{
+    OAColorAdders adders = {
+        .component = _dictionaryNumberComponentAdder,
+        .string = _dictionaryStringAdder,
+        .data = _dictionaryDataAdder
+    };
+    NSMutableDictionary *plist = [NSMutableDictionary dictionary];
+    [self _addComponentsToContainer:plist adders:adders omittingDefaultValues:YES withColorSpaceManager:manager];
+    return plist;
 }
 
 //
@@ -462,7 +526,8 @@ static OANamedColorEntry *_addColorsFromList(OANamedColorEntry *colorEntries, NS
 	NSColor *color = [colorList colorWithKey:colorKey];
 	
 	OANamedColorEntry *entry = &colorEntries[*entryCount + colorIndex];
-	entry->name = [colorKey copy];
+        NSString *localizedColorName =  [OMNI_BUNDLE localizedStringForKey:colorKey value:nil table:@"OACrayonNames"];
+	entry->name = [localizedColorName copy];
 	
 	NSColor *rgbColor = [color colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
 	[rgbColor getHue:&entry->h saturation:&entry->s brightness:&entry->v alpha:&entry->a];
@@ -597,18 +662,18 @@ static CGFloat _colorCloseness(const OANamedColorEntry *e1, const OANamedColorEn
     
     NSString *closestColorDescription = nil;
     if (saturationString != nil && brightnessString != nil)
-        closestColorDescription = [NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"%@, %@ %@", @"OmniAppKit", [OAColorProfile bundle], "format string for color with saturation and brightness descriptions"), brightnessString, saturationString, closestEntry->name];
+        closestColorDescription = [NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"%@, %@ %@", @"OmniAppKit", [OAColorProfile bundle], "format string for color with saturation and brightness descriptions (brightness, saturation, color name)"), brightnessString, saturationString, closestEntry->name];
     else if (saturationString != nil)
-        closestColorDescription = [NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"%@ %@", @"OmniAppKit", [OAColorProfile bundle], "format string for color with saturation description"), saturationString, closestEntry->name];
+        closestColorDescription = [NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"%@ %@", @"OmniAppKit", [OAColorProfile bundle], "format string for color with saturation description (saturation, color name)"), saturationString, closestEntry->name];
     else if (brightnessString != nil)
-        closestColorDescription = [NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"%@ %@", @"OmniAppKit", [OAColorProfile bundle], "format string for color with brightness description"), brightnessString, closestEntry->name];
+        closestColorDescription = [NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"%@ %@", @"OmniAppKit", [OAColorProfile bundle], "format string for color with brightness description (brightness, color name)"), brightnessString, closestEntry->name];
     else
         closestColorDescription = closestEntry->name;
 
     if (colorEntry.a <= 0.001)
         return NSLocalizedStringFromTableInBundle(@"Clear", @"OmniAppKit", [OAColorProfile bundle], "name of completely transparent color");
     else if (colorEntry.a < .999)
-        return [NSString stringWithFormat:@"%d%% %@", (int)(colorEntry.a * 100), closestColorDescription];
+        return [NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"%d%% %@", @"OmniAppKit", [OAColorProfile bundle], "alpha with color description"), (int)(colorEntry.a * 100), closestColorDescription];
     else
         return closestColorDescription;
 }
@@ -790,12 +855,12 @@ static void _xmlDataAdder(id container, NSString *key, NSData *data)
             .string = _xmlStringAdder,
             .data = _xmlDataAdder
         };
-        [self _addComponentsToContainer:doc adders:adders omittingDefaultValues:YES];
+        [self _addComponentsToContainer:doc adders:adders omittingDefaultValues:YES withColorSpaceManager:nil];
 
         // This is used in cases where you want to export both the real colorspace AND something that might be understandable to other XML readers (who won't be able to understand catalog colors).
         NSString *additionalColorSpace = [doc userObjectForKey:OAColorXMLAdditionalColorSpace];
         if (additionalColorSpace && OFNOTEQUAL(additionalColorSpace, [self colorSpaceName]))
-            [[self colorUsingColorSpaceName:additionalColorSpace] _addComponentsToContainer:doc adders:adders omittingDefaultValues:YES];
+            [[self colorUsingColorSpaceName:additionalColorSpace] _addComponentsToContainer:doc adders:adders omittingDefaultValues:YES withColorSpaceManager:nil];
     }
     [doc popElement];
 }
@@ -831,50 +896,8 @@ static NSData *_xmlCursorDataGetter(void *container, NSString *key)
         .string = _xmlCursorStringGetter,
         .data = _xmlCursorDataGetter
     };
-    return [NSColor _colorFromContainer:cursor getters:getters];
+    return [NSColor _colorFromContainer:cursor getters:getters withColorSpaceManager:nil];
 }
-
-static BOOL _xmlNodeAttributeDictionaryComponentGetter(void *container, NSString *key, CGFloat *outComponent)
-{
-    NSString *attribute = [(NSDictionary *)container objectForKey:key];
-    if (!attribute)
-        return NO;
-    *outComponent = [attribute cgFloatValue];
-    return YES;
-}
-
-static NSString *_xmlNodeAttributeDictionaryStringGetter(void *container, NSString *key)
-{
-    return [(NSDictionary *)container objectForKey:key];
-}
-
-static NSData *_xmlNodeAttributeDictionaryDataGetter(void *container, NSString *key)
-{
-    NSString *string = [(NSDictionary *)container objectForKey:key];
-    if (!string)
-        return nil;
-    return [[[NSData alloc] initWithBase64String:string] autorelease];
-}
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wdeprecated-implementations"
-+ (NSColor *)colorFromXMLTreeRef:(CFXMLTreeRef)treeRef;
-{
-    CFXMLNodeRef nodeRef = CFXMLTreeGetNode(treeRef);
-    if (nodeRef == NULL)
-        return [NSColor whiteColor];
-    
-    NSDictionary *colorAttributes = (NSDictionary *)(((CFXMLElementInfo *)CFXMLNodeGetInfoPtr(nodeRef))->attributes);
-    
-    OAColorGetters getters = {
-        .component = _xmlNodeAttributeDictionaryComponentGetter,
-        .string = _xmlNodeAttributeDictionaryStringGetter,
-        .data = _xmlNodeAttributeDictionaryDataGetter
-    };
-    return [NSColor _colorFromContainer:colorAttributes getters:getters];
-}
-#pragma clang diagnostic pop
 
 @end
 

@@ -1,4 +1,4 @@
-// Copyright 2006-2008, 2010-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2006-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -27,9 +27,6 @@ RCS_ID("$Id$");
 }
 
 #pragma mark API
-
-@synthesize defaultTimeDateComponents = _defaultTimeDateComponents;
-@synthesize useEndOfDuration = _useEndOfDuration;
 
 - (void)setUseRelativeDayNames:(BOOL)useRelativeDayNames;
 {
@@ -97,7 +94,7 @@ dateString = [super stringForObjectValue:obj]; \
 	return [super stringForObjectValue:obj];
     
     NSCalendar *cal = [NSCalendar currentCalendar];
-    NSDateComponents *value = [cal components:NSYearCalendarUnit|NSMonthCalendarUnit|NSDayCalendarUnit|NSHourCalendarUnit|NSMinuteCalendarUnit|NSWeekdayCalendarUnit fromDate:obj];
+    NSDateComponents *value = [cal components:NSCalendarUnitYear|NSCalendarUnitMonth|NSCalendarUnitDay|NSCalendarUnitHour|NSCalendarUnitMinute|NSCalendarUnitWeekday fromDate:obj];
     NSDateFormatterStyle timeStyle = [self timeStyle];
     NSString *dateString = @"";
 
@@ -111,7 +108,7 @@ dateString = [super stringForObjectValue:obj]; \
     }
     
     // construct relative day names
-    NSDateComponents *today = [cal components:NSYearCalendarUnit|NSMonthCalendarUnit|NSDayCalendarUnit fromDate:[NSDate date]];
+    NSDateComponents *today = [cal components:NSCalendarUnitYear|NSCalendarUnitMonth|NSCalendarUnitDay fromDate:[NSDate date]];
     
     // if today, and no time set, just say "Today", if there is a time, return the time
     if ([self dateStyle] == NSDateFormatterNoStyle)
@@ -158,7 +155,7 @@ dateString = [super stringForObjectValue:obj]; \
     NSError *relativeError = nil;
     NSDate *date = nil;
     
-    BOOL success = [[OFRelativeDateParser sharedParser] getDateValue:&date forString:string fromStartingDate:_referenceDate useEndOfDuration:_useEndOfDuration defaultTimeDateComponents:_defaultTimeDateComponents calendar:[self calendar] error:&relativeError];
+    BOOL success = [[OFRelativeDateParser sharedParser] getDateValue:&date forString:string fromStartingDate:_referenceDate useEndOfDuration:_useEndOfDuration defaultTimeDateComponents:_defaultTimeDateComponents calendar:[self calendar] withCustomFormat:self.dateFormat error:&relativeError];
 
     if (success)
         *obj = date;
@@ -174,7 +171,7 @@ dateString = [super stringForObjectValue:obj]; \
 - (BOOL)getObjectValue:(out id *)obj forString:(NSString *)string range:(inout NSRange *)rangep error:(out NSError **)error;
 {
     NSDate *date = nil;
-    BOOL success = [[OFRelativeDateParser sharedParser] getDateValue:&date forString:string fromStartingDate:_referenceDate useEndOfDuration:_useEndOfDuration defaultTimeDateComponents:_defaultTimeDateComponents calendar:[self calendar] error:error];
+    BOOL success = [[OFRelativeDateParser sharedParser] getDateValue:&date forString:string fromStartingDate:_referenceDate useEndOfDuration:_useEndOfDuration defaultTimeDateComponents:_defaultTimeDateComponents calendar:[self calendar] withCustomFormat:self.dateFormat error:error];
 
     if (success)
         *obj = date;

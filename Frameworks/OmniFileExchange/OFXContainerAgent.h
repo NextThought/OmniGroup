@@ -1,4 +1,4 @@
-// Copyright 2013 Omni Development, Inc. All rights reserved.
+// Copyright 2013-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -10,7 +10,8 @@
 #import <Foundation/NSObject.h>
 
 @class ODAVFileInfo;
-@class OFXConnection, OFXFileItem, OFXAccountAgent, OFXServerAccount, OFXFileSnapshotTransfer, OFXRegistrationTable, OFXContainerScan;
+@class OFFileMotionResult;
+@class OFXConnection, OFXFileItem, OFXAccountAgent, OFXServerAccount, OFXFileSnapshotTransfer, OFXRegistrationTable, OFXContainerScan, OFXAccountClientParameters;
 
 @protocol NSFilePresenter;
 
@@ -46,6 +47,8 @@ typedef NS_ENUM(NSUInteger, OFXFileItemTransferKind) {
 @property(nonatomic,readonly) NSString *identifier;
 @property(nonatomic,readonly) OFXRegistrationTable *metadataRegistrationTable;
 
+@property(nonatomic,readonly) OFXAccountClientParameters *clientParameters;
+
 @property(nonatomic,weak) id <NSFilePresenter> filePresenter;
 @property(nonatomic) BOOL automaticallyDownloadFileContents;
 
@@ -68,10 +71,13 @@ typedef NS_ENUM(NSUInteger, OFXFileItemTransferKind) {
 - (OFXFileSnapshotTransfer *)prepareDownloadTransferForFileItem:(OFXFileItem *)fileItem error:(NSError **)outError;
 - (OFXFileSnapshotTransfer *)prepareDeleteTransferForFileItem:(OFXFileItem *)fileItem error:(NSError **)outError;
 
+- (void)addRecentTransferErrorsByLocalRelativePath:(NSMutableDictionary *)recentErrorsByLocalRelativePath;
+- (void)clearRecentErrorsOnAllFileItems;
+
 // Describes the current state of files on the *server* for this container. When this is updated, the container calls -containerPublishedFileVersionsChanged: on its account agent (on the account agent's queue).
 @property(nonatomic,readonly) NSArray *publishedFileVersions;
 
-- (OFXFileItem *)publishedFileItemWithURL:(NSURL *)fileURL;
+- (OFXFileItem *)fileItemWithURL:(NSURL *)fileURL;
 - (void)addFileItems:(NSMutableArray *)fileItems inDirectoryWithRelativePath:(NSString *)localDirectoryRelativePath;
 
 //
@@ -87,8 +93,7 @@ typedef NS_ENUM(NSUInteger, OFXFileItemTransferKind) {
 - (void)fileItemMoved:(OFXFileItem *)fileItem fromURL:(NSURL *)oldURL toURL:(NSURL *)newURL byUser:(BOOL)byUser;
 - (void)downloadFileAtURL:(NSURL *)fileURL completionHandler:(void (^)(NSError *errorOrNil))completionHandler;
 - (void)deleteItemAtURL:(NSURL *)fileURL completionHandler:(void (^)(NSError *errorOrNil))completionHandler;
-- (void)moveItemAtURL:(NSURL *)originalFileURL toURL:(NSURL *)updatedFileURL completionHandler:(void (^)(NSError *errorOrNil))completionHandler;
-- (void)newlyUnshadowedFileItemRequestsContents:(OFXFileItem *)fileItem;
+- (void)moveItemAtURL:(NSURL *)originalFileURL toURL:(NSURL *)updatedFileURL completionHandler:(void (^)(OFFileMotionResult *result, NSError *errorOrNil))completionHandler;
 
 @property(nonatomic,copy) NSString *debugName;
 

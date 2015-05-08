@@ -1,4 +1,4 @@
-// Copyright 1997-2014 Omni Development, Inc. All rights reserved.
+// Copyright 1997-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -15,6 +15,8 @@
     #define OB_ARC 1
     #define OB_STRONG __strong
     #define OB_BRIDGE __bridge
+    #define OB_BRIDGE_RETAIN __bridge_retain
+    #define OB_BRIDGE_TRANSFER __bridge_transfer
     #define OB_AUTORELEASING __autoreleasing
     #define OB_RETAIN(x) (x) // For assignment to a strong local, not for retain in place
     #define OB_RELEASE(x) (x = nil)
@@ -23,6 +25,8 @@
     #define OB_ARC 0
     #define OB_STRONG
     #define OB_BRIDGE
+    #define OB_BRIDGE_RETAIN
+    #define OB_BRIDGE_TRANSFER
     #define OB_AUTORELEASING
     #define OB_RETAIN(x) [(x) retain] // For assignment to a strong local, not for retain in place
     #define OB_RELEASE(x) [(x) release]
@@ -149,6 +153,9 @@
 
 /* For doing retain-and-assign or copy-and-assign with CF objects */
 #define OB_ASSIGN_CFRELEASE(lval, rval) { __typeof__(rval) new_ ## lval = (rval); if (lval != NULL) { CFRelease(lval); } lval = new_ ## lval; }
+
+/* For filling your NSError out-parameter from the CFErrorRef you got from another function */
+#define OB_CFERROR_TO_NS(outNSError, cfError) do{ if(outNSError) { *(outNSError) = CFBridgingRelease(cfError); } else { CFRelease(cfError); } }while(0)
 
 /* Replacement for __private_extern__, which is deprecated as of Xcode 4.6 DP2 */
 #define OB_HIDDEN __attribute__((visibility("hidden")))

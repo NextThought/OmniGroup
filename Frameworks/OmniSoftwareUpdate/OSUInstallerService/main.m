@@ -1,4 +1,4 @@
-// Copyright 2013 The Omni Group.  All rights reserved.
+// Copyright 2013-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -60,18 +60,6 @@ typedef NS_OPTIONS(NSUInteger, OSUInstallerServiceUpdateOptions) {
         AuthorizationFree(_authorizationToken, kAuthorizationFlagDefaults);
         _authorizationToken = NULL;
     }
-    
-    [_preflightError release];
-    
-    [_trampolineToolPath release];
-    
-    [_authorizationData release];
-    [_unpackedPath release];
-    [_installationDirectory release];
-    [_installedVersionPath release];
-    [_installationName release];
-    
-    [super dealloc];
 }
 
 #pragma mark Accessors
@@ -101,7 +89,7 @@ typedef NS_OPTIONS(NSUInteger, OSUInstallerServiceUpdateOptions) {
     self.preflightSuccessful = NO;
 
     if ([self _unpackInstallerArguments:arguments error:&error]) {
-        reply = [[reply copy] autorelease];
+        reply = [reply copy];
         
         [self checkPrivilegedHelperToolVersionWithReply:^(BOOL versionMismatch, NSInteger installedToolVersion) {
             NSData *authorizationData = nil;
@@ -298,23 +286,27 @@ typedef NS_OPTIONS(NSUInteger, OSUInstallerServiceUpdateOptions) {
     // (Alternative strategies exist, such as reading the tools embedded Info.plist, or embedding the version number in the launchd job dictionary.)
     
     BOOL privilegedHelperInstalled = NO;
-    CFDictionaryRef jobDictionary = SMJobCopyDictionary(kSMDomainSystemLaunchd, (CFStringRef)OSUInstallerPrivilegedHelperJobLabel);
-    if (jobDictionary != NULL) {
+    
+    // <bug:///108728> (Unassigned: Deprecated SMJob API used in OSUInstallerService)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    NSDictionary *jobDictionary = CFBridgingRelease(SMJobCopyDictionary(kSMDomainSystemLaunchd, (__bridge CFStringRef)OSUInstallerPrivilegedHelperJobLabel));
+#pragma clang diagnostic pop
+    if (jobDictionary != nil) {
         // Check to make sure that the helper tool actually exists. If it doesn't, the error handler on the remote proxy is never called (Neither are the invalidation or interruption handlers on the NSXPCConnection.)
-        NSString *executablePath = [[(NSDictionary *)jobDictionary objectForKey:@"ProgramArguments"] firstObject];
+        NSString *executablePath = [[jobDictionary objectForKey:@"ProgramArguments"] firstObject];
         BOOL executableExists = [[NSFileManager defaultManager] fileExistsAtPath:executablePath];
         privilegedHelperInstalled = executableExists;
 
-        CFRelease(jobDictionary);
-        jobDictionary = NULL;
+        jobDictionary = nil;
     }
     
     if (privilegedHelperInstalled) {
-        NSXPCConnection *connection = [[[NSXPCConnection alloc] initWithMachServiceName:OSUInstallerPrivilegedHelperJobLabel options:NSXPCConnectionPrivileged] autorelease];
+        NSXPCConnection *connection = [[NSXPCConnection alloc] initWithMachServiceName:OSUInstallerPrivilegedHelperJobLabel options:NSXPCConnectionPrivileged];
         connection.remoteObjectInterface = [NSXPCInterface interfaceWithProtocol:@protocol(OSUInstallerPrivilegedHelper)];
         [connection resume];
 
-        reply = [[reply copy] autorelease];
+        reply = [reply copy];
         
         id <OSUInstallerPrivilegedHelper> remoteProxy = [connection remoteObjectProxyWithErrorHandler:^(NSError *error) {
             [connection invalidate];
@@ -330,26 +322,26 @@ typedef NS_OPTIONS(NSUInteger, OSUInstallerServiceUpdateOptions) {
     }
 }
 
+// As of protocol version 6, we only install the tool. Each version has the protocol version as the last path component of the install helper and once it is installed we leave it alone.
+// This avoids flapping between multiple versions on disk if two apps are installed that want different versions and it avoids deprecated SMJob* functions.
 - (BOOL)updatePrivilegedHelperToolWithAuthorizationData:(NSData *)authorizationData installedToolVersion:(NSInteger)installedToolVersion error:(NSError **)error;
 {
-    if (![self uninstallPrivilegedHelperToolWithAuthorizationData:authorizationData installedToolVersion:installedToolVersion error:error]) {
-        return NO;
-    }
+    NSLog(@"Updating helper tool, installed version %ld ...", installedToolVersion);
     
     AuthorizationRef authorizationRef = [self createAuthorizationRefFromExternalAuthorizationData:authorizationData error:error];
     if (authorizationRef == NULL) {
+        NSLog(@"  Create authorization failed");
         return NO;
     }
 
     CFErrorRef blessError = NULL;
-    BOOL success = SMJobBless(kSMDomainSystemLaunchd, (CFStringRef)OSUInstallerPrivilegedHelperJobLabel, authorizationRef, &blessError);
+    BOOL success = SMJobBless(kSMDomainSystemLaunchd, (__bridge CFStringRef)OSUInstallerPrivilegedHelperJobLabel, authorizationRef, &blessError);
     if (!success) {
+        NSLog(@"  Job bless failed for %@: %@", OSUInstallerPrivilegedHelperJobLabel, [(__bridge NSError *)blessError toPropertyList]);
         AuthorizationFree(authorizationRef, kAuthorizationFlagDefaults);
         authorizationRef = NULL;
 
-        if (error != NULL) {
-            *error = [[(id)blessError copy] autorelease];
-        }
+        OB_CFERROR_TO_NS(error, blessError);
         
         return NO;
     }
@@ -357,102 +349,8 @@ typedef NS_OPTIONS(NSUInteger, OSUInstallerServiceUpdateOptions) {
     AuthorizationFree(authorizationRef, kAuthorizationFlagDefaults);
     authorizationRef = NULL;
     
+    NSLog(@"Update succeeded");
     return YES;
-}
-
-- (BOOL)uninstallPrivilegedHelperToolWithAuthorizationData:(NSData *)authorizationData installedToolVersion:(NSInteger)installedToolVersion error:(NSError **)error;
-{
-    BOOL privilegedHelperInstalled = NO;
-    CFDictionaryRef jobDictionary = SMJobCopyDictionary(kSMDomainSystemLaunchd, (CFStringRef)OSUInstallerPrivilegedHelperJobLabel);
-    if (jobDictionary != NULL) {
-        privilegedHelperInstalled = YES;
-        CFRelease(jobDictionary);
-        jobDictionary = NULL;
-    }
-    
-    if (!privilegedHelperInstalled) {
-        return YES;
-    }
-    
-    // We want to politely uninstall the tool.
-    // -uninstallPrivilegedHelperToolWithAuthorizationData:error: will refuse to install the tool if there is work in progress, but the logic was broken for versions of the tool prior to 4, so just remove the job in that case.
-    
-    if (installedToolVersion < 4) {
-        AuthorizationRef authorizationRef = [self createAuthorizationRefFromExternalAuthorizationData:authorizationData error:error];
-        if (authorizationRef == NULL) {
-            return NO;
-        }
-        
-        CFErrorRef jobRemoveError = NULL;
-        BOOL success = SMJobRemove(kSMDomainSystemLaunchd, (CFStringRef)OSUInstallerPrivilegedHelperJobLabel, authorizationRef, YES, &jobRemoveError);
-        if (!success) {
-            AuthorizationFree(authorizationRef, kAuthorizationFlagDefaults);
-            authorizationRef = NULL;
-            
-            if (error != NULL) {
-                *error = [[(id)jobRemoveError copy] autorelease];
-            }
-            
-            return NO;
-        }
-        
-        AuthorizationFree(authorizationRef, kAuthorizationFlagDefaults);
-        authorizationRef = NULL;
-        
-        return YES;
-    }
-    
-    __block BOOL uninstallSuccess = NO;
-    __block BOOL hasReceivedResponseOrError = NO;
-    __block NSError *remoteError = nil;
-    
-    NSXPCConnection *connection = [[NSXPCConnection alloc] initWithMachServiceName:OSUInstallerPrivilegedHelperJobLabel options:NSXPCConnectionPrivileged];
-    connection.remoteObjectInterface = [NSXPCInterface interfaceWithProtocol:@protocol(OSUInstallerPrivilegedHelper)];
-    [connection resume];
-    
-    id <OSUInstallerPrivilegedHelper> remoteProxy = [connection remoteObjectProxyWithErrorHandler:^(NSError *error) {
-        uninstallSuccess = NO;
-        remoteError = [error copy];
-        hasReceivedResponseOrError = YES;
-    }];
-    
-    [remoteProxy uninstallWithAuthorizationData:authorizationData reply:^(BOOL success, NSError *error) {
-        uninstallSuccess = success;
-        remoteError = [error copy];
-        hasReceivedResponseOrError = YES;
-    }];
-    
-    // We really want this to be synchronous; run the run loop waiting for a reply.
-    while (!hasReceivedResponseOrError) {
-        NSTimeInterval pollInterval = 0.5;
-        NSDate *limitDate = [NSDate dateWithTimeIntervalSinceNow:pollInterval];
-        [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:limitDate];
-    }
-
-    if (error != NULL) {
-        *error = remoteError;
-    }
-    
-    if (uninstallSuccess) {
-        AuthorizationRef authorizationRef = [self createAuthorizationRefFromExternalAuthorizationData:authorizationData error:error];
-        if (authorizationRef != NULL) {
-            // Remove the job - SMJobRemove will validate the rights in the authorization ref
-            CFErrorRef jobRemoveError = NULL;
-            if (!SMJobRemove(kSMDomainSystemLaunchd, (CFStringRef)OSUInstallerPrivilegedHelperJobLabel, authorizationRef, YES, &jobRemoveError)){
-                if (error != NULL) {
-                    *error = [(id)jobRemoveError copy];
-                }
-            }
-            
-            AuthorizationFree(authorizationRef, kAuthorizationFlagDefaults);
-            authorizationRef = NULL;
-        }
-    }
-
-    [remoteError autorelease];
-    [connection invalidate];
-
-    return uninstallSuccess;
 }
 
 - (AuthorizationRef)createAuthorizationRefFromExternalAuthorizationData:(NSData *)authorizationData error:(NSError **)error;
@@ -1020,10 +918,9 @@ static BOOL _PerformPrivilegedInstall(NSArray *installerArguments, NSData *autho
     }
 
     if (outError != nil) {
-        *outError = [[installerError copy] autorelease];
+        *outError = [installerError copy];
     }
     
-    [installerError release];
     [connection invalidate];
     
     return installerSucceeded;
@@ -1092,7 +989,6 @@ static BOOL _PerformPrivilegedTrashFile(NSString *path, NSString *description, N
         NSLog(@"Error trying to remove %@ at '%@': %@", description, path, trashFileError);
     }
     
-    [trashFileError release];
     [connection invalidate];
     
     return trashFileSucceeded;
@@ -1114,7 +1010,7 @@ static BOOL _PerformPrivilegedTrashFile(NSString *path, NSString *description, N
 {
     // Each connection gets its own instance of an OSUInstallerService, since there is per instance data.
     // Typically, there is only ever one of these, and the host application will reuse a single connection. (Unless it was interrupted or invalidated.)
-    OSUInstallerService *installerService = [[[OSUInstallerService alloc] init] autorelease];
+    OSUInstallerService *installerService = [[OSUInstallerService alloc] init];
     
     connection.exportedInterface = [NSXPCInterface interfaceWithProtocol:@protocol(OSUInstallerService)];
     connection.exportedObject = installerService;
@@ -1139,7 +1035,6 @@ int main(int argc, const char *argv[])
     @autoreleasepool {
         OSUInstallerServiceListener *listener = [[OSUInstallerServiceListener alloc] init];
         [listener run];
-        [listener release];
     }
 
     return 0;

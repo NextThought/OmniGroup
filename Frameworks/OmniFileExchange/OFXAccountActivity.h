@@ -1,4 +1,4 @@
-// Copyright 2012-2013 The Omni Group. All rights reserved.
+// Copyright 2012-2014 The Omni Group. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -15,6 +15,7 @@
 
 // Should only be called by OFXAgentActivity ideally
 - initWithRunningAccount:(OFXServerAccount *)account agent:(OFXAgent *)agent;
+- initWithAccount:(OFXServerAccount *)account agent:(OFXAgent *)agent; // for accounts that failed to start
 
 @property(nonatomic,readonly) OFXServerAccount *account;
 @property(nonatomic,readonly) OFXRegistrationTable *registrationTable;
@@ -26,7 +27,7 @@
 @property(nonatomic,readonly) unsigned long long uploadingSize;
 
 @property(nonatomic,readonly) BOOL isActive;
-@property(nonatomic,readonly) NSError *lastError;
+@property(nonatomic,readonly) NSError *lastError; // This is for the whole account
 
 @property(nonatomic,readonly) NSDate *lastSyncDate;
 

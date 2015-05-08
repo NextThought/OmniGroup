@@ -1,4 +1,4 @@
-// Copyright 1997-2005, 2007-2008, 2010-2014 Omni Development, Inc. All rights reserved.
+// Copyright 1997-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -55,80 +55,6 @@ static BOOL implementsInstanceMethod(Class cls, SEL aSelector)
 + (NSBundle *)bundle;
 {
     return [NSBundle bundleForClass:self];
-}
-
-- (NSBundle *)bundle;
-{
-    return [[self class] bundle];
-}
-
-struct reversedApplyContext {
-    NSObject *receiver;
-    SEL sel;
-    IMP impl;
-    NSMutableArray *storage;
-};
-
-static void OFPerformWithObject(const void *arg, void *context)
-{
-    id target = (id)arg;
-    struct reversedApplyContext *c = context;
-    
-    id (*imp)(id self, SEL _cmd, id target) = (typeof(imp))c->impl;
-    imp(c->receiver, c->sel, target);
-}
-
-static void OFPerformWithObjectAndStore(const void *arg, void *context)
-{
-    id target = (id)arg;
-    struct reversedApplyContext *c = context;
-    
-    id (*imp)(id self, SEL _cmd, id target) = (typeof(imp))c->impl;
-    id result = imp(c->receiver, c->sel, target);
-    
-    [c->storage addObject:result];
-}
-
-static struct reversedApplyContext OFMakeApplyContext(NSObject *rcvr, SEL sel)
-{
-    Class receiverClass = object_getClass(rcvr);
-    
-    IMP impl = class_getMethodImplementation(receiverClass, sel);
-    
-    return (struct reversedApplyContext){ .receiver = rcvr, .sel = sel, .impl = impl, .storage = nil };
-}
-
-- (void)performSelector:(SEL)sel withEachObjectInArray:(NSArray *)array
-{
-    if (!array)
-        return;
-    CFIndex count = CFArrayGetCount((CFArrayRef)array);
-    if (count == 0)
-        return;
-    struct reversedApplyContext ctxt = OFMakeApplyContext(self, sel);
-    CFArrayApplyFunction((CFArrayRef)array, CFRangeMake(0, count), OFPerformWithObject, &ctxt);
-}
-
-- (NSArray *)arrayByPerformingSelector:(SEL)sel withEachObjectInArray:(NSArray *)array;
-{
-    if (!array)
-        return nil;
-    CFIndex count = CFArrayGetCount((CFArrayRef)array);
-    if (count == 0)
-        return [NSArray array];
-    struct reversedApplyContext ctxt = OFMakeApplyContext(self, sel);
-    ctxt.storage = [[NSMutableArray alloc] initWithCapacity:count];
-    [ctxt.storage autorelease]; // In case one of the perform: calls raises an exception
-    CFArrayApplyFunction((CFArrayRef)array, CFRangeMake(0, count), OFPerformWithObjectAndStore, &ctxt);
-    return ctxt.storage;
-}
-
-- (void)performSelector:(SEL)sel withEachObjectInSet:(NSSet *)set
-{
-    if (!set)
-        return;
-    struct reversedApplyContext ctxt = OFMakeApplyContext(self, sel);
-    CFSetApplyFunction((CFSetRef)set, OFPerformWithObject, &ctxt);
 }
 
 typedef char   (*byteImp_t)(id self, SEL _cmd, id arg);
@@ -216,35 +142,113 @@ typedef double (*dblImp_t)(id self, SEL _cmd, id arg);
     return returnDictionary;
 }
 
-- (void)afterDelay:(NSTimeInterval)delay performBlock:(void (^)(void))block;
+@end
+
+void OFAfterDelayPerformBlock(NSTimeInterval delay, void (^block)(void))
 {
     /*
-     dispatch_get_current_queue is deprecated, or this could be a bit simpler. Instead, we do the scheduling on the main queue and then send that back to the original queue. This requires the main queue to be unblocked (which it really should be anyway). All the current callers are from the main queue, anyway. Assert this is still true so that we can make sure to test the non-main caller case if/when it happens.
+     dispatch_get_current_queue is deprecated, or this could be a bit simpler. Instead, we schedule a block on the main dispatch queue that will then send the original block back to the original operation queue. This requires the main queue to be unblocked (which it really should be anyway). All the current callers are from the main queue, anyway. Assert this is still true so that we can make sure to test the non-main caller case if/when it happens.
      */
     OBPRECONDITION([NSThread isMainThread]);
     
     NSOperationQueue *operationQueue = [NSOperationQueue currentQueue];
     
-    block = [[block copy] autorelease];
-        
-    dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER,
-                                                     0/* handle -- not applicable */,
-                                                     0/* mask -- not applicable */,
-                                                     dispatch_get_main_queue());
+    block = [block copy];
     
     dispatch_time_t startTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * 1e9) /* dispatch_time() takes nanoseconds */);
-    dispatch_source_set_timer(timer, startTime, 0/*interval*/, 0/*leeway*/);
     
-    dispatch_source_set_event_handler(timer, ^{
+    dispatch_after(startTime, dispatch_get_main_queue(), ^{
         [operationQueue addOperationWithBlock:block];
-        dispatch_source_cancel(timer);
-#if !OB_ARC
-        dispatch_release(timer);
-#endif
     });
-
-    // Fire it up.
-    dispatch_resume(timer);
+    [block release];
 }
 
-@end
+void OFPerformInBackground(void (^block)(void))
+{
+    NSOperationQueue *queue = [[NSOperationQueue alloc] init];
+    [queue addOperationWithBlock:^{
+        block();
+        [queue release];
+    }];
+}
+
+#import <Foundation/NSThread.h>
+#import <dispatch/queue.h>
+
+void OFMainThreadPerformBlock(void (^block)(void)) {
+    if ([NSThread isMainThread])
+        block();
+    else
+        dispatch_async(dispatch_get_main_queue(), block);
+}
+
+
+// Inspired by <https://github.com/n-b/CTT2>, but redone to use a timer to avoid spinning the runloop as fast as possible when polling.
+
+BOOL OFRunLoopRunUntil(NSTimeInterval timeout, OFRunLoopRunType runType, BOOL(^predicate)(void))
+{
+    __block BOOL done = NO;
+    
+    // Early out if this is already true
+    if (predicate()) {
+        return YES;
+    }
+    
+    CFRunLoopRef runLoop = CFRunLoopGetCurrent();
+    
+    // If we are polling, do so by installing an event source that will kick the runloop on a preferred polling interval (rather than running the predicate over and over as fast as possible).
+    CFRunLoopTimerRef timer = NULL;
+    if (runType == OFRunLoopRunTypePolling) {
+        timer = CFRunLoopTimerCreateWithHandler(kCFAllocatorDefault, 0/*first fire date*/, 0.05/*interval*/, 0/*flags*/, 0/*order*/, ^(CFRunLoopTimerRef t){}/*block*/); // NULL block crashes.
+        CFRunLoopAddTimer(runLoop, timer, kCFRunLoopDefaultMode);
+    }
+    
+    void (^beforeWaiting)(CFRunLoopObserverRef observer, CFRunLoopActivity activity) =
+    ^(CFRunLoopObserverRef observer, CFRunLoopActivity activity) {
+        // If our predicate succeeded, we stopped the runloop and should not be called again.
+        OBASSERT(!done);
+
+        done = predicate();
+        if (done) {
+            CFRunLoopStop(runLoop);
+        }
+    };
+    
+    CFRunLoopObserverRef observer = CFRunLoopObserverCreateWithHandler(NULL, kCFRunLoopBeforeWaiting, true, 0, beforeWaiting);
+    CFRunLoopAddObserver(runLoop, observer, kCFRunLoopDefaultMode);
+    
+    CFAbsoluteTime startTime = CFAbsoluteTimeGetCurrent();
+    while (YES) {
+        CFAbsoluteTime remainingTimeout = 0.0;
+        if (timeout > 0.0) {
+            CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
+            remainingTimeout = (startTime + timeout) - currentTime;
+        }
+        
+        SInt32 returnReason = CFRunLoopRunInMode(kCFRunLoopDefaultMode, remainingTimeout, false);
+        OBASSERT(returnReason != kCFRunLoopRunFinished, "This should only be returned if the run loop has no sources or timers, but we added a source");
+        
+        if (returnReason == kCFRunLoopRunStopped) {
+            if (done) {
+                break;
+            } else {
+                // Some other source called CFRunLoopStop()?
+            }
+        }
+        if (returnReason == kCFRunLoopRunTimedOut) {
+            OBASSERT(!done); // Ran out of time
+            break;
+        }
+        // Otherwise, we are likely running on the main queue with AppKit and lots of other sources and got kCFRunLoopRunHandledSource. CFRunLoopRunInMode() will only handle 1 or possibly two sources before returning.
+    }
+    
+    CFRunLoopRemoveObserver(runLoop, observer, kCFRunLoopDefaultMode);
+    CFRelease(observer);
+    
+    if (timer) {
+        CFRunLoopRemoveTimer(runLoop, timer, kCFRunLoopDefaultMode);
+        CFRelease(timer);
+    }
+    
+    return done;
+}

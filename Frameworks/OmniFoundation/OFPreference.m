@@ -1,4 +1,4 @@
-// Copyright 2001-2008, 2010-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2001-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -11,6 +11,7 @@
 #import <OmniFoundation/OFEnumNameTable.h>
 #import <OmniFoundation/OFNull.h>
 #import <OmniFoundation/NSDate-OFExtensions.h> // For -initWithXMLString:
+#import <OmniFoundation/OFErrors.h>
 
 #if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
 #import <OmniFoundation/NSUserDefaults-OFExtensions.h>
@@ -37,9 +38,13 @@ static NSNotificationCenter *preferenceNotificationCenter = nil;
 NSString * const OFPreferenceObjectValueBinding = @"objectValue";
 NSString * const OFPreferenceDidChangeNotification = @"OFPreferenceDidChangeNotification";
 
-@interface OFPreference (Private)
-- (id) _initWithKey: (NSString * ) key;
-- (void)_refresh;
+@interface OFPreference ()
+{
+@protected
+    // OFEnumeratedPreference references these
+    NSString *_key;
+    id _value;
+}
 @end
 
 @interface OFEnumeratedPreference : OFPreference
@@ -47,13 +52,21 @@ NSString * const OFPreferenceDidChangeNotification = @"OFPreferenceDidChangeNoti
     OFEnumNameTable *names;
 }
 
-- (id) _initWithKey: (NSString * ) key enumeration: (OFEnumNameTable *)enumeration;
+- (id)_initWithKey:(NSString * )key enumeration:(OFEnumNameTable *)enumeration;
 
 @end
 
 @implementation OFPreference
+{
+    unsigned _generation;
+    id _defaultValue;
+    
+    id _controller;
+    NSString *_controllerKey;
+    BOOL _updatingController;
+}
 
-static id _retainedObjectValue(OFPreference *self, id *_value, NSString *key)
+static id _retainedObjectValue(OFPreference *self, id const *_value, NSString *key)
 {
     id result = nil;
 
@@ -77,7 +90,7 @@ static id _retainedObjectValue(OFPreference *self, id *_value, NSString *key)
     return result;
 }
 
-static inline id _objectValue(OFPreference *self, id *_value, NSString *key, NSString *className)
+static inline id _objectValue(OFPreference *self, id const *_value, NSString *key, NSString *className)
 {
     id result = [_retainedObjectValue(self, _value, key) autorelease];
 
@@ -116,7 +129,7 @@ static void _setValueUnderlyingValue(OFPreference *self, id controller, NSString
     }
 }
 
-static void _setValue(OFPreference *self, id *_value, NSString *key, id value)
+static void _setValue(OFPreference *self, OB_STRONG id *_value, NSString *key, id value)
 {
     @synchronized(self) {
         // If this preference is created & used by a OAPreferenceClient, or other NSController, use KVC on the controller to set the preference so that other observers of the controller will get notified via KVO.
@@ -253,14 +266,13 @@ static void _setValue(OFPreference *self, id *_value, NSString *key, id value)
         // Some one doing 'make new' in a script; don't crash but log an error
         [command setScriptErrorNumber:NSReceiversCantHandleCommandScriptError];
         [command setScriptErrorString:@"Preferences cannot be defined by scripts."];
-    } else
-#endif
-    {
-        OBRejectUnusedImplementation(self, _cmd);
+        
+        [self release];
+        return nil;
     }
-    
-    [self release];
-    return nil;
+#endif
+
+    OBRejectUnusedImplementation(self, _cmd);
 }
 
 - (void)dealloc;
@@ -392,6 +404,19 @@ static void _setValue(OFPreference *self, id *_value, NSString *key, id value)
 - (void) restoreDefaultValue;
 {
     _setValue(self, &_value, _key, nil);
+}
+
+- (BOOL) hasPersistentValue;
+{
+    NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
+    for (NSString *domain in @[bundleIdentifier, NSGlobalDomain]) {
+        id value = [[standardUserDefaults persistentDomainForName:domain] objectForKey:_key];
+        if (value != nil) {
+            return YES;
+        }
+    }
+    
+    return NO;
 }
 
 - (id) objectValue;
@@ -697,10 +722,7 @@ static void _setValue(OFPreference *self, id *_value, NSString *key, id value)
 
 #endif
 
-@end
-
-
-@implementation OFPreference (Private)
+#pragma mark - Private
 
 - (id) _initWithKey: (NSString * ) key;
 {
@@ -750,9 +772,10 @@ static void _setValue(OFPreference *self, id *_value, NSString *key, id value)
 
 @implementation OFEnumeratedPreference
 
-- (id) _initWithKey: (NSString * ) key enumeration: (OFEnumNameTable *)enumeration;
+- (id)_initWithKey:(NSString * )key enumeration:(OFEnumNameTable *)enumeration;
 {
-    self = [super _initWithKey:key];
+    if (!(self = [super _initWithKey:key]))
+        return nil;
     names = [enumeration retain];
     return self;
 }
@@ -764,7 +787,7 @@ static void _setValue(OFPreference *self, id *_value, NSString *key, id value)
     return names;
 }
 
-- (id) defaultObjectValue
+- (id)defaultObjectValue
 {
     id defaultValue = [super defaultObjectValue];
     if (defaultValue == nil)
@@ -796,8 +819,8 @@ static void _setValue(OFPreference *self, id *_value, NSString *key, id value)
         result = [(NSNumber *)value integerValue];
         [value release];
     } else if ([value isKindOfClass:[NSString class]]) {
-        [value autorelease];
-        result = [names enumForName:value]; // May raise
+        result = [names enumForName:value];
+        [value release];
     } else {
         OBASSERT_NOT_REACHED("Enumerated preference not a string or a number");
         [value release];
@@ -825,6 +848,7 @@ static void _setValue(OFPreference *self, id *_value, NSString *key, id value)
 @end
 
 @implementation OFPreferenceWrapper : NSObject
+
 + (OFPreferenceWrapper *) sharedPreferenceWrapper;
 {
     static OFPreferenceWrapper *sharedPreferenceWrapper = nil;
@@ -834,32 +858,18 @@ static void _setValue(OFPreference *self, id *_value, NSString *key, id value)
     return sharedPreferenceWrapper;
 }
 
-- (OFPreference *) preferenceForKey: (NSString *) key;
+- (OFPreference *)preferenceForKey:(NSString *)key;
 {
     return [OFPreference preferenceForKey:key];
 }
 
-- (id) retain;
-{
-    return self;
-}
-
-- (oneway void)release;
-{
-}
-
-- (id) autorelease;
-{
-    return self;
-}
-
 - (void) dealloc;
 {
-    OBASSERT_NOT_REACHED("OFPreference instance is never deallocated");
-	
-	// Squelch the warning that 10.4 emits.
-	return;
-	[super dealloc];
+    OBRejectUnusedImplementation(self, _cmd); // OFPreferenceWrapper instance should never be deallocated
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code"
+    [super dealloc]; // We know this won't be reached, but w/o this we get a warning about a missing call to super -dealloc
+#pragma clang diagnostic pop
 }
 
 - (id)objectForKey:(NSString *)defaultName;
@@ -974,34 +984,322 @@ static void _setValue(OFPreference *self, id *_value, NSString *key, id value)
 
 @end
 
-void _OFInitializeDebugLogLevel(NSInteger *outLevel, NSString *name)
+#import <OmniFoundation/OFBindingPoint.h>
+#import <OmniFoundation/OFMultiValueDictionary.h>
+#import <OmniFoundation/NSString-OFURLEncoding.h>
+
+static NSMutableDictionary *ConfigurationValueRegistrations = nil;
+static id UserDefaultsObserver = nil;
+
+NSString * const OFChangeConfigurationValueURLPath = @"/change-configuration-value";
+
+@interface OFConfigurationValue ()
+
+- initWithKey:(NSString *)key objcType:(const char *)objcType pointer:(void *)pointer defaultValue:(double)defaultValue minimumValue:(double)minimumValue maximumValue:(double)maximumValue;
+
+@property(nonatomic,readonly) void *pointer;
+
+- (void)update;
+
+@end
+
+@implementation OFConfigurationValue
+
++ (void)initialize;
 {
-    NSInteger level;
+    OBINITIALIZE;
     
-    const char *env = getenv([name UTF8String]); /* easier for command line tools */
-    if (env)
-        level = strtoul(env, NULL, 0);
-    else
-        level = [[NSUserDefaults standardUserDefaults] integerForKey:name];
-    
-    if (level)
-        NSLog(@"DEBUG LEVEL %@ = %ld", name, level);
-    *outLevel = level;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        ConfigurationValueRegistrations = [[NSMutableDictionary alloc] init];
+        UserDefaultsObserver = [[NSNotificationCenter defaultCenter] addObserverForName:NSUserDefaultsDidChangeNotification object:[NSUserDefaults standardUserDefaults] queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
+            [self _updateAllConfigurationValues];
+        }];
+    });
 }
 
-void _OFInitializeTimeInterval(NSTimeInterval *outInterval, NSString *name, NSTimeInterval default_value, NSTimeInterval min_value, NSTimeInterval max_value)
++ (NSArray *)configurationValues;
 {
-    NSTimeInterval value = default_value;
+    OBPRECONDITION([NSThread isMainThread]);
     
-    const char *env = getenv([name UTF8String]); /* easier for command line tools */
-    if (env)
-        value = strtod(env, NULL);
-    else if ([[NSUserDefaults standardUserDefaults] objectForKey:name])
-        value = [[NSUserDefaults standardUserDefaults] doubleForKey:name];
-    
-    value = CLAMP(value, min_value, max_value);
-    if (value != default_value)
-        NSLog(@"TIME INTERVAL %@ = %lf", name, value);
-    *outInterval = value;
+    return [ConfigurationValueRegistrations allValues];
 }
+
++ (void)restoreAllConfigurationValuesToDefaults;
+{
+    [ConfigurationValueRegistrations enumerateKeysAndObjectsUsingBlock:^(NSString *configurationValueKey, OFConfigurationValue *configurationValue, BOOL *stop) {
+        [configurationValue restoreDefaultValue];
+    }];
+}
+
+// Each app has its own scheme. We could maybe determine it automatically if there is only one scheme.
+static NSString *ConfigurationValuesURLScheme = nil;
++ (void)setConfigurationValuesURLScheme:(NSString *)scheme;
+{
+    OBPRECONDITION(scheme);
+    ConfigurationValuesURLScheme = [scheme copy];
+}
+
+// An empty array is valid -- it produces a 'reset all' configuration
++ (NSURL *)URLForConfigurationValues:(NSArray *)configurationValues;
+{
+    if (ConfigurationValuesURLScheme == nil) {
+        OBASSERT_NOT_REACHED("Expect to have call +setConfigurationValuesURLScheme: during app startup");
+        return nil;
+    }
+
+    // Start by resetting everything to defaults
+    NSMutableString *urlString = [NSMutableString stringWithFormat:@"%@://%@?all=", ConfigurationValuesURLScheme, OFChangeConfigurationValueURLPath];
+    
+    for (OFConfigurationValue *configurationValue in configurationValues) {
+        if (configurationValue.hasNonDefaultValue) {
+            double value = configurationValue.currentValue;
+            
+            NSString *quotedName = [NSString encodeURLString:configurationValue.key asQuery:YES leaveSlashes:NO leaveColons:NO];
+            OBASSERT([quotedName isEqual:configurationValue.key], "We really expect pretty vanilla strings for configuration parameters since they are used as global variable names.");
+            
+            if (value == (NSInteger)value) {
+                [urlString appendFormat:@"&%@=%ld", quotedName, (NSInteger)value];
+            } else {
+                [urlString appendFormat:@"&%@=%f", quotedName, value];
+            }
+        }
+    }
+    
+    NSURL *url = [NSURL URLWithString:urlString];
+    OBASSERT(url);
+    return url;
+}
+
++ (void)_updateAllConfigurationValues;
+{
+    OBPRECONDITION([NSThread isMainThread]);
+
+    [ConfigurationValueRegistrations enumerateKeysAndObjectsUsingBlock:^(NSString *name, OFConfigurationValue *configurationValue, BOOL *stop) {
+        [configurationValue update];
+    }];
+}
+
+- initWithKey:(NSString *)key objcType:(const char *)objcType pointer:(void *)pointer defaultValue:(double)defaultValue minimumValue:(double)minimumValue maximumValue:(double)maximumValue;
+{
+    OBPRECONDITION(defaultValue >= minimumValue);
+    OBPRECONDITION(defaultValue <= maximumValue);
+    
+    if (!(self = [super init])) {
+        return nil;
+    }
+    
+    _key = [key copy];
+    _objcType = objcType;
+    _pointer = pointer;
+    _defaultValue = defaultValue;
+    _minimumValue = minimumValue;
+    _maximumValue = maximumValue;
+    
+    [self update];
+    
+    return self;
+}
+
+- (double)currentValue;
+{
+    if (strcmp(_objcType, @encode(NSInteger)) == 0) {
+        NSInteger *levelPointer = _pointer;
+        return *levelPointer;
+    }
+    if (strcmp(_objcType, @encode(NSTimeInterval)) == 0) {
+        NSTimeInterval *intervalPointer = (NSTimeInterval *)_pointer;
+        return *intervalPointer;
+    }
+    NSLog(@"%@: Unknown encoding '%s'", NSStringFromClass([self class]), _objcType);
+    return 0;
+}
+
+- (BOOL)hasNonDefaultValue;
+{
+    return self.currentValue != self.defaultValue;
+}
+
+- (void)restoreDefaultValue;
+{
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:_key];
+}
+
+- (void)setValueFromString:(NSString *)stringValue;
+{
+    if (strcmp(_objcType, @encode(NSInteger)) == 0) {
+        NSInteger level = [stringValue integerValue];
+        [[NSUserDefaults standardUserDefaults] setObject:@(level) forKey:_key];
+    } else if (strcmp(_objcType, @encode(NSTimeInterval)) == 0) {
+        NSTimeInterval value = [stringValue doubleValue];
+        [[NSUserDefaults standardUserDefaults] setObject:@(value) forKey:_key];
+    } else {
+        NSLog(@"%s: Unknown encoding '%s'", __func__, _objcType);
+    }
+}
+
+- (void)setValueFromDouble:(double)value;
+{
+    // -update does the clamping and snapping to integer values when needed.
+    [[NSUserDefaults standardUserDefaults] setObject:@(value) forKey:_key];
+}
+
+- (void)update;
+{
+    OBPRECONDITION([NSThread isMainThread]);
+    
+    if (strcmp(_objcType, @encode(NSInteger)) == 0) {
+        NSInteger level = _defaultValue;
+        const char *env = getenv([_key UTF8String]); /* easier for command line tools */
+        if (env)
+            level = strtoul(env, NULL, 0);
+        else if ([[NSUserDefaults standardUserDefaults] objectForKey:_key])
+            level = [[NSUserDefaults standardUserDefaults] integerForKey:_key];
+        
+        level = CLAMP(level, _minimumValue, _maximumValue);
+        
+        // Log if the value is getting set to something non-zero the first time around, or if its changing the second time around.
+        NSInteger *levelPointer = (NSInteger *)_pointer;
+        if (*levelPointer != level) {
+            if ((*levelPointer == _defaultValue && level != _defaultValue) || (*levelPointer != _defaultValue && level != *levelPointer))
+                NSLog(@"DEBUG LEVEL %@ = %ld", _key, level);
+            [self willChangeValueForKey:OFValidateKeyPath(self, currentValue)];
+            *levelPointer = level;
+            [self didChangeValueForKey:OFValidateKeyPath(self, currentValue)];
+        }
+    } else if (strcmp(_objcType, @encode(NSTimeInterval)) == 0) {
+        NSTimeInterval value = _defaultValue;
+        
+        const char *env = getenv([_key UTF8String]); /* easier for command line tools */
+        if (env)
+            value = strtod(env, NULL);
+        else if ([[NSUserDefaults standardUserDefaults] objectForKey:_key])
+            value = [[NSUserDefaults standardUserDefaults] doubleForKey:_key];
+        
+        value = CLAMP(value, _minimumValue, _maximumValue);
+        
+        // Log if the value is getting set to something non-zero the first time around, or if its changing the second time around.
+        NSTimeInterval *intervalPointer = (NSTimeInterval *)_pointer;
+        if (*intervalPointer != value) {
+            if ((*intervalPointer == _defaultValue && value != _defaultValue) || (*intervalPointer != _defaultValue && value != *intervalPointer))
+                NSLog(@"TIME INTERVAL %@ = %lf", _key, value);
+            [self willChangeValueForKey:OFValidateKeyPath(self, currentValue)];
+            *intervalPointer = value;
+            [self didChangeValueForKey:OFValidateKeyPath(self, currentValue)];
+        }
+    } else {
+        NSLog(@"%@: Unknown encoding '%s'", NSStringFromClass([self class]), _objcType);
+    }
+}
+
+- (NSString *)debugDescription;
+{
+    return [NSString stringWithFormat:@"<%@:%p %@ '%s' at %p>", NSStringFromClass([self class]), self, _key, _objcType, _pointer];
+}
+
+@end
+
+BOOL OFHandleChangeConfigurationValueURL(NSURL *url, NSError **outError, OFConfigurationValueChangeConfirmation confirm)
+{
+    OBPRECONDITION([NSThread isMainThread]);
+    
+    if (![[url path] isEqual:OFChangeConfigurationValueURLPath]) {
+        NSString *reason = [NSString stringWithFormat:@"Expected URL to have a path of \"%@\", but it had \"%@\".", OFChangeConfigurationValueURLPath, [url path]];
+        OFError(outError, OFChangeDebugLevelURLError, @"Cannot change the debug level.", reason);
+        return NO;
+    }
+    
+    
+    NSMutableArray *actions = [NSMutableArray array];
+    NSMutableArray *actionDescriptions = [NSMutableArray array];
+    
+    void (^addAction)(void (^)(void)) = ^(void (^action)(void)){
+        action = [[action copy] autorelease];
+        [actions addObject:action];
+    };
+    
+    __block BOOL success = YES;
+    [[url query] parseQueryString:^(NSString *decodedName, NSString *decodedValue, BOOL *stop) {
+        // Add a special case to let customers reset to the default state after we've had them turn on stuff temporarily.
+        if ([decodedName isEqual:@"all"] && (OFISNULL(decodedValue) || [NSString isEmptyString:decodedValue])) {
+            [actionDescriptions addObject:NSLocalizedStringFromTableInBundle(@"Restore all internal configuration settings to defaults", @"OmniFoundation", OMNI_BUNDLE, @"alert title when clicking on a configuration value URL")];
+            addAction(^{
+                [OFConfigurationValue restoreAllConfigurationValuesToDefaults];
+            });
+            return;
+        }
+        
+        OFConfigurationValue *configurationValue = ConfigurationValueRegistrations[decodedName];
+        if (configurationValue == nil) {
+            OFError(outError, OFChangeDebugLevelURLError, @"Cannot change the configuration value.", @"No such configuration value defined.");
+            success = NO;
+            *stop = YES;
+            return;
+        }
+        
+        if (OFISNULL(decodedValue) || [NSString isEmptyString:decodedValue]) {
+            [actionDescriptions addObject:[NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"Restore \"%@\" to its default value", @"OmniFoundation", OMNI_BUNDLE, @"alert message format when clicking on a configuration value URL"), decodedName]];
+            addAction(^{
+                [configurationValue restoreDefaultValue];
+            });
+            return;
+        }
+        
+        [actionDescriptions addObject:[NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"Set \"%@\" to \"%@\"", @"OmniFoundation", OMNI_BUNDLE, @"alert message format when clicking on a configuration value URL"), decodedName, decodedValue]];
+        addAction(^{
+            [configurationValue setValueFromString:decodedValue];
+        });
+    }];
+    
+    if (!success)
+        return NO;
+    
+    void (^performActions)(void) = ^{
+        for (void (^action)(void) in actions) {
+            action();
+        }
+    };
+    
+    if (confirm) {
+        NSString *title = NSLocalizedStringFromTableInBundle(@"Change configuration?", @"OmniFoundation", OMNI_BUNDLE, @"alert title when clicking on a configuration value URL");
+        NSString *message = NSLocalizedStringFromTableInBundle(@"This configuration link will make the following changes:", @"OmniFoundation", OMNI_BUNDLE, @"alert message header when clicking on a configuration value URL");
+        
+        NSString *details = [[actionDescriptions arrayByPerformingBlock:^NSString *(NSString *desc) {
+            return [NSString stringWithFormat:@"• %@", desc];
+        }] componentsJoinedByString:@"\n"];
+        message = [message stringByAppendingFormat:@"\n\n%@", details];
+        
+        confirm(title, message, ^(BOOL confirmed, NSError *confirmError) {
+            if (confirmed) {
+                performActions();
+            }
+        });
+    } else {
+        performActions();
+    }
+    
+    return YES;
+}
+
+void _OFRegisterIntegerConfigurationValue(NSInteger *outLevel, NSString *name, double defaultValue, double minimumValue, double maximumValue)
+{
+    OBPRECONDITION([NSThread isMainThread]);
+    
+    @autoreleasepool {
+        OFConfigurationValue *configurationValue = [[OFConfigurationValue alloc] initWithKey:name objcType:@encode(typeof(*outLevel)) pointer:outLevel defaultValue:defaultValue minimumValue:minimumValue maximumValue:maximumValue];
+        ConfigurationValueRegistrations[name] = configurationValue;
+        [configurationValue release];
+    }
+}
+void _OFRegisterTimeIntervalConfigurationValue(NSTimeInterval *outInterval, NSString *name, double defaultValue, double minimumValue, double maximumValue)
+{
+    OBPRECONDITION([NSThread isMainThread]);
+    
+    @autoreleasepool {
+        OFConfigurationValue *configurationValue = [[OFConfigurationValue alloc] initWithKey:name objcType:@encode(typeof(*outInterval)) pointer:outInterval defaultValue:defaultValue minimumValue:minimumValue maximumValue:maximumValue];
+        ConfigurationValueRegistrations[name] = configurationValue;
+        [configurationValue release];
+    }
+}
+
 

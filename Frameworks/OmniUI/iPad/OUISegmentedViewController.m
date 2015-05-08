@@ -1,4 +1,4 @@
-// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -9,12 +9,14 @@
 
 RCS_ID("$Id$")
 
-@interface OUISegmentedViewController () <UIToolbarDelegate, UINavigationControllerDelegate>
+@interface OUISegmentedViewController () <UINavigationBarDelegate, UINavigationControllerDelegate>
 
-@property (nonatomic, strong) UIToolbar *toolbar;
+@property (nonatomic, strong) UINavigationBar *navigationBar;
 @property (nonatomic, strong) UISegmentedControl *segmentedControl;
 
 @property (nonatomic, weak) id<UINavigationControllerDelegate> originalNavDelegate;
+
+@property (nonatomic, assign) CGSize selectedViewSizeAfterLayout;
 
 @end
 
@@ -42,16 +44,16 @@ RCS_ID("$Id$")
 	// Do any additional setup after loading the view.
     self.view.backgroundColor = [UIColor whiteColor];
     
-    self.toolbar = [[UIToolbar alloc] init];
-    self.toolbar.translatesAutoresizingMaskIntoConstraints = NO;
-    self.toolbar.delegate = self;
-    [self.view addSubview:self.toolbar];
+    self.navigationBar = [[UINavigationBar alloc] init];
+    self.navigationBar.translatesAutoresizingMaskIntoConstraints = NO;
+    self.navigationBar.delegate = self;
+    [self.view addSubview:self.navigationBar];
     
-    NSDictionary *views = NSDictionaryOfVariableBindings(_toolbar);
-    [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[_toolbar]|" options:0 metrics:nil views:views]];
+    NSDictionary *views = NSDictionaryOfVariableBindings(_navigationBar);
+    [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[_navigationBar]|" options:0 metrics:nil views:views]];
     
     
-    [self.view addConstraint:[NSLayoutConstraint constraintWithItem:self.toolbar attribute:NSLayoutAttributeTop relatedBy:NSLayoutRelationEqual toItem:self.topLayoutGuide attribute:NSLayoutAttributeBottom multiplier:1.0 constant:0.0]];
+    [self.view addConstraint:[NSLayoutConstraint constraintWithItem:self.navigationBar attribute:NSLayoutAttributeTop relatedBy:NSLayoutRelationEqual toItem:self.topLayoutGuide attribute:NSLayoutAttributeBottom multiplier:1.0 constant:0.0]];
 }
 
 #pragma mark - Public API
@@ -94,14 +96,14 @@ RCS_ID("$Id$")
     _selectedViewController = selectedViewController;
     _selectedViewController.view.translatesAutoresizingMaskIntoConstraints = NO;
     
-    // Move in new view controller/view.
-    [_selectedViewController willMoveToParentViewController:self];
+    // Move in new view controller/view. addChildViewController: automatically calls the childs willMoveToParentViewController: passing in the new parent. We shouldn't call that directly while adding the child VC.
+//    [_selectedViewController willMoveToParentViewController:self];
     [self addChildViewController:_selectedViewController];
 
     [self.view addSubview:_selectedViewController.view];
     
     // Add constraints
-    NSDictionary *views = @{ @"toolbar" : _toolbar, @"childView" : _selectedViewController.view };
+    NSDictionary *views = @{ @"navigationBar" : _navigationBar, @"childView" : _selectedViewController.view };
     
     [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[childView]|"
                                                                       options:0
@@ -109,7 +111,7 @@ RCS_ID("$Id$")
                                                                         views:views]];
 
     if ([_selectedViewController isKindOfClass:[UINavigationController class]]) {
-        [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[toolbar][childView]|"
+        [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[navigationBar][childView]|"
                                                                           options:0
                                                                           metrics:nil
                                                                             views:views]];
@@ -131,7 +133,7 @@ RCS_ID("$Id$")
     // Make sure to use the _selectedIndex ivar directly here because the setter will end up calling into this method and we don't want to create an infinite loop.
     _selectedIndex = [self.viewControllers indexOfObject:_selectedViewController];
     self.segmentedControl.selectedSegmentIndex = _selectedIndex;
-    [self.view bringSubviewToFront:self.toolbar];
+    [self.view bringSubviewToFront:self.navigationBar];
 }
 
 - (void)setSelectedIndex:(NSUInteger)selectedIndex;
@@ -162,12 +164,11 @@ RCS_ID("$Id$")
     [self.segmentedControl setSelectedSegmentIndex:0];
     [self.segmentedControl addTarget:self action:@selector(_segmentValueChanged:) forControlEvents:UIControlEventValueChanged];
     
-    UIBarButtonItem *leftFlexItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
-    UIBarButtonItem *segmentedControlItem = [[UIBarButtonItem alloc] initWithCustomView:self.segmentedControl];
-    UIBarButtonItem *rightFlexItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
-    
-    self.toolbar.items = @[leftFlexItem, segmentedControlItem, rightFlexItem];
-//    self.navigationItem.titleView = self.segmentedControl;
+    self.navigationItem.titleView = self.segmentedControl;
+    if (self.leftBarButtonItem) {
+        self.navigationItem.leftBarButtonItem = self.leftBarButtonItem;
+    }
+    [self.navigationBar pushNavigationItem:self.navigationItem animated:NO];
 }
 
 - (void)_segmentValueChanged:(id)sender;
@@ -180,10 +181,25 @@ RCS_ID("$Id$")
     [self setSelectedIndex:selectedIndex];
 }
 
-#pragma mark - UIToolbarDelegate
+- (void)_dismiss:(id)sender;
+{
+    [self dismissViewControllerAnimated:YES completion:NULL];
+}
+
+- (void)setShouldShowDismissButton:(BOOL)shouldShow;
+{
+    if (shouldShow) {
+        self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(_dismiss:)];
+    }
+    else {
+        self.navigationItem.rightBarButtonItem = nil;
+    }
+}
+
+#pragma mark - UINavigationBarDelegate
 - (UIBarPosition)positionForBar:(id <UIBarPositioning>)bar;
 {
-    if (bar == self.toolbar) {
+    if (bar == self.navigationBar) {
         return UIBarPositionTopAttached;
     }
 

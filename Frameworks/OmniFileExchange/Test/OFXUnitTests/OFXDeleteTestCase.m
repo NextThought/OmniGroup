@@ -1,4 +1,4 @@
-// Copyright 2013 Omni Development, Inc. All rights reserved.
+// Copyright 2013-2014 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -8,6 +8,7 @@
 #import "OFXTestCase.h"
 
 #import <OmniFoundation/OFNull.h>
+#import <OmniFileExchange/OFXAccountClientParameters.h>
 
 #import "OFXTrace.h"
 
@@ -20,7 +21,7 @@ RCS_ID("$Id$")
 
 // Run a single test over and over.
 #if 0
-+ (id)defaultTestSuite;
++ (XCTestSuite *)defaultTestSuite;
 {
     SenTestSuite *suite = OB_AUTORELEASE([[SenTestSuite alloc] initWithName:@"-infinite-"]);
     
@@ -45,6 +46,18 @@ RCS_ID("$Id$")
     return suite;
 }
 #endif
+
+- (OFXAccountClientParameters *)accountClientParametersForAgentName:(NSString *)agentName;
+{
+    OFXAccountClientParameters *clientParameters = [super accountClientParametersForAgentName:agentName];
+    
+    if (self.invocation.selector == @selector(testRaceBetweenDownloadUpdateAndLocalDeletion) && [agentName isEqual:@"B"]) {
+        // Speed up the metadata updates since we are trying to catch it while it is downloading.
+        clientParameters.metadataUpdateInterval = 0.0001;
+    }
+    
+    return clientParameters;
+}
 
 - (void)testFile;
 {
@@ -80,8 +93,8 @@ RCS_ID("$Id$")
     
     // Make sure the published file has been removed.
     __autoreleasing NSError *error;
-    STAssertNil([[NSFileManager defaultManager] attributesOfItemAtPath:[metadataB.fileURL path] error:&error], nil);
-    STAssertTrue([error hasUnderlyingErrorDomain:NSPOSIXErrorDomain code:ENOENT], nil);
+    XCTAssertNil([[NSFileManager defaultManager] attributesOfItemAtPath:[metadataB.fileURL path] error:&error]);
+    XCTAssertTrue([error hasUnderlyingErrorDomain:NSPOSIXErrorDomain code:ENOENT]);
     
     // Stop the agents and restart them to make sure nothing reappears (might if we left a snapshot in their internal directories).
     [self stopAgents];
@@ -89,8 +102,8 @@ RCS_ID("$Id$")
     [agentB applicationLaunched];
     [self waitForAsyncOperations];
 
-    STAssertTrue([[self metadataItemsForAgent:agentA] count] == 0, @"Deleted items should not resurrect");
-    STAssertTrue([[self metadataItemsForAgent:agentB] count] == 0, @"Deleted items should not resurrect");
+    XCTAssertTrue([[self metadataItemsForAgent:agentA] count] == 0, @"Deleted items should not resurrect");
+    XCTAssertTrue([[self metadataItemsForAgent:agentB] count] == 0, @"Deleted items should not resurrect");
 }
 
 - (void)testParentDirectory;
@@ -138,8 +151,8 @@ RCS_ID("$Id$")
     // Make sure the published files have been removed.
     for (OFXFileMetadata *metadataB in metadataItemsB) {
         __autoreleasing NSError *error;
-        STAssertNil([[NSFileManager defaultManager] attributesOfItemAtPath:[metadataB.fileURL path] error:&error], nil);
-        STAssertTrue([error hasUnderlyingErrorDomain:NSPOSIXErrorDomain code:ENOENT], nil);
+        XCTAssertNil([[NSFileManager defaultManager] attributesOfItemAtPath:[metadataB.fileURL path] error:&error]);
+        XCTAssertTrue([error hasUnderlyingErrorDomain:NSPOSIXErrorDomain code:ENOENT]);
     }
     
     // Stop the agents and restart them to make sure nothing reappears (might if we left a snapshot in their internal directories).
@@ -148,8 +161,8 @@ RCS_ID("$Id$")
     [agentB applicationLaunched];
     [self waitForAsyncOperations];
     
-    STAssertTrue([[self metadataItemsForAgent:agentA] count] == 0, @"Deleted items should not resurrect");
-    STAssertTrue([[self metadataItemsForAgent:agentB] count] == 0, @"Deleted items should not resurrect");
+    XCTAssertTrue([[self metadataItemsForAgent:agentA] count] == 0, @"Deleted items should not resurrect");
+    XCTAssertTrue([[self metadataItemsForAgent:agentB] count] == 0, @"Deleted items should not resurrect");
 }
 
 - (void)testDeleteWhileStillUploadingForFirstTime;
@@ -165,7 +178,7 @@ RCS_ID("$Id$")
     [self waitForFileMetadata:agent where:^BOOL(OFXFileMetadata *metadata) {
         float percentUploaded = metadata.percentUploaded;
         if (percentUploaded >= 1) {
-            STFail(@"Waited too long!");
+            XCTFail(@"Waited too long!");
         }
         return (percentUploaded > 0.1);
     }];
@@ -185,8 +198,8 @@ RCS_ID("$Id$")
     OFXTraceWait(@"OFXFileSnapshotDeleteTransfer.finished");
     OFXTraceWait(@"OFXFileItem.delete_transfer.commit.removed_local_snapshot");
     
-    STAssertTrue(OFXTraceHasSignal(@"OFXContainerAgent.upload_did_not_commit"), @"Upload completion should have failed validation");
-    STAssertFalse(OFXTraceHasSignal(@"OFXFileSnapshotDeleteTransfer.remote_delete_attempted"), @"We should not have tried to delete the remote URL");
+    XCTAssertTrue(OFXTraceHasSignal(@"OFXContainerAgent.upload_did_not_commit"), @"Upload completion should have failed validation");
+    XCTAssertFalse(OFXTraceHasSignal(@"OFXFileSnapshotDeleteTransfer.remote_delete_attempted"), @"We should not have tried to delete the remote URL");
 }
 
 - (void)testDeleteWhileUploadingEditOfExitingDocument;
@@ -213,7 +226,7 @@ RCS_ID("$Id$")
     [self waitForFileMetadata:agent where:^BOOL(OFXFileMetadata *metadata) {
         float percentUploaded = metadata.percentUploaded;
         if (percentUploaded >= 1) {
-            STFail(@"Waited too long!");
+            XCTFail(@"Waited too long!");
         }
         return (percentUploaded > 0.1);
     }];
@@ -230,19 +243,23 @@ RCS_ID("$Id$")
     OFXTraceWait(@"OFXFileSnapshotDeleteTransfer.finished");
     OFXTraceWait(@"OFXFileItem.delete_transfer.commit.removed_local_snapshot");
     
-    STAssertTrue(OFXTraceHasSignal(@"OFXFileSnapshotDeleteTransfer.remote_delete_attempted"), @"We should have deleted the remote URL");
+    XCTAssertTrue(OFXTraceHasSignal(@"OFXFileSnapshotDeleteTransfer.remote_delete_attempted"), @"We should have deleted the remote URL");
 }
 
 - (void)testDeleteOfUndownloadedFile;
 {
     self.agentB.automaticallyDownloadFileContents = NO;
 
-    [self copyFixtureNamed:@"test.package" waitForDownload:NO]; /* Just waiting for the metadata -- it's not going to get downloaded */
+    [self copyFixtureNamed:@"test.package" toPath:@"test.package" waitingForAgentsToDownload:nil]; /* Just waiting for the metadata -- it's not going to get downloaded */
     
+    // -waitForAgentsEditsToAgree: waits for the file to be downloaded.
+    [self waitForFileMetadata:self.agentB where:^BOOL(OFXFileMetadata *metadata) {
+        return [[metadata.fileURL lastPathComponent] isEqual:@"test.package"];
+    }];
     
     OFXServerAccount *accountB = [[self.agentB.accountRegistry validCloudSyncAccounts] lastObject];
     [self.agentB deleteItemAtURL:[accountB.localDocumentsURL URLByAppendingPathComponent:@"test.package" isDirectory:YES] completionHandler:^(NSError *errorOrNil) {
-        STAssertNil(errorOrNil, @"Should be no error");
+        XCTAssertNil(errorOrNil, @"Should be no error");
     }];
     
     // Wait for A to hear about it
@@ -250,14 +267,14 @@ RCS_ID("$Id$")
         return [metadataItems count] == 0;
     }];
     
-    STAssertTrue(OFXTraceHasSignal(@"OFXContainerAgent.delete_item.metadata"), @"Should have just been done via metadata since there was no file");
+    XCTAssertTrue(OFXTraceHasSignal(@"OFXContainerAgent.delete_item.metadata"), @"Should have just been done via metadata since there was no file");
 }
 
 - (void)testIncomingDeleteOfUndownloadedFile;
 {
     self.agentB.automaticallyDownloadFileContents = NO;
     
-    [self copyFixtureNamed:@"test.package" waitForDownload:NO]; /* Just waiting for the metadata -- it's not going to get downloaded */
+    [self copyFixtureNamed:@"test.package" toPath:@"test.package" waitingForAgentsToDownload:nil]; /* Just waiting for the metadata -- it's not going to get downloaded */
 
     OFXServerAccount *accountA = [[self.agentA.accountRegistry validCloudSyncAccounts] lastObject];
     [self deletePath:@"test.package" ofAccount:accountA];
@@ -267,7 +284,10 @@ RCS_ID("$Id$")
         return [metadataItems count] == 0;
     }];
     
-    STAssertTrue(OFXTraceHasSignal(@"OFXFileItem.incoming_delete.removed_local_snapshot"), @"Should have deleted the snapshot");
+    // The metadata updates are async as are the trace counters, and they aren't serialized vs. each other, so we need to wait to avoid races
+    [self waitUntil:^BOOL{
+        return OFXTraceHasSignal(@"OFXFileItem.incoming_delete.removed_local_snapshot");
+    }];
 }
 
 - (void)_doDeleteOnAgent:(OFXAgent *)deletingAgent whileStillDownloading:(OFXFileMetadata *)originalMetadata;
@@ -278,7 +298,7 @@ RCS_ID("$Id$")
     
     // ... and then delete on either the incoming or local side.
     [deletingAgent deleteItemAtURL:originalMetadata.fileURL completionHandler:^(NSError *errorOrNil){
-        STAssertNil(errorOrNil, @"Should not fail");
+        XCTAssertNil(errorOrNil, @"Should not fail");
     }];
     
     // Both A and B should settle down to having no files
@@ -374,7 +394,7 @@ RCS_ID("$Id$")
     }];
     
     // B should have gotten the new contents
-    STAssertTrue(ITEM_MATCHES_FIXTURE(updatedMetadata, @"test2.package"), nil);
+    XCTAssertTrue(ITEM_MATCHES_FIXTURE(updatedMetadata, @"test2.package"));
 }
 
 // Similar to -testLocalDeleteOfFlatFileWhileStillDownloading, but here we are trying to test the race between committing a download and the local deletion.
@@ -404,14 +424,14 @@ RCS_ID("$Id$")
     // Start downloads and then deletions of all the files, in increasing order of size.
     for (OFXFileMetadata *metadataItem in sizeSortedMetadataItemsOnB) {
         [self.agentB requestDownloadOfItemAtURL:metadataItem.fileURL completionHandler:^(NSError *errorOrNil) {
-            STAssertNil(errorOrNil, @"Download request should work");
+            XCTAssertNil(errorOrNil, @"Download request should work");
         }];
     }
     for (OFXFileMetadata *metadataItem in sizeSortedMetadataItemsOnB) {
         // Give a little time for the downloads to catch up.
         [NSThread sleepForTimeInterval:0.1*OFRandomNextDouble()];
         [self.agentB deleteItemAtURL:metadataItem.fileURL completionHandler:^(NSError *errorOrNil) {
-            STAssertNil(errorOrNil, @"Delete request should work");
+            XCTAssertNil(errorOrNil, @"Delete request should work");
         }];
     }
     
@@ -428,9 +448,9 @@ RCS_ID("$Id$")
 - (void)testRaceBetweenDownloadUpdateAndLocalDeletion;
 {
     // Not using -makeRandomFlatFile:withSize: since that waits. Bulk create a bunch of files.
-    const NSUInteger fileCount = 25;
+    const NSUInteger fileCount = 50;
     for (NSUInteger fileIndex = 0; fileIndex < fileCount; fileIndex++) {
-        [self writeRandomFlatFile:[NSString stringWithFormat:@"file%lu.txt", fileIndex] withSize:fileIndex*fileIndex];
+        [self writeRandomFlatFile:[NSString stringWithFormat:@"file%lu.txt", fileIndex] withSize:10*fileIndex*fileIndex*fileIndex];
     }
     
     // Wait for them all to appear on B.
@@ -442,7 +462,8 @@ RCS_ID("$Id$")
         }];
     }];
     
-    // For each file, write an update and then as soon as B starts deleting it, delete it locally. We are hoping to catch issues with the commit of a downoaded update racing with noticing the local deletion.
+    // For each file, write an update and then as soon as B starts downloading it, delete it locally. We are hoping to catch issues with the commit of a downoaded update racing with noticing the local deletion.
+    __block NSUInteger deletesAttemptedWhileDownloading = 0;
     NSMutableDictionary *filenameToContents = [NSMutableDictionary new];;
     for (OFXFileMetadata *metadataItem in [self metadataItemsForAgent:self.agentA]) {
         NSData *updatedContents = OFRandomCreateDataOfLength(metadataItem.fileSize);
@@ -456,6 +477,7 @@ RCS_ID("$Id$")
                 return NO;
             
             if (updatedMetadata.downloading) {
+                deletesAttemptedWhileDownloading++;
                 [self deletePath:[updatedMetadata.fileURL lastPathComponent] inAgent:self.agentB];
                 return YES;
             }
@@ -467,19 +489,14 @@ RCS_ID("$Id$")
         }];
     }
     
+    XCTAssertGreaterThan(deletesAttemptedWhileDownloading, 0ULL, "Should have managed at least one attempt at a delete while we were still downloading");
+    
     // Some of the deletes might happen, some might get dropped. Any files that are left should have the updated contents.
-    [self waitForAgentsToAgree];
+    [self waitForAgentsEditsToAgree];
+    [self requireAgentsToHaveSameFilesByName];
     
-    NSSet *finalMetadataItems = [self metadataItemsForAgent:self.agentA];
-    STAssertTrue([finalMetadataItems count] < fileCount, @"We expect that some of the deletes will have won"); // Unlikely that all will have failed, but it could happen.
-    
-    for (OFXFileMetadata *metadataItem in finalMetadataItems) {
-        NSError *error;
-        NSData *contents;
-        OBShouldNotError((contents = [[NSData alloc] initWithContentsOfURL:metadataItem.fileURL options:0 error:&error]));
-        
-        STAssertEqualObjects(contents, filenameToContents[[metadataItem.fileURL lastPathComponent]], nil);
-    }
+    // We expect that we'll get all the updated contents (no deletes should win). Once we start a download, deletes are delayed until the download ends, and once the download ends, there will be a file in place (so the next scan won't issue a delete).
+    [self requireAgent:self.agentB toHaveDataContentsByPath:filenameToContents];
 }
 
 // <bug:///88190> (Clients out of sync after deleting subfolder while uploading contents)
@@ -578,6 +595,43 @@ RCS_ID("$Id$")
     [self waitForFileMetadataItems:agentB where:^BOOL(NSSet *metadataItems) {
         return [metadataItems count] == 0;
     }];
+}
+
+- (void)testDocumentWithMultipleVersionsOnServer;
+{
+    OFXAgent *agentA = self.agentA;
+    OFXAgent *agentB = self.agentB;
+    
+    OFXTraceReset();
+    
+    // Make sure neither agent cleans up file versions so that there are multiple to delete
+    agentA.clientParameters.deletePreviousFileVersionAfterNewVersionUploaded = NO;
+    agentB.clientParameters.deletePreviousFileVersionAfterNewVersionUploaded = NO;
+    agentA.clientParameters.deleteStaleFileVersionsWhenSyncing = NO;
+    agentB.clientParameters.deleteStaleFileVersionsWhenSyncing = NO;
+    
+    // Upload two versions of a file on A
+    OFXFileMetadata *originalMetadata = [self uploadFixture:@"test.package"];
+    [self uploadFixture:@"test2.package" as:@"test.package" replacingMetadata:originalMetadata];
+
+    // Make sure B sees the file so that we can use this as a check that the delete has happened (since in-progress deletes vend no metadata, so we can't check agentA's metadata items.
+    [self waitForFileMetadataItems:agentB where:^BOOL(NSSet *metadataItems) {
+        return [metadataItems count] == 1;
+    }];
+    
+    // Deleting this should remove both versions
+    [self deletePath:@"test.package" ofAccount:[self singleAccountInAgent:agentA]];
+    
+    [self waitForFileMetadataItems:agentB where:^BOOL(NSSet *metadataItems) {
+        return [metadataItems count] == 0;
+    }];
+    
+    NSArray *deletedURLs = OFXTraceCopy(@"OFXFileSnapshotDeleteTransfer.deleted_urls");
+    XCTAssertEqual([deletedURLs count], 2UL, "Delete should have removed both versions");
+
+    // A little inside-baseball here to know how versions are represented.
+    XCTAssert([[deletedURLs[0] lastPathComponent] hasSuffix:@"~0"], "Should delete the oldest version first");
+    XCTAssert([[deletedURLs[1] lastPathComponent] hasSuffix:@"~1"], "Should delete the newest version second");
 }
 
 @end
