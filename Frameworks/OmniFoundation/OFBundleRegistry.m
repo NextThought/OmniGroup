@@ -306,7 +306,7 @@ static NSString *_normalizedPath(NSString *path)
         [newPath release];
     } else {
         // standardPath = ("~/Library/Components", "/Library/Components", "AppWrapper");
-        standardPath = [[NSArray alloc] initWithObjects:
+        standardPath = @[//[[NSArray alloc] initWithObjects:
 #ifdef OF_BUNDLE_REGISTRY_DYNAMIC_BUNDLE_LOADING
             // User's library directory
             [NSString pathWithComponents:[NSArray arrayWithObjects:NSHomeDirectory(), @"Library", @"Components", nil]],
@@ -319,7 +319,7 @@ static NSString *_normalizedPath(NSString *path)
             mainBundlePath,
 #endif
 
-            nil];
+			];//nil];
     }
 
     return standardPath;

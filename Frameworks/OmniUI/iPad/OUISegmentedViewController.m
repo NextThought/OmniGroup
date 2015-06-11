@@ -224,7 +224,7 @@ RCS_ID("$Id$")
     }
 }
 
-- (NSUInteger)navigationControllerSupportedInterfaceOrientations:(UINavigationController *)navigationController;
+- (UIInterfaceOrientationMask)navigationControllerSupportedInterfaceOrientations:(UINavigationController *)navigationController;
 {
     if ([self.originalNavDelegate respondsToSelector:@selector(navigationControllerSupportedInterfaceOrientations:)]) {
         return [self.originalNavDelegate navigationControllerSupportedInterfaceOrientations:navigationController];

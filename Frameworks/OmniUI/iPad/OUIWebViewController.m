@@ -85,7 +85,7 @@ RCS_ID("$Id$")
 
 - (void)loadData:(NSData *)data ofType:(NSString *)mimeType;
 {
-    [(UIWebView *)self.view loadData:data MIMEType:mimeType textEncodingName:@"utf-8" baseURL:nil];
+    [(UIWebView *)self.view loadData:data MIMEType:mimeType textEncodingName:@"utf-8" baseURL:[NSURL new]];
 }
 
 - (void)mailComposeController:(MFMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error;
@@ -138,7 +138,7 @@ RCS_ID("$Id$")
         }
 
         // Special URL
-        if ([OUIAppController canHandleURLScheme:scheme] && [[[UIApplication sharedApplication] delegate] application:nil handleOpenURL:requestURL]) {
+        if ([OUIAppController canHandleURLScheme:scheme] && [[[UIApplication sharedApplication] delegate] application:[UIApplication sharedApplication] handleOpenURL:requestURL]) {
             return NO; // Don't load this in the WebView
         }
     }

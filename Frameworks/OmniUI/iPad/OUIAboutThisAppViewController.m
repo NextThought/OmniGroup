@@ -137,7 +137,7 @@ RCS_ID("$Id$")
         }
 
         // Special URL
-        if ([OUIAppController canHandleURLScheme:scheme] && [[[UIApplication sharedApplication] delegate] application:nil handleOpenURL:requestURL]) {
+        if ([OUIAppController canHandleURLScheme:scheme] && [[[UIApplication sharedApplication] delegate] application:[UIApplication sharedApplication] handleOpenURL:requestURL]) {
                 return NO; // Don't load this in the WebView
         }
     }
