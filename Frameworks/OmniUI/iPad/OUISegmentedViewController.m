@@ -224,7 +224,13 @@ RCS_ID("$Id$")
     }
 }
 
-- (UIInterfaceOrientationMask)navigationControllerSupportedInterfaceOrientations:(UINavigationController *)navigationController;
+#ifdef __IPHONE_9_0
+#define NTIUIInterfaceOrientationMaskType UIInterfaceOrientationMask
+#else
+#define NTIUIInterfaceOrientationMaskType NSUInteger
+#endif
+
+- (NTIUIInterfaceOrientationMaskType)navigationControllerSupportedInterfaceOrientations:(UINavigationController *)navigationController;
 {
     if ([self.originalNavDelegate respondsToSelector:@selector(navigationControllerSupportedInterfaceOrientations:)]) {
         return [self.originalNavDelegate navigationControllerSupportedInterfaceOrientations:navigationController];
