@@ -24,5 +24,5 @@ void OUITextViewFixTextStorageIvar(OUITextView *self, NSTextStorage *oldTextStor
     
     // Fix ref counting
     OBStrongRetain(textStorage);
-    OBStrongRelease(oldTextStorage);
+//    OBStrongRelease(oldTextStorage);
 }

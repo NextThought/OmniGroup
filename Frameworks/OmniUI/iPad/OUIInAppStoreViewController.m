@@ -94,6 +94,16 @@ typedef NS_ENUM(NSUInteger, OUIInAppStoreViewState) {
     return self;
 }
 
+- (instancetype)initWithNibName:(nullable NSString *)nibNameOrNil bundle:(nullable NSBundle *)nibBundleOrNil
+{
+	return [self initWithProductIdentifier:@""];
+}
+
+- (instancetype)initWithCoder:(nonnull NSCoder *)aDecoder
+{
+	return [self initWithProductIdentifier:@""];
+}
+
 - (void)viewDidLoad;
 {
     [super viewDidLoad];

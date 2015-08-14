@@ -236,8 +236,8 @@ BOOL OFWriteCredentialsForServiceIdentifier(NSString *serviceIdentifier, NSStrin
 
     // Split the entry into a query and attributes to update.
     NSMutableDictionary *query = [[entry mutableCopy] autorelease];
-    [query removeObjectForKey:kSecAttrAccount];
-    [query removeObjectForKey:kSecValueData];
+    [query removeObjectForKey:(NSString *)kSecAttrAccount];
+    [query removeObjectForKey:(NSString *)kSecValueData];
     
     NSDictionary *attributes = @{(id)kSecAttrAccount:entry[(id)kSecAttrAccount], (id)kSecValueData:entry[(id)kSecValueData]};
     

@@ -112,6 +112,11 @@ RCS_ID("$Id$");
     return self;
 }
 
+- (instancetype)init
+{
+	return [self initWithURL:[NSURL new]];
+}
+
 - (NSString *)commandDescription;
 {
     return [self.url query];

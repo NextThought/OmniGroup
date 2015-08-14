@@ -1261,7 +1261,7 @@ static void _copyAttribute(NSMutableDictionary *dest, NSDictionary *src, NSStrin
         NSMutableAttributedString *result = [NSMutableAttributedString new];
         _enumerateBestDataForTypes(pasteboard, _readableTypes(), ^(NSData *data){
             __autoreleasing NSError *error = nil;
-            NSAttributedString *attributedString = [[NSAttributedString alloc] initWithData:data options:nil documentAttributes:NULL error:&error];
+            NSAttributedString *attributedString = [[NSAttributedString alloc] initWithData:data options:[NSDictionary new] documentAttributes:NULL error:&error];
             if (!attributedString)
                 [error log:@"Error reading pasteboard item"];
             else {
