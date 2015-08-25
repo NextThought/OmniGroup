@@ -1,4 +1,4 @@
-// Copyright 2000-2005, 2007-2008, 2010, 2013-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2000-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -27,7 +27,6 @@
 // If 'manager' is nil, we use the old behavior of fully archiving colors with unknown colorspaces.
 
 - (BOOL)isSimilarToColor:(NSColor *)color;
-- (BOOL)isPatternSimilarToColorPattern:(NSColor *)color;
 - (NSData *)patternImagePNGData;
 
 - (NSString *)similarColorNameFromColorLists;

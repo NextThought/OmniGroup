@@ -13,7 +13,9 @@ RCS_ID("$Id$");
 
 static id _commonInit(OUIUndoButton *self)
 {
-    [self setImage:[UIImage imageNamed:@"OUIToolbarUndo"] forState:UIControlStateNormal];
+    UIImage *image = [UIImage imageNamed:@"OUIToolbarUndo" inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil];
+    OBASSERT(image);
+    [self setImage:image forState:UIControlStateNormal];
 
     return self;
 }
@@ -32,4 +34,9 @@ static id _commonInit(OUIUndoButton *self)
     return _commonInit(self);
 }
 
+#pragma mark - Accessibility
+- (NSString *)accessibilityLabel
+{
+    return NSLocalizedStringFromTableInBundle(@"Undo", @"OmniUI", OMNI_BUNDLE, @"Undo button title");
+}
 @end

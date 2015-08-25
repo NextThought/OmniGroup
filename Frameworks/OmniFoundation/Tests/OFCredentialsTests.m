@@ -1,4 +1,4 @@
-// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -65,16 +65,21 @@ RCS_ID("$Id$");
 - (void)testUpdateCredential;
 {
     NSString *password1 = OFXMLCreateID();
-    XCTAssertTrue(OFWriteCredentialsForServiceIdentifier(_serviceIdentifier, @"user", password1, NULL));
-
-    NSURLCredential *credential1 = OFReadCredentialsForServiceIdentifier(_serviceIdentifier, NULL);
+    __autoreleasing NSError *error = nil;
+    
+    OBShouldNotError(OFWriteCredentialsForServiceIdentifier(_serviceIdentifier, @"user", password1, &error));
+    
+    NSURLCredential *credential1;
+    OBShouldNotError(credential1 = OFReadCredentialsForServiceIdentifier(_serviceIdentifier, &error));
+    
     XCTAssertEqualObjects(credential1.user, @"user");
     XCTAssertEqualObjects(credential1.password, password1);
 
     NSString *password2 = OFXMLCreateID();
-    XCTAssertTrue(OFWriteCredentialsForServiceIdentifier(_serviceIdentifier, @"user", password2, NULL));
+    OBShouldNotError(OFWriteCredentialsForServiceIdentifier(_serviceIdentifier, @"user", password2, &error));
     
-    NSURLCredential *credential2 = OFReadCredentialsForServiceIdentifier(_serviceIdentifier, NULL);
+    NSURLCredential *credential2;
+    OBShouldNotError(credential2 = OFReadCredentialsForServiceIdentifier(_serviceIdentifier, &error));
     XCTAssertEqualObjects(credential2.user, @"user");
     XCTAssertEqualObjects(credential2.password, password2);
 }

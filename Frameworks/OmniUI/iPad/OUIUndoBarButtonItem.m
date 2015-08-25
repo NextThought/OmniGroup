@@ -9,7 +9,9 @@
 
 #import <OmniUI/NSUndoManager-OUIExtensions.h>
 #import <OmniUI/OUIAppController.h>
+#import <OmniUI/OUIUndoBarButtonMenuAppearanceDelegate.h>
 #import <OmniUI/OUIUndoButton.h>
+#import <OmniUI/UIPopoverPresentationController-OUIExtensions.h>
 #import <OmniUI/UIView-OUIExtensions.h>
 #import <OmniUI/OUIMenuController.h>
 #import "OUIParameters.h"
@@ -124,6 +126,16 @@ static id _commonInit(OUIUndoBarButtonItem *self)
     return _commonInit(self);
 }
 
+- initWithUndoMenuAppearanceDelegate:(id <OUIUndoBarButtonMenuAppearanceDelegate>)appearanceDelegate;
+{
+    if (!(self = [super init]))
+        return nil;
+    
+    _weak_appearanceDelegate = appearanceDelegate;
+    
+    return _commonInit(self);
+}
+
 - (void)dealloc;
 {
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
@@ -161,7 +173,7 @@ static id _commonInit(OUIUndoBarButtonItem *self)
 - (void)updateButtonForCompact:(BOOL)isCompact;
 {
     if (isCompact) {
-        [_undoButton setImage:[UIImage imageNamed:@"OUIToolbarUndo"] forState:UIControlStateNormal];
+        [_undoButton setImage:[UIImage imageNamed:@"OUIToolbarUndo" inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil] forState:UIControlStateNormal];
         [_undoButton setTitle:nil forState:UIControlStateNormal];
         [_undoButton sizeToFit];
     } else {
@@ -169,6 +181,38 @@ static id _commonInit(OUIUndoBarButtonItem *self)
         [_undoButton setTitle:NSLocalizedStringFromTableInBundle(@"Undo", @"OmniUI", OMNI_BUNDLE, @"Undo button title") forState:UIControlStateNormal];
         [_undoButton sizeToFit];
     }
+}
+
+#pragma mark - Appearance
+
+- (void)appearanceDidChange;
+{
+    if (self.appearanceDelegate != nil) {
+        
+        if (_menuController != nil) {
+            _menuController.popoverPresentationController.backgroundColor = [self.appearanceDelegate undoBarButtonMenuPopoverBackgroundColor];
+            _menuController.menuBackgroundColor = [self.appearanceDelegate undoBarButtonMenuBackgroundColor];
+            _menuController.menuOptionBackgroundColor = [self.appearanceDelegate undoBarButtonMenuOptionBackgroundColor];
+            _menuController.menuOptionSelectionColor = [self.appearanceDelegate undoBarButtonMenuOptionSelectionColor];
+        }
+    }
+}
+
+@synthesize appearanceDelegate = _weak_appearanceDelegate;
+- (void)setAppearanceDelegate:(id<OUIUndoBarButtonMenuAppearanceDelegate>)appearanceDelegate;
+{
+    if (appearanceDelegate == _weak_appearanceDelegate) {
+        return;
+    }
+    
+    _weak_appearanceDelegate = appearanceDelegate;
+    [self appearanceDidChange];
+}
+
+#pragma mark - Accessibility
+- (NSString *)accessibilityLabel
+{
+    return NSLocalizedStringFromTableInBundle(@"Undo", @"OmniUI", OMNI_BUNDLE, @"Undo button title");
 }
 
 #pragma mark -
@@ -257,6 +301,9 @@ static id _commonInit(OUIUndoBarButtonItem *self)
     
     // Setup Popover Presentation Controller - This must be done each time becase when the popover is dismissed the current popoverPresentationController is released and a new one is created next time.
     _menuController.popoverPresentationController.barButtonItem = self;
+
+    // give the appearanceDelegate, if present, an opportunity to alter the appearance each time
+    [self appearanceDidChange];
     
     return _menuController;
 }
@@ -366,12 +413,12 @@ static BOOL DidDismissAnyMenus;
     }
     else {
         // we can use our popover
+        UINavigationController *navigationController = [self isKindOfClass:[UINavigationController class]] ? (UINavigationController *)self : self.navigationController;
         OUIMenuController *menuController = [barButtonItem _menuControllerForRegularMenuPresentation];
+        [menuController.popoverPresentationController addManagedBarButtonItemsFromNavigationController:navigationController];
+        
         [[NSNotificationCenter defaultCenter] postNotificationName:OUIUndoPopoverWillShowNotification object:barButtonItem];
-        [self presentViewController:menuController animated:YES completion:^{
-            // The menu controller "helpfully" adds passthrough views for us at presentation time – clear them out afterwards
-            menuController.popoverPresentationController.passthroughViews = @[];
-        }];
+        [self presentViewController:menuController animated:YES completion:NULL];
     }
 }
 

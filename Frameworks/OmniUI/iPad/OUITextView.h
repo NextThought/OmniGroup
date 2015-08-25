@@ -40,6 +40,8 @@ extern NSString * const OUITextViewInsertionPointDidChangeNotification;
 
 @interface OUITextView : UITextView <OUIInspectorDelegate>
 
++ (OUITextView *)activeFirstResponderTextView;
+
 @property(nonatomic,assign) id <OUITextViewDelegate> delegate; // We'd like this to be weak, but the superclass declares it 'assign'.
 
 // UITextView currently has top/bottom padding that we cannot turn off/change
@@ -51,6 +53,8 @@ extern NSString * const OUITextViewInsertionPointDidChangeNotification;
 @property(nonatomic,readonly) CGSize textUsedSize;
 
 @property(nonatomic,readonly) CGFloat firstLineAscent;
+
+@property(nonatomic) BOOL keepContextualMenuHidden;
 
 - (NSDictionary *)typingAttributesWithAllAttributes; // allow subclasses to ensure that the typing attributes contain the extra attributes which are sometimes stripped out by the runtime.
 - (void)ensureLayout;
@@ -89,6 +93,8 @@ extern NSString * const OUITextViewInsertionPointDidChangeNotification;
 - (void)performUndoableEditOnRange:(NSRange)range action:(void (^)(NSMutableAttributedString *))action;
 - (void)performUndoableEditToStylesInSelectedRange:(void (^)(NSTextStorage *textStorage))action;
 - (void)performUndoableReplacementOnSelectedRange:(NSAttributedString *)replacement;
+
+@property (nonatomic, assign) BOOL alwaysHighlightSelectedText;
 
 @end
 

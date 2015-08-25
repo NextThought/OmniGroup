@@ -14,13 +14,16 @@
 require 'pathname'
 require 'rexml/document'
 
+require 'xcode'
 require 'xcodeproj'
 
 gem_path = Pathname.new(File.dirname(__FILE__) + "/plist-3.1.0/lib").realpath.to_s
 $: << gem_path
 require 'plist'
 
+
 module Xcode
+
   module Workspace
   end
   
@@ -114,16 +117,22 @@ module Xcode
     end
   end
   
+  class Workspace::PathReference < Struct.new(:path, :project_paths)
+  end
+  
   class Workspace::Workspace
-    attr_reader :path, :root
+    attr_reader :path, :checkout_location, :root
     attr_reader :autocreate_schemes
     
-    def initialize(path)
-      @path = Pathname.new(path).realpath.to_s
-      fail "#{path} is not a directory\n" unless File.directory?(@path)
+    # The path is the nominal location, while @checkout_location is the real path on disk (possibly a cache)
+    def initialize(path, options = {})
+      @checkout_location = Pathname.new(Xcode::checkout_location(path)).realpath.to_s
+      fail "#{path} is not a directory\n" unless File.directory?(@checkout_location)
+      
+      @path = Xcode::real_relative_path(path) # Allow missing path here since we might have a different checkout location
 
-      xml_file = path + "/contents.xcworkspacedata"
-      fail "no contents.xcworkspacedata file in #{path}\n" unless File.exist?(xml_file)
+      xml_file = @checkout_location + "/contents.xcworkspacedata"
+      fail "no contents.xcworkspacedata file in #{@checkout_location}\n" unless File.exist?(xml_file)
       
       doc = REXML::Document.new(File.read(xml_file))
       fail "Unable to read '#{xml_file}'\n" if (doc.nil? || doc.root.nil?)
@@ -133,7 +142,7 @@ module Xcode
       @root = Xcode::Workspace::Group.from_xml(self, doc.root)
       
       @autocreate_schemes = true
-      settings_path = @path + "/xcshareddata/WorkspaceSettings.xcsettings"
+      settings_path = @checkout_location + "/xcshareddata/WorkspaceSettings.xcsettings"
       if File.exist?(settings_path)
         settings = Plist::parse_xml(`plutil -convert xml1 -o - "#{settings_path}"`)
 
@@ -153,18 +162,29 @@ module Xcode
       File.dirname(path)
     end
     
+    def add_dir_ref(ref_by_dir, path, project_path)
+      dir_path = File.dirname(path)
+      ref = ref_by_dir[dir_path]
+      if ref.nil?
+        ref = Xcode::Workspace::PathReference.new(dir_path, [project_path])
+        ref_by_dir[dir_path] = ref
+      else
+        ref.project_paths << project_path unless ref.project_paths.index(project_path)
+      end
+    end
+    
     # Collects the transitive closure of files referenced by this workspace and any xcodeproj files referenced directly or indirectly
     # This depends upon the referenced projects being checked out, and doesn't consider any branched directories, which would be needed for PostAutoBuildSequences
-    def referenced_directories
-      dirs = {}
-      dirs[File.dirname(path)] = true # The directory containing this workspace
+    # The results are instances of Workspace::PathReference. The reference given won't necessarily contain all the project paths refering to its path or subpaths (usually useful for getting rid of bad references, so you might need to use it iteratively).
+    def directory_references
+      ref_by_dir = {}
+      add_dir_ref(ref_by_dir, path, path) # The directory containing this workspace
       
       # TODO: If a group in the workspace has a path set, we should probably include that? But the few places we have that, it points at OmniGroup/Frameworks and we don't need all that.
       project_paths = []
       processed_project_paths = {}
       each_file {|f|
         path = f.absolute_path
-        dirs[File.dirname(path)] = true # The directory containing every directly referenced file
         
         if File.extname(path) == ".xcodeproj"
           project_paths << path
@@ -177,10 +197,15 @@ module Xcode
         next if processed_project_paths[project_path] # Skip projects that we've seen via another path
         processed_project_paths[project_path] = true
         
-        dirs[File.dirname(project_path)] = true # The directory containing every project
+        add_dir_ref(ref_by_dir, project_path, project_path)
 
         #STDERR.print "project_path = #{project_path}\n"
-        project = Xcode::Project.new(project_path)
+        project = Xcode::Project.from_path(project_path)
+        if !project
+            STDERR.print "--- Skipping missing #{project_path} (maybe excluded during autobuild)\n"
+            next
+        end
+
         project.each_item {|item|
           fullpath = project.resolvepath(item.identifier, false)
           #STDERR.print "item #{item} #{item.identifier} #{item.dict} #{fullpath}\n"
@@ -197,7 +222,7 @@ module Xcode
             # We don't include anything directly for groups since (for example, we might have a reference to OmniGroup/Frameworks)
           when Xcode::PBXFileReference
             # TODO: If this is a copy-the-folder reference, we only need the folder.
-            dirs[File.dirname(fullpath)] = true
+            add_dir_ref(ref_by_dir, fullpath, project_path)
           else
             fail "Don't know what to do with #{item} at #{fullpath}\n"
           end
@@ -207,7 +232,7 @@ module Xcode
       end
       
       # Sort directories by size so that we can check if an ancestor is already present
-      ordered_dirs = dirs.keys.sort {|a,b| a.size <=> b.size }
+      ordered_dirs = ref_by_dir.keys.sort {|a,b| a.size <=> b.size }
       
       unique_dirs = []
       ordered_dirs.each {|d|
@@ -220,11 +245,13 @@ module Xcode
         d.index("/usr/lib") == 0 || d.index("/System") == 0 || d.index("/Library") == 0
       }
       bad_paths.each {|d|
-        STDERR.print "NOTE: Removing bad reference to #{d}\n"
+        #STDERR.print "NOTE: Removing bad reference to #{d}\n"
         unique_dirs.delete(d)
       }
       
-      unique_dirs.sort {|a,b| a <=> b }
+      unique_dirs.sort {|a,b| a <=> b }.map {|d|
+        ref_by_dir[d]
+      }
     end
     
   end

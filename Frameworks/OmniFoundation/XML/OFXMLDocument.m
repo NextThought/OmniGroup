@@ -1,4 +1,4 @@
-// Copyright 2003-2005, 2007-2008, 2010-2012, 2014 Omni Development, Inc. All rights reserved.
+// Copyright 2003-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -211,11 +211,11 @@ RCS_ID("$Id$");
             OFXMLBufferAppendString(xml, (__bridge CFStringRef)_versionString);
             OFXMLBufferAppendUTF8CString(xml, "\" encoding=\"");
             
-            // Convert the encoding name to lowercase for compatibility with an older version of OFXMLDocument (regression tests...)
-            CFStringRef encodingName = (CFStringRef)[(NSString *)CFStringConvertEncodingToIANACharSetName(_stringEncoding) lowercaseString];
+            // XML spec wants uppercase names, but we should match case insensitively.
+            CFStringRef encodingName = (CFStringRef)[(NSString *)CFStringConvertEncodingToIANACharSetName(_stringEncoding) uppercaseString];
             if (!encodingName) {
                 OBASSERT_NOT_REACHED("No encoding name found");
-                encodingName = CFSTR("utf-8");
+                encodingName = CFSTR("UTF-8");
             }
             OFXMLBufferAppendString(xml, encodingName);
             

@@ -1,4 +1,4 @@
-// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -85,7 +85,14 @@ RCS_ID("$Id$")
 
 - (void)loadData:(NSData *)data ofType:(NSString *)mimeType;
 {
-    [(UIWebView *)self.view loadData:data MIMEType:mimeType textEncodingName:@"utf-8" baseURL:[NSURL new]];
+    UIWebView *webView = OB_CHECKED_CAST(UIWebView, self.view);
+    NSURL *baseURL = [NSURL URLWithString:@"x-invalid:"];
+    
+    if (data == nil) {
+        data = [NSData data];
+    }
+    
+    [webView loadData:data MIMEType:mimeType textEncodingName:@"utf-8" baseURL:baseURL];
 }
 
 - (void)mailComposeController:(MFMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error;

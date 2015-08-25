@@ -29,7 +29,7 @@
 "Cannot locate synchronized documents folder." = "Synchronisierter Dokumentordner kann nicht gefunden werden.";
 
 /* Error description */
-"Cannot move document." = "Dokument kann nicht bewegt werden.";
+"Cannot move document." = "Dokument kann nicht verschoben werden.";
 
 /* Error description */
 "Cannot start account agent." = "Account-Agent kann nicht gestartet werden.";
@@ -82,7 +82,7 @@
 "Omni Sync Server" = "Omni Sync Server";
 
 /* account validation error suggestion */
-"Please check that the account information you entered is correct." = "Überprüfen Sie, ob die eingegebenen Account-Informationen richtig sind.";
+"Please check that the account information you entered is correct." = "Überprüfen Sie, ob die eingegebenen Accountinformationen richtig sind.";
 
 /* account validation error suggestion */
 "Please enter an address for the account." = "Geben Sie eine Adresse für den Account ein.";
@@ -151,7 +151,7 @@
 "Use your own WebDAV space." = "Eigenen WebDAV-Speicher verwenden";
 
 /* Account validation step description */
-"Validating Account..." = "Account überprüfen …";
+"Validating Account..." = "Account überprüfen ...";
 
 /* Server account type */
 "WebDAV" = "WebDAV";

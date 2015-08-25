@@ -1,4 +1,4 @@
-// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -290,7 +290,7 @@ static void _commonInit(OUIServerAccountSetupViewController *self)
     OBFinishPortingLater("This isn't reliable -- it works in the WebDAV case, but not OSS, for whatever reason (likely because our UITableView isn't in the window yet");
     [_tableView layoutIfNeeded];
     
-#ifdef DEBUG_bungi
+#if 0 && defined(DEBUG_bungi)
     // Speedy account creation
     if (_account == nil) {
         CELL_AT(ServerAccountAddressSection, 0).editableValueCell.valueField.text = @"https://crispix.local:8001/test";
@@ -731,7 +731,7 @@ static const CGFloat OUIServerAccountSendSettingsFooterHeight = 120;
     header.font = [UIFont systemFontOfSize:14];
     header.backgroundColor = [UIColor clearColor];
     header.opaque = NO;
-    header.textColor = [UIColor omniNeutralDeemphasizedColor];
+    header.textColor = [OUIAppearanceDefaultColors appearance].omniNeutralDeemphasizedColor;
     header.numberOfLines = 0 /* no limit */;
     
     return header;

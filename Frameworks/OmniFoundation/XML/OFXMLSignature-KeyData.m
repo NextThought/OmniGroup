@@ -1,4 +1,4 @@
-// Copyright 2009-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2009-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -435,10 +435,13 @@ SecKeyRef OFXMLSigCopyKeyFromEllipticKeyValue(xmlNode *keyvalue, int *outOrder, 
 
 static NSData *getNamedCurve(const xmlChar *curveName, int *log2_p_out, NSError **outError)
 {
-    for(const struct OFNamedCurveInfo *cursor = _OFEllipticCurveInfoTable; cursor->urn; cursor++) {
-        if (xmlStrcmp(curveName, (xmlChar *)(cursor->urn)) == 0) {
-            *log2_p_out = cursor->generatorSize;
-            return [NSData dataWithBytesNoCopy:(void *)(cursor->derOid) length:(cursor->derOidLength) freeWhenDone:NO];
+    if (strncmp((const char *)curveName, "urn:oid:", 8) == 0) {
+        const xmlChar *curveOIDString = curveName + 8;
+        for(const struct OFNamedCurveInfo *cursor = _OFEllipticCurveInfoTable; cursor->urn; cursor++) {
+            if (xmlStrcmp(curveOIDString, (xmlChar *)(cursor->urn)) == 0) {
+                *log2_p_out = cursor->generatorSize;
+                return [NSData dataWithBytesNoCopy:(void *)(cursor->derOid) length:(cursor->derOidLength) freeWhenDone:NO];
+            }
         }
     }
 

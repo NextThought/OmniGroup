@@ -1,4 +1,4 @@
-// Copyright 1997-2008, 2010, 2012-2014 Omni Development, Inc. All rights reserved.
+// Copyright 1997-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -112,7 +112,6 @@
 #import <OmniAppKit/OAPreferenceController.h>
 #import <OmniAppKit/OARegExFindPattern.h>
 #import <OmniAppKit/OAResizingByteFormatter.h>
-#import <OmniAppKit/OAResizingTitleBarButton.h>
 #import <OmniAppKit/OAScriptToolbarHelper.h>
 #import <OmniAppKit/OAScrollView.h>
 #import <OmniAppKit/OASearchField.h>
@@ -125,8 +124,6 @@
 #import <OmniAppKit/OAStackView.h>
 #import <OmniAppKit/OASteppableTextField.h>
 #import <OmniAppKit/OASubtleScroller.h>
-#import <OmniAppKit/OASwitcherBarButtonCell.h>
-#import <OmniAppKit/OASwitcherBarMatrix.h>
 #import <OmniAppKit/OASwoopView.h>
 #import <OmniAppKit/OATabView.h>
 #import <OmniAppKit/OATabViewController.h>

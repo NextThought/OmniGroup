@@ -140,7 +140,11 @@ RCS_ID("$Id$");
 
 - (void)ensureSelectedFilterMatchesFileItem:(ODSFileItem *)fileItem;
 {
-    // nothing to do here.
+    if (self.navigationController.viewControllers.count > 1) {
+        [self.navigationController popViewControllerAnimated:NO];
+        OUIDocumentPickerViewController *scopeViewController = OB_CHECKED_CAST(OUIDocumentPickerViewController, self.navigationController.topViewController);
+        [scopeViewController ensureSelectedFilterMatchesFileItem:fileItem];
+    }
 }
 
 #pragma mark -
@@ -161,9 +165,15 @@ RCS_ID("$Id$");
         }
 
         [self _beginIgnoringDocumentsDirectoryUpdates]; // prevent the possibility of the newly created document showing up in the template chooser.  This will only happen if you are creating a new template.
-        [self newDocumentWithTemplateFileItem:fileItem documentType:self.type];
-        // do not call _endIgnoringDocumentsDirectoryUpdates.  Otherwise we will get updates before we animate away opening the document.  We will not be returning to this view controller so this should not be an issue.
+        [self newDocumentWithTemplateFileItem:fileItem documentType:self.type completion:^{
+            [self _endIgnoringDocumentsDirectoryUpdates];
+        }];
     }
+}
+
+- (BOOL)documentPickerScrollViewShouldMultiselect:(OUIDocumentPickerScrollView *)scrollView
+{
+    return NO;
 }
 
 @end

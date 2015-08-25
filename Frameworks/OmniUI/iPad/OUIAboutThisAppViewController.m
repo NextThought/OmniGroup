@@ -22,7 +22,10 @@ RCS_ID("$Id$")
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil;
 {
-    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+    OBPRECONDITION(nibNameOrNil == nil);
+    OBPRECONDITION(nibBundleOrNil == nil);
+    
+    self = [super initWithNibName:@"OUIAboutThisAppViewController" bundle:OMNI_BUNDLE];
     if (self == nil)
         return nil;
     
@@ -137,8 +140,11 @@ RCS_ID("$Id$")
         }
 
         // Special URL
-        if ([OUIAppController canHandleURLScheme:scheme] && [[[UIApplication sharedApplication] delegate] application:[UIApplication sharedApplication] handleOpenURL:requestURL]) {
+        if ([OUIAppController canHandleURLScheme:scheme]) {
+            UIApplication *sharedApplication = [UIApplication sharedApplication];
+            if ([[sharedApplication delegate] application:sharedApplication handleOpenURL:requestURL]) {
                 return NO; // Don't load this in the WebView
+            }
         }
     }
 

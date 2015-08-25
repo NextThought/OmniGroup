@@ -151,7 +151,7 @@
 "Use your own WebDAV space." = "Utilisez votre propre espace WebDAV.";
 
 /* Account validation step description */
-"Validating Account..." = "Validation du compte…";
+"Validating Account..." = "Validation du compte...";
 
 /* Server account type */
 "WebDAV" = "WebDAV";

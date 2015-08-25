@@ -1,4 +1,4 @@
-// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -17,14 +17,12 @@
 RCS_ID("$Id$");
 
 @implementation OUIScalingView
-{
-    NSArray *_shadowEdgeViews;
-}
 
 static id _commonInit(OUIScalingView *self)
 {
     self.layer.needsDisplayOnBoundsChange = YES;
     self->_scale = 1;
+    self->_scaleEnabled = YES;
     return self;
 }
 
@@ -45,6 +43,10 @@ static id _commonInit(OUIScalingView *self)
 // If this view is within a OUIScalingScrollView, then this property should be considered read-only and the scale should be adjusted via its methods.
 - (void)setScale:(CGFloat)scale;
 {
+    if (self.scaleEnabled == NO) {
+        return;
+    }
+    
     OBPRECONDITION(scale > 0);
     if (_scale == scale)
         return;
@@ -203,31 +205,6 @@ static id _commonInit(OUIScalingView *self)
     return data;
 }
 
-- (void)updateShadowEdgeViews;
-{
-    if (!self.wantsShadowEdges)
-        return;
-    
-    if (!_shadowEdgeViews)
-        _shadowEdgeViews = [OUIViewAddShadowEdges(self) copy];
-    OUIViewLayoutShadowEdges(self, _shadowEdgeViews, YES/*flipped*/);
-}
-
-- (void)setShadowEdgeViewVisibility:(BOOL)visible;
-{
-    if (!self.wantsShadowEdges)
-        return;
-    
-    if (visible) {
-        for (UIView *view in _shadowEdgeViews) {
-            [self addSubview:view];
-        }
-    }
-    else {
-        [_shadowEdgeViews makeObjectsPerformSelector:@selector(removeFromSuperview)];
-    }
-}
-
 #pragma mark UIView subclass
 
 - (void)drawRect:(CGRect)rect;
@@ -239,13 +216,6 @@ static id _commonInit(OUIScalingView *self)
         [self drawScaledContent:rect];
     }
     CGContextRestoreGState(ctx);
-}
-
-- (void)layoutSubviews;
-{
-    if (self.wantsShadowEdges) {
-        [self updateShadowEdgeViews];
-    }
 }
 
 @end

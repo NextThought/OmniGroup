@@ -7,6 +7,7 @@
 
 #import <OmniUIDocument/OUIDocumentNavigationItem.h>
 
+#import <OmniUIDocument/OUIDocumentTitleView.h>
 #import <OmniDocumentStore/ODSErrors.h>
 #import <OmniDocumentStore/ODSFileItem.h>
 #import <OmniFileExchange/OFXAccountActivity.h>
@@ -20,7 +21,6 @@
 #import <OmniUIDocument/OUIDocumentAppController.h>
 
 #import "OUIDocument-Internal.h"
-#import "OUIDocumentTitleView.h"
 #import "OUIFullWidthNavigationItemTitleView.h"
 
 RCS_ID("$Id$");
@@ -83,12 +83,11 @@ NSString * const OUIDocumentNavigationItemOriginalDocumentNameUserInfoKey = @"OU
             OBASSERT(_documentTitleView.syncAccountActivity != nil);
         }
         
-        _documentTitleView.titleCanBeTapped = YES;
+        _documentTitleView.titleCanBeTapped = fileItem.scope.canRenameDocuments;
         self.title = title;
         
         self.titleView = _documentTitleView;
 
-        ODSFileItem *fileItem = document.fileItem;
         _fileNameBinding = [[OFBinding alloc] initWithSourceObject:fileItem sourceKeyPath:OFValidateKeyPath(fileItem, name) destinationObject:self destinationKeyPath:OFValidateKeyPath(self, title)]; // value already propagated by designated initializer
         
         _documentTitleTextField = [[UITextField alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 200.0f, 31.0f)];
@@ -103,8 +102,10 @@ NSString * const OUIDocumentNavigationItemOriginalDocumentNameUserInfoKey = @"OU
         
         // Custom clear button.
         _documentTitleTextField.clearButtonMode = UITextFieldViewModeNever;
-        UIImage *clearButtonImage = [[UIImage imageNamed:@"OUITextField-ClearButton"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        UIImage *clearButtonImage = [[UIImage imageNamed:@"OUITextField-ClearButton" inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
         UIButton *customClearButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        customClearButton.accessibilityLabel = NSLocalizedStringFromTableInBundle(@"Clear Title", @"OmniUIDocument", OMNI_BUNDLE, @"title view clear button accessibility label.");
+        
         customClearButton.frame = (CGRect){
             .size.width = 31.0f,
             .size.height = 31.0f
@@ -175,8 +176,6 @@ NSString * const OUIDocumentNavigationItemOriginalDocumentNameUserInfoKey = @"OU
             titleView = _documentTitleTextFieldView;
         else
             titleView = _documentTitleView;
-    } else {
-        OBASSERT(!_renaming, "Don't replace the renaming text field while we are in the middle of renaming");
     }
     [super setTitleView:titleView];
 }
@@ -319,7 +318,7 @@ NSString * const OUIDocumentNavigationItemOriginalDocumentNameUserInfoKey = @"OU
 
 - (void)documentTitleView:(OUIDocumentTitleView *)documentTitleView titleTapped:(id)sender;
 {
-    [[OUIAppController controller] dismissActionSheetAndPopover:NO];
+    [[OUIAppController controller] dismissPopoverAnimated:NO];
     
     _renaming = YES;
     [self _updateItemsForRenaming];
@@ -331,35 +330,38 @@ NSString * const OUIDocumentNavigationItemOriginalDocumentNameUserInfoKey = @"OU
 {
     if (_renaming) {
         DEBUG_EDIT_MODE(@"Switching to rename mode.");
+        // save the document
+        [self.document saveToURL:self.document.fileURL forSaveOperation:UIDocumentSaveForOverwriting completionHandler:^(BOOL success) {           
+            // Prevent rotation while in rename mode.
+            self.renamingRotationLock = [OUIRotationLock rotationLock];
+            
+            // Make sure we're prepared to switch into rename mode.
+            OBASSERT(self.usersLeftBarButtonItems == nil);
+            OBASSERT(self.usersRightBarButtonItems == nil);
+            
+            // Cache user's items.
+            self.usersLeftBarButtonItems = self.leftBarButtonItems;
+            self.usersRightBarButtonItems = self.rightBarButtonItems;
+            
+            // Remove user's item.
+            self.leftBarButtonItems = nil;
+            self.rightBarButtonItems = nil;
+            
+            // Set our textField as the titleView and give it focus.
+            self.titleView = _documentTitleTextFieldView;
+            [_documentTitleTextField becomeFirstResponder];
+            
+            // Add Shild View
+            UIWindow *window = [OUIAppController controller].window;
+            UITapGestureRecognizer *shieldViewTapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(_shieldViewTapped:)];
+            NSArray *passthroughViews = [NSArray arrayWithObject:_documentTitleTextField];
+            self.shieldView = [OUIShieldView shieldViewWithView:window];
+            [self.shieldView addGestureRecognizer:shieldViewTapRecognizer];
+            self.shieldView.passthroughViews = passthroughViews;
+            [window addSubview:self.shieldView];
+            [window bringSubviewToFront:self.shieldView];
+        }];
         
-        // Prevent rotation while in rename mode.
-        self.renamingRotationLock = [OUIRotationLock rotationLock];
-        
-        // Make sure we're prepared to switch into rename mode.
-        OBASSERT(self.usersLeftBarButtonItems == nil);
-        OBASSERT(self.usersRightBarButtonItems == nil);
-        
-        // Cache user's items.
-        self.usersLeftBarButtonItems = self.leftBarButtonItems;
-        self.usersRightBarButtonItems = self.rightBarButtonItems;
-        
-        // Remove user's item.
-        self.leftBarButtonItems = nil;
-        self.rightBarButtonItems = nil;
-        
-        // Set our textField as the titleView and give it focus.
-        self.titleView = _documentTitleTextFieldView;
-        [_documentTitleTextField becomeFirstResponder];
-        
-        // Add Shild View
-        UIWindow *window = [OUIAppController controller].window;
-        UITapGestureRecognizer *shieldViewTapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(_shieldViewTapped:)];
-        NSArray *passthroughViews = [NSArray arrayWithObject:_documentTitleTextField];
-        self.shieldView = [OUIShieldView shieldViewWithView:window];
-        [self.shieldView addGestureRecognizer:shieldViewTapRecognizer];
-        self.shieldView.passthroughViews = passthroughViews;
-        [window addSubview:self.shieldView];
-        [window bringSubviewToFront:self.shieldView];
     }
     else {
         DEBUG_EDIT_MODE(@"Switching to non-rename mode.");

@@ -1,4 +1,4 @@
-// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -15,7 +15,7 @@ NSString *const OUINumericFieldTableCellValueKey = @"value";
 @interface OUINumericFieldTableCell () <UITextFieldDelegate>
 @property (retain, nonatomic) IBOutlet UIButton *incrementButton;
 @property (retain, nonatomic) IBOutlet UIButton *decrementButton;
-@property (retain, nonatomic) IBOutlet UILabel *editingUnitsLabel;
+@property (retain, nonatomic, readwrite) IBOutlet UILabel *editingUnitsLabel;
 @property (retain, nonatomic) IBOutlet NSLayoutConstraint *valueTextFieldMinimumWidthConstraint;
 
 - (IBAction)decrement:(id)sender;
@@ -31,7 +31,7 @@ NSString *const OUINumericFieldTableCellValueKey = @"value";
 
 + (instancetype)numericFieldTableCell;
 {
-    NSArray *topLevelObjects = [[UINib nibWithNibName:NSStringFromClass([OUINumericFieldTableCell class]) bundle:nil] instantiateWithOwner:nil options:nil];
+    NSArray *topLevelObjects = [[UINib nibWithNibName:NSStringFromClass([OUINumericFieldTableCell class]) bundle:OMNI_BUNDLE] instantiateWithOwner:nil options:nil];
     OBASSERT(topLevelObjects != nil);
     OBASSERT(topLevelObjects.count == 1);
     OBASSERT([topLevelObjects.lastObject isKindOfClass:[OUINumericFieldTableCell class]]);

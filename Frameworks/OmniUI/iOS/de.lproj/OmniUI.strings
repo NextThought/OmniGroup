@@ -12,7 +12,7 @@
 "Bold" = "Fett";
 
 /* 'Buy' button title format. The currency symbol will be provided at run time. */
-"Buy %@" = "Für %@ kaufen";
+"Buy %@" = "%@ kaufen";
 
 /* button title
    cancel button title
@@ -23,10 +23,10 @@
 "Cancel" = "Abbrechen";
 
 /* Center Text Align button accessibility label. */
-"Center text align" = "Zentriert ausrichten";
+"Center text align" = "Textausrichtung zentriert";
 
 /* Certificate trust alert title */
-"Certificate Trust" = "Zertifikatvertrauen";
+"Certificate Trust" = "Zertifikatsvertrauen";
 
 /* alert message */
 "Changed the '%@' preference from '%@' to '%@'" = "Einstellung „%1$@“ wurde von „%2$@“ in „%3$@“ geändert";
@@ -61,7 +61,7 @@
 "Feature not enabled for this demo" = "Funktion ist für diese Demo nicht aktiviert";
 
 /* Overlay text when zoomed to fit screen */
-"Fit" = "Anpassen";
+"Fit" = "Anp.";
 
 /* Help and Settings toolbar item accessibility label. */
 "Help and Settings" = "Hilfe und Einstellungen";
@@ -82,10 +82,10 @@
 "Italic" = "Kursiv";
 
 /* Justified Text Align button accessibility label. */
-"Justified text align" = "Blocksatz";
+"Justified text align" = "Textausrichtung Blocksatz";
 
 /* Left Text Align button accessibility label. */
-"Left text align" = "Linksbündig ausrichten";
+"Left text align" = "Textausrichtung linksbündig";
 
 /* Web view error opening URL title. */
 "Link could not be opened. Please check Safari restrictions in Settings." = "Der Link konnte nicht geöffnet werden. Überprüfen Sie in der App „Einstellungen“ die Safari-Einschränkungen.";
@@ -94,16 +94,13 @@
 "More Info" = "Weitere Informationen";
 
 /* empty value cell placeholder */
-"None" = "Ohne";
+"None" = "Keine";
 
 /* Full screen note editor title */
 "Note" = "Notiz";
 
 /* button title
-   Dismiss failed purchase alert
-   Dismiss failed restore alert
-   OK button label
-   Web view error opening URL cancel button. */
+   OK button label */
 
 
 
@@ -143,7 +140,7 @@
 "Restore Purchases" = "Käufe wiederherstellen";
 
 /* Right Text Align button accessibility label. */
-"Right text align" = "Rechtsbündig ausrichten";
+"Right text align" = "Textausrichtung rechtsbündig";
 
 /* Search field placeholder text */
 "Search" = "Suchen";
@@ -179,4 +176,4 @@
 "You have tapped on an Omni special URL:\n\n\"%@\"\n\nRun this command?" = "Sie haben auf eine Omni-spezifische URL getippt:\n\n„%@“\n\nSoll dieser Befehl ausgeführt werden?";
 
 /* zoom label */
-"Zoom" = "Zoomen";
+"Zoom" = "Zoom";
