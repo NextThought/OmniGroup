@@ -146,7 +146,7 @@ static void __iOS7B5CleanConsoleOutput(void)
             NSLog(@"-[%@ %@]", OBShortObjectDescription(self), NSStringFromSelector(_cmd));
         
 #ifdef OMNI_ASSERTIONS_ON
-        OBPerformRuntimeChecks();
+        //OBPerformRuntimeChecks();
 #endif
     }
 }
