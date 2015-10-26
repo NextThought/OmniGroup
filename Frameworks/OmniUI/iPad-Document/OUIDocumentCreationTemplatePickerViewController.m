@@ -12,12 +12,12 @@
 #import <OmniFoundation/OFEnumNameTable.h>
 #import <OmniFoundation/OFPreference.h>
 #import <OmniUI/OUIAppController.h>
+#import <OmniUI/OUIEmptyOverlayView.h>
 #import <OmniUIDocument/OUIDocumentPickerDelegate.h>
 #import <OmniUIDocument/OUIDocumentPicker.h>
 #import <OmniUIDocument/OUIDocumentPickerItemView.h>
 #import <OmniUIDocument/OUIDocumentPickerFileItemView.h>
 #import <OmniUIDocument/OUIDocumentPickerFilter.h>
-#import <OmniUI/OUIEmptyOverlayView.h>
 
 RCS_ID("$Id$");
 
@@ -147,6 +147,15 @@ RCS_ID("$Id$");
     }
 }
 
+- (BOOL)canPerformAction:(SEL)action withSender:(id)sender;
+{
+    if (action == @selector(newDocument:)) {
+        return NO;
+    }
+
+    return [super canPerformAction:action withSender:sender];
+}
+
 #pragma mark -
 #pragma mark OUIDocumentPickerScrollView delegate
 
@@ -157,9 +166,9 @@ RCS_ID("$Id$");
         OBASSERT([fileItem isKindOfClass:[ODSFileItem class]]);
 
         if (fileItem.isDownloaded == NO) {
-            NSError *error = nil;
+            __autoreleasing NSError *error = nil;
             if (![fileItem requestDownload:&error]) {
-                OUI_PRESENT_ERROR(error);
+                OUI_PRESENT_ERROR_FROM(error, self);
             }
             return;
         }

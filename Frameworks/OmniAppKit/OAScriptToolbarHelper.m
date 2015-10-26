@@ -189,6 +189,7 @@ static BOOL OAScriptToolbarItemsDisabled = NO;
         }
     };
     
+    // TODO: We seem to always be sandboxed now? If so, the unsandboxed paths below could go away, taking a deprecation warning along with them. <bug:///122264> (Unassigned: Remove the non-sandboxed code path from -[OAScriptToolbarHelper executeScriptItem:]). 
     BOOL isSandboxed = [[NSProcessInfo processInfo] isSandboxed];
     NSString *itemPath = [[self pathForItem:sender] stringByExpandingTildeInPath];
     NSString *typename = [[NSWorkspace sharedWorkspace] typeOfFile:itemPath error:NULL];
@@ -400,12 +401,8 @@ static BOOL OAScriptToolbarItemsDisabled = NO;
     NSString *path = [[self pathForItem:toolbarItem] stringByExpandingTildeInPath];
     NSURL *url = [NSURL fileURLWithPath:path];
 
-    // 21385984: 10.11 AMWorkflow -runWorkflowAtURL:withInput:error: has incorrect nullability annotation.
-    // Adding this temporary variable seems to be enough to avoid the warning(!)
-    id input = nil;
-    
     NSError *error = nil;
-    id result = [AMWorkflow runWorkflowAtURL:url withInput:input error:&error];
+    id result = [AMWorkflow runWorkflowAtURL:url withInput:nil error:&error];
     if (result == nil) {
         [self _handleAutomatorWorkflowExecutionErrorForToolbarItem:toolbarItem inWindowController:windowController errorText:[error localizedDescription]];
     }

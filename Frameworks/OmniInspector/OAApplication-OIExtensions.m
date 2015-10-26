@@ -25,6 +25,11 @@ RCS_ID("$Id$")
     [[OIInspectorRegistry inspectorRegistryForMainWindow] tabShowHidePanels];
 }
 
+- (void)revealEmbeddedInspectorFromMenuItem:(id)sender;
+{
+    [[OIInspectorRegistry inspectorRegistryForMainWindow] revealEmbeddedInspectorFromMenuItem:sender];
+}
+
 - (IBAction)toggleFrontColorPanel:(id)sender;
 {
     [[NSColorPanel sharedColorPanel] toggleWindow:nil];
@@ -47,14 +52,18 @@ RCS_ID("$Id$")
             hideString = NSLocalizedStringFromTableInBundle(@"Hide Inspectors", @"OmniInspector", [OIInspectorRegistry bundle], "menu title");
         }
 	
-        if ([[[OIInspectorRegistry inspectorRegistryForMainWindow] visibleGroups] count] > 0) {
+        if ([[OIInspectorRegistry inspectorRegistryForMainWindow] hasVisibleInspector]) {
             [item setTitle:hideString];
         } else {
             [item setTitle:showString];
         }
         return YES;
     }
-    
+
+    if (action == @selector(revealEmbeddedInspectorFromMenuItem:)) {
+        return [[OIInspectorRegistry inspectorRegistryForMainWindow] validateMenuItem:item];
+    }
+
     return [super validateMenuItem:item];
 }
 

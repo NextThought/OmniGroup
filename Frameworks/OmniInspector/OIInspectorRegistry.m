@@ -66,7 +66,6 @@ static NSMutableArray *additionalPanels = nil;
     } registryFlags;
     
     NSMutableArray *inspectorControllers;
-    NSMutableDictionary *inspectorControllersById;
     float inspectorWidth;
     NSString *_currentInspectionIdentifier;
     
@@ -246,6 +245,11 @@ static NSMutableArray *hiddenPanels = nil;
         OBASSERT([[controller inspector] isKindOfClass:[OITabbedInspector class]]);
         OITabbedInspector *inspector = OB_CHECKED_CAST(OITabbedInspector, [controller inspector]);
         [inspector switchToInspectorWithIdentifier:identifier];
+        
+        NSWindow *window = [[[NSApplication sharedApplication] delegate] windowForInspectorRegistry:self];
+        if ([window.delegate respondsToSelector:@selector(inspectorRegistryDidRevealEmbeddedInspectorFromMenuItem:)]) {
+            [(id)window.delegate inspectorRegistryDidRevealEmbeddedInspectorFromMenuItem:self];
+        }
     }
 }
 
@@ -295,7 +299,12 @@ static NSMutableArray *hiddenPanels = nil;
 
 - (OIInspectorController *)controllerWithIdentifier:(NSString *)anIdentifier;
 {
-    return [inspectorControllersById objectForKey:anIdentifier];
+    OFForEachInArray(inspectorControllers, OIInspectorController *, anInspector, {
+        if ([[anInspector identifier] isEqualToString:anIdentifier])
+            return anInspector;
+    });
+    
+    return nil;
 }
 
 - (NSArray *)controllers;
@@ -319,7 +328,7 @@ static NSMutableArray *hiddenPanels = nil;
 {
     for (OIInspectorController *controller in inspectorControllers) {
         // We use the -containerView here instead of just -window to cover the embedded-inspector case.
-        if ([[[controller containerView] window] isVisible] && [controller isExpanded]) {
+        if (![[controller containerView] superview].hidden && [controller isExpanded]) {
             return YES;
         }
     }
@@ -369,7 +378,6 @@ static NSMutableArray *hiddenPanels = nil;
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_applicationDidFinishRestoringWindowsNotification:) name:NSApplicationDidFinishRestoringWindowsNotification object:nil];
     
     inspectorControllers = [[NSMutableArray alloc] init];
-    inspectorControllersById = [[NSMutableDictionary alloc] init];
     
     _existingGroups = [[NSArray alloc] init];
     
@@ -517,7 +525,7 @@ static NSComparisonResult sortGroupByGroupNumber(OIInspectorGroup *a, OIInspecto
 {
     @autoreleasepool {
         NSArray *groups = [[OIWorkspace.sharedWorkspace objectForKey:@"_groups"] copy];
-        NSMutableDictionary *inspectorById = [inspectorControllersById mutableCopy];
+        NSMutableDictionary *inspectorById = [NSMutableDictionary dictionary];
         
         // Obsolete name of a method, make sure nobody's trying to override it
         OBASSERT_NOT_IMPLEMENTED(self, _adjustTopLeftDefaultPositioningPoint:);
@@ -1153,7 +1161,6 @@ static NSString *OIWorkspaceOrderPboardType = @"OIWorkspaceOrder";
     OBPRECONDITION(inspector);
     OIInspectorController *controller = [self controllerWithInspector:inspector];    
     [inspectorControllers addObject:controller];
-    [inspectorControllersById setObject:controller forKey:controller.identifier];
     
     return controller;
 }
@@ -1359,7 +1366,11 @@ static NSString *OIWorkspaceOrderPboardType = @"OIWorkspaceOrder";
 	[defaultNotificationCenter addObserver:self selector:@selector(_windowWillClose:) name:NSWindowWillCloseNotification object:nil];
 
         registryFlags.isListeningForNotifications = YES;
-        [self queueSelectorOnce:@selector(_loadConfigurations)];        
+        
+        // With one registry per window and in-window sidebar inspectors, and especially with auto-tab switching based on selection, we don't actually want to have whatever tabs were visible in the last visible window try to become visible again in some brand new window. See <bug:///121639> (Bug: When opening or creating any project, the selected inspector tab flashes from Project to Task to Project).
+        //
+        // But leave this here, but commented out, because once we have detachable inspectors then we'll need some configuration of where they are again.
+        //[self queueSelectorOnce:@selector(_loadConfigurations)];
     }
     
     [self restoreInspectorGroups];

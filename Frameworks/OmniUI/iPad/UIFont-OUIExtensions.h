@@ -1,4 +1,4 @@
-// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -11,12 +11,14 @@
 
 @interface UIFont (OUIExtensions)
 
-+ (UIFont *)mediumSystemFontOfSize:(CGFloat)size;
-+ (UIFont *)lightSystemFontOfSize:(CGFloat)size;
++ (UIFont *)mediumSystemFontOfSize:(CGFloat)size NS_DEPRECATED_IOS(8_2, 8_2, "Use +systemFontOfSize:weight: instead.");
++ (UIFont *)lightSystemFontOfSize:(CGFloat)size NS_DEPRECATED_IOS(8_2, 8_2, "Use +systemFontOfSize:weight: instead.");
+
 + (UIFont *)preferredItalicFontForTextStyle:(NSString *)style;
 + (UIFont *)preferredBoldFontForTextStyle:(NSString *)style;
 
-- (UIFont *)fontByAddingProportionalNumberAttributes;
+- (UIFont *)fontByAddingProportionalNumberAttributes; // already default on iOS 9+
+- (UIFont *)fontByAddingMonospacedNumberAttributes;
 - (UIFont *)fontByAddingTimeAttributes;
 
 @end

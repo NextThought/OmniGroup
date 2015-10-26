@@ -22,7 +22,6 @@
 
 #import "OIInspectorController-Internal.h"
 #import "OIInspectorHeaderBackground.h"
-#import "OIInspectorResizer.h"
 
 
 RCS_ID("$Id$");
@@ -51,13 +50,13 @@ NSComparisonResult OISortByDefaultDisplayOrderInGroup(OIInspectorController *a, 
 @implementation OIInspectorController
 {
     NSArray *currentlyInspectedObjects;
+    NSString *currentInspectionIdentifier;
     OIInspector *inspector;
     OIInspectorWindow *window;
     OIInspectorHeaderView *headingButton;
     OIInspectorHeaderBackground *headingBackground;
-    OIInspectorResizer *resizerView;
     NSView *controlsView;
-    BOOL loadedInspectorView, isBottommostInGroup, collapseOnTakeNewPosition, heightSizable, forceResizeWidget;
+    BOOL loadedInspectorView, isBottommostInGroup, collapseOnTakeNewPosition;
     CGFloat _minimumHeight;
     NSPoint newPosition;
 }
@@ -203,12 +202,17 @@ NSComparisonResult OISortByDefaultDisplayOrderInGroup(OIInspectorController *a, 
 
 - (void)toggleExpandednessWithNewTopLeftPoint:(NSPoint)topLeftPoint animate:(BOOL)animate;
 {
+    BOOL expanded = !_isExpanded;
+
+    if (!inspector.isCollapsible)
+        expanded = YES;
+
     switch (self.interfaceType) {
         case OIInspectorInterfaceTypeFloating:
-            [self _setFloatingExpandedness:!_isExpanded updateInspector:YES withNewTopLeftPoint:topLeftPoint animate:animate];
+            [self _setFloatingExpandedness:expanded updateInspector:YES withNewTopLeftPoint:topLeftPoint animate:animate];
             break;
         case OIInspectorInterfaceTypeEmbedded:
-            [self _setEmbeddedExpandedness:!_isExpanded updateInspector:YES];
+            [self _setEmbeddedExpandedness:expanded updateInspector:YES];
             break;
     }
 }
@@ -229,9 +233,6 @@ NSComparisonResult OISortByDefaultDisplayOrderInGroup(OIInspectorController *a, 
             [self _setEmbeddedExpandedness:_isExpanded updateInspector:NO];
             break;
     }
-    
-    if (_isExpanded && resizerView != nil)
-        [self queueSelectorOnce:@selector(_saveInspectorHeight)];
 }
 
 - (void)setNewPosition:(NSPoint)aPosition;
@@ -338,14 +339,14 @@ NSComparisonResult OISortByDefaultDisplayOrderInGroup(OIInspectorController *a, 
     if (!_isExpanded)
         return;
 
-    NSArray *list = nil;
     NSResponder *oldResponder = nil;
-    NS_DURING {
+    @try {
         
         // Don't update the inspector if the list of objects to inspect hasn't changed. -inspectedObjectsOfClass: returns a pointer-sorted list of objects, so we can just to 'identical' on the array.
-        list = [self.inspectorRegistry copyObjectsInterestingToInspector:inspector];
-        if ((!list && !currentlyInspectedObjects) || [list isIdenticalToArray:currentlyInspectedObjects]) {
-            NS_VOIDRETURN;
+        NSArray *newInspectedObjects = [self.inspectorRegistry copyObjectsInterestingToInspector:inspector];
+        NSString *newInspectionIdentifier = [self.inspectorRegistry inspectionIdentifierForCurrentInspectionSet];
+        if (OFISEQUAL(currentInspectionIdentifier, newInspectionIdentifier) && ((newInspectedObjects == nil && currentlyInspectedObjects == nil) || [newInspectedObjects isIdenticalToArray:currentlyInspectedObjects])) {
+            return;
         }
         
         // Record what was first responder in the inspector before we clear it.  We want to clear it since resigning first responder can cause controls to send actions and thus we want this happen *before* we change what would be affected by the action!
@@ -371,13 +372,14 @@ NSComparisonResult OISortByDefaultDisplayOrderInGroup(OIInspectorController *a, 
             OBASSERT([window firstResponder] == window);
         }
         
-        currentlyInspectedObjects = list; // takes ownership of the reference
-        list = nil;
+        currentInspectionIdentifier = newInspectionIdentifier;
+        currentlyInspectedObjects = newInspectedObjects; // takes ownership of the reference
+        newInspectedObjects = nil;
         [inspector inspectObjects:currentlyInspectedObjects];
-    } NS_HANDLER {
+    } @catch (NSException *localException) {
         NSLog(@"-[%@ %@]: *** %@", [self class], NSStringFromSelector(_cmd), localException);
         [self inspectNothing];
-    } NS_ENDHANDLER;
+    };
 
     // Restore the old first responder, unless it was a view that is no longer in the view hierarchy
     if ([oldResponder isKindOfClass:[NSView class]]) {
@@ -385,18 +387,16 @@ NSComparisonResult OISortByDefaultDisplayOrderInGroup(OIInspectorController *a, 
         if ([view window] != window)
             oldResponder = nil;
     }
-    if (oldResponder)
+
+    if (oldResponder != nil)
         [window makeFirstResponder:oldResponder];
 }
 
 - (void)inspectNothing;
 {
-    @try {
-	currentlyInspectedObjects = nil;
-        [inspector inspectObjects:nil];
-    } @catch (NSException *exc) {
-        OB_UNUSED_VALUE(exc);
-    }
+    currentlyInspectedObjects = nil;
+    currentInspectionIdentifier = nil;
+    [inspector inspectObjects:nil];
 }
 
 - (void)inspectorDidResize:(OIInspector *)resizedInspector;
@@ -528,28 +528,18 @@ NSComparisonResult OISortByDefaultDisplayOrderInGroup(OIInspectorController *a, 
     NSView *inspectorView = inspector.view;
     
     if (!loadedInspectorView) {
-        forceResizeWidget = [inspector respondsToSelector:@selector(inspectorWillResizeToHeight:)]; 
-        heightSizable = [inspectorView autoresizingMask] & NSViewHeightSizable ? YES : NO;
-
-        if (forceResizeWidget) {
-            _minimumHeight = 0;
-        } else if ([inspector respondsToSelector:@selector(inspectorMinimumHeight)]) { 
+        if ([inspector respondsToSelector:@selector(inspectorMinimumHeight)]) {
             _minimumHeight = [inspector inspectorMinimumHeight];
         } else {
             _minimumHeight = [inspectorView frame].size.height;
         }
         
-        NSString *savedHeightString = [OIWorkspace.sharedWorkspace objectForKey:[NSString stringWithFormat:@"%@-Height", [self identifier]]];
-
 	NSSize size = [inspectorView frame].size;
 	OBASSERT(size.width <= [self.inspectorRegistry inspectorWidth]); // OK to make inspectors wider, but probably indicates a problem if the nib is wider than the global inspector width
         if (size.width > [self.inspectorRegistry inspectorWidth]) {
             NSLog(@"Inspector %@ is wider (%g) than grouped width (%g)", [self identifier], size.width, [self.inspectorRegistry inspectorWidth]);
         }
 	size.width = [self.inspectorRegistry inspectorWidth];
-	
-        if (savedHeightString != nil && heightSizable)
-	    size.height = [savedHeightString floatValue];
 	[inspectorView setFrameSize:size];
 	
         loadedInspectorView = YES;
@@ -589,12 +579,8 @@ NSComparisonResult OISortByDefaultDisplayOrderInGroup(OIInspectorController *a, 
         windowFrame.origin.y = topLeftPoint.y - windowFrame.size.height;
         windowFrame = [self windowWillResizeFromFrame:[window frame] toFrame:windowFrame];
 
-        if (forceResizeWidget) {
-            viewFrame = NSMakeRect(0, 0, NSWidth(newContentRect), NSHeight(viewFrame));
-        } else {
-            viewFrame.origin.x = (CGFloat)floor((NSWidth(newContentRect) - NSWidth(viewFrame)) / 2.0);
-            viewFrame.origin.y = 0;
-        }
+        viewFrame.origin.x = (CGFloat)floor((NSWidth(newContentRect) - NSWidth(viewFrame)) / 2.0);
+        viewFrame.origin.y = 0;
 
         additionalHeaderHeight = [inspector additionalHeaderHeight];
         
@@ -602,14 +588,6 @@ NSComparisonResult OISortByDefaultDisplayOrderInGroup(OIInspectorController *a, 
         [view setAutoresizingMask:NSViewNotSizable];
         [[self containerView] addSubview:view positioned:NSWindowBelow relativeTo:headingButton];
         [window setFrame:windowFrame display:YES animate:animate];
-        if (forceResizeWidget || heightSizable) {
-            if (!resizerView) {
-                resizerView = [[OIInspectorResizer alloc] initWithFrame:NSMakeRect(0, 0, OIInspectorResizerWidth, OIInspectorResizerWidth)];
-                [resizerView setAutoresizingMask:NSViewMinXMargin | NSViewMaxYMargin];
-            }
-            [resizerView setFrameOrigin:NSMakePoint(NSMaxX(newContentRect) - OIInspectorResizerWidth, 0)];
-            [[self containerView] addSubview:resizerView];
-        }
         [view setAutoresizingMask:NSViewHeightSizable | NSViewMinXMargin | NSViewMaxXMargin];
         [OIWorkspace.sharedWorkspace updateInspectorsWithBlock:^(NSMutableDictionary *dictionary) {
             [dictionary setObject:@"YES" forKey:[self identifier]];
@@ -617,7 +595,6 @@ NSComparisonResult OISortByDefaultDisplayOrderInGroup(OIInspectorController *a, 
     } else {
 	[window makeFirstResponder:window];
 
-        [resizerView removeFromSuperview];
         [view setAutoresizingMask:NSViewNotSizable];
 	
         NSRect headingFrame;
@@ -664,7 +641,6 @@ NSComparisonResult OISortByDefaultDisplayOrderInGroup(OIInspectorController *a, 
 
 - (void)_setEmbeddedExpandedness:(BOOL)expanded updateInspector:(BOOL)updateInspector;
 {
-    OBFinishPortingLater("Add back animated argument?");
     OBPRECONDITION(self.interfaceType == OIInspectorInterfaceTypeEmbedded);
     
     if (expanded == _isExpanded)
@@ -831,18 +807,11 @@ NSComparisonResult OISortByDefaultDisplayOrderInGroup(OIInspectorController *a, 
         if (NSHeight(newContentRect) < _minimumHeight)
             newContentRect.size.height = _minimumHeight;
     }
-    if (_isExpanded && forceResizeWidget) {
-        CGFloat neededHeight = headingButton ? headingButton.heightNeededWhenExpanded : OIInspectorStartingHeaderButtonHeight;
-        newContentRect.size.height -= neededHeight;
-        newContentRect.size.height = [inspector inspectorWillResizeToHeight:newContentRect.size.height];
-        newContentRect.size.height += neededHeight;
-    }
-
     newContentRect.size.width = [self.inspectorRegistry inspectorWidth];
     
     toRect = [window frameRectForContentRect:newContentRect];
     
-    if (_isExpanded && !_isSettingExpansion && !forceResizeWidget && !heightSizable) {
+    if (_isExpanded && !_isSettingExpansion) {
         toRect.origin.y += NSHeight(fromRect) - NSHeight(toRect);
         toRect.size.height = NSHeight(fromRect);
     }
@@ -853,8 +822,6 @@ NSComparisonResult OISortByDefaultDisplayOrderInGroup(OIInspectorController *a, 
     } else
         result = toRect;
     
-    if (_isExpanded && !_isSettingExpansion && resizerView != nil)
-        [self queueSelectorOnce:@selector(_saveInspectorHeight)];
     return result;
 }
 

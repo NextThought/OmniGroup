@@ -312,6 +312,8 @@ static OFEnumNameTable *OIVisibilityStateNameTable = nil;
 
 - (NSMenuItem *)menuItemForTarget:(id)target action:(SEL)action;
 {
+    OBPRECONDITION(!target || [target respondsToSelector:action]);
+
     NSString *keyEquivalent = [self shortcutKey];
     if (keyEquivalent == nil)
 	keyEquivalent = @"";
@@ -368,10 +370,10 @@ static OFEnumNameTable *OIVisibilityStateNameTable = nil;
         
     // Optional finer grain predicate.
     NSPredicate *predicate = [self shouldBeUsedForObjectPredicate];
-    if (predicate)
-        return [predicate evaluateWithObject:object];
-    
-    return NO;
+    if (predicate != nil && ![predicate evaluateWithObject:object])
+        return NO;
+
+    return YES;
 }
 
 - (NSPredicate *)shouldBeUsedForObjectPredicate;
