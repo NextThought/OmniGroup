@@ -139,8 +139,15 @@ static NSArray *_parseKeyCommands(NSArray *commands, NSBundle *bundle, NSString 
                 input = UIKeyInputEscape;
             else
                 OBASSERT([input length] == 1, "Input portion of key command string \"%@\" should be a single character", shortcut);
-            
-            UIKeyCommand *command = [UIKeyCommand keyCommandWithInput:input modifierFlags:flags action:NSSelectorFromString(selectorName) discoverabilityTitle:discoverabilityTitle];
+			
+			UIKeyCommand* command = nil;
+			if([[UIKeyCommand class] respondsToSelector: @selector(keyCommandWithInput:modifierFlags:action:discoverabilityTitle:)]){
+				command = [UIKeyCommand keyCommandWithInput:input modifierFlags:flags action:NSSelectorFromString(selectorName) discoverabilityTitle:discoverabilityTitle];
+			}
+			else{
+				command = [UIKeyCommand keyCommandWithInput:input modifierFlags:flags action:NSSelectorFromString(selectorName)];
+			}
+			
             [result addObject:command];
         }
     }
