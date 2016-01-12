@@ -1,4 +1,4 @@
-// Copyright 2010-2013 The Omni Group. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -10,11 +10,14 @@
 #import <OmniDAV/ODAVFileInfo.h>
 #import <OmniFileExchange/OFXServerAccount.h>
 #import <OmniFoundation/OFCredentials.h>
+#import <OmniFoundation/OFUTI.h>
 #import <OmniUI/OUIBarButtonItem.h>
 #import <OmniUIDocument/OUIDocumentAppController.h>
 #import <OmniUIDocument/OUIDocumentPicker.h>
+#import <OmniUIDocument/OUIDocumentPickerFilter.h>
 #import <OmniUIDocument/OUIDocumentPickerViewController.h>
 #import <OmniDocumentStore/ODSScope.h>
+#import <OmniDocumentStore/ODSFileItem.h>
 
 #import "OUISyncDownloader.h"
 
@@ -77,7 +80,7 @@ RCS_ID("$Id$");
         .size.height = 32
     }];
     _connectingLabel.backgroundColor = [UIColor clearColor];
-    _connectingLabel.font = [UIFont fontWithName:@"Helvetica-Bold" size:20.0];
+    _connectingLabel.font = [UIFont systemFontOfSize:20.0];
     _connectingLabel.textColor = [UIColor blackColor];
     [_connectingView addSubview:_connectingLabel];
     
@@ -125,8 +128,9 @@ RCS_ID("$Id$");
     NSURL *downloadURL = [[notification userInfo] objectForKey:OUISyncDownloadURL];
 
     [self _fadeOutDownload:downloader];
-    
-    OUIDocumentPickerViewController *scopeViewController = [OUIDocumentAppController controller].documentPicker.selectedScopeViewController;
+
+    OUIDocumentPicker *docPicker = [OUIDocumentAppController controller].documentPicker;
+    OUIDocumentPickerViewController *scopeViewController = docPicker.selectedScopeViewController;
     OBASSERT(scopeViewController);
     
     [self.navigationController dismissViewControllerAnimated:YES completion:^{
@@ -135,7 +139,25 @@ RCS_ID("$Id$");
             [scopeViewController exportedDocumentToURL:downloadURL];
         } else if (_isDownloading) {
             _isDownloading = NO;
-            [scopeViewController addDocumentFromURL:downloadURL];
+            // instead of just copying the file we downloaded into the current scope, we need to do any converty work on it we intend to do (.oo3 -> .graffle for example).
+            BOOL shouldConvert = NO;
+
+            NSURL *documentToAddURL = downloadURL;
+            if ([docPicker.delegate respondsToSelector:@selector(documentPickerShouldOpenButNotDisplayUTType:)] && [docPicker.delegate respondsToSelector:@selector(documentPicker:saveNewFileIfAppropriateFromFile:completionHandler:)]) {
+                BOOL isDirectory = NO;
+                [[NSFileManager defaultManager] fileExistsAtPath:[documentToAddURL path] isDirectory:&isDirectory];
+                shouldConvert = [docPicker.delegate documentPickerShouldOpenButNotDisplayUTType:OFUTIForFileExtensionPreferringNative([downloadURL pathExtension], @(isDirectory))];
+
+                if (shouldConvert) { // convert files we claim to view, but do not display in our doc-picker?
+                    [docPicker.delegate documentPicker:docPicker saveNewFileIfAppropriateFromFile:documentToAddURL completionHandler:^(BOOL success, ODSFileItem *savedItem, ODSScope *currentScope) {
+                        [docPicker.documentStore moveItems:[NSSet setWithObject:savedItem] fromScope:currentScope toScope:scopeViewController.selectedScope inFolder:scopeViewController.selectedScope.rootFolder completionHandler:^(NSSet *movedFileItems, NSArray *errorsOrNil) {
+
+                        }];
+                    }];
+                    return;
+                }
+            }
+            [scopeViewController addDocumentFromURL:documentToAddURL];
         }
     }];
 }
@@ -201,7 +223,7 @@ RCS_ID("$Id$");
 {
     OBASSERT(_replaceDocumentAlert == nil); // this should never happen
     _replaceDocumentAlert = [[OUIReplaceDocumentAlert alloc] initWithDelegate:self documentURL:fileURL];
-    [_replaceDocumentAlert show];
+    [_replaceDocumentAlert showFromViewController:self];
 }
 
 - (void)_cancelDownloadEffectDidStop:(NSString *)animationID finished:(NSNumber *)finished context:(void *)context;

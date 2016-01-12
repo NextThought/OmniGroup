@@ -19,11 +19,17 @@
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string></string>
+	<string>1.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>2004A</string>
+	<string>1.0</string>
+	<key>OAAboutPanelMainBundleContentVariants</key>
+	<array>
+		<string>Credits - Mac App Store.html</string>
+		<string>Credits.html</string>
+		<string>Versions.txt</string>
+	</array>
 	<key>OFRegistrations</key>
 	<dict>
 		<key>NSUserDefaults</key>
@@ -36,31 +42,23 @@
 				<true/>
 				<key>OADisplayNoteMouseTips</key>
 				<true/>
+				<key>OAMessageOfTheDayCheckOnLaunch</key>
+				<true/>
+				<key>OAMessageOfTheDaySignature</key>
+				<data>
+				</data>
 				<key>OAScrollWheelTargetScrollFactor</key>
 				<array>
 					<real>1</real>
 					<real>5</real>
 					<real>3</real>
 				</array>
+				<key>OAShowMessageOfTheDayOnFirstLaunch</key>
+				<false/>
 				<key>ToolbarItemTint</key>
 				<string>default</string>
 			</dict>
 		</dict>
 	</dict>
-	<key>OAAboutPanelMainBundleContentVariants</key>
-	<array>
-<!--
-#if defined(MAC_APP_STORE) && MAC_APP_STORE
- -->
-		<string>Credits - Mac App Store.html</string>
-<!--
-#else
- -->
-                <string>Credits.html</string>
-<!--
-#endif
- -->
-		<string>Versions.txt</string>
-	</array>
 </dict>
 </plist>

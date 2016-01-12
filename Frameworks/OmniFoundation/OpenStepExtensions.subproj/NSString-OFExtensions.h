@@ -1,4 +1,4 @@
-// Copyright 1997-2008, 2010-2011, 2013-2014 Omni Development, Inc. All rights reserved.
+// Copyright 1997-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -80,6 +80,8 @@ enum {
 
 - (NSString *)stringByNormalizingWithOptions:(NSUInteger)options locale:(NSLocale *)locale;
 
+- (NSString *)stringByPaddingToLength:(NSUInteger)aLength;
+
 - (NSString *)stringByNormalizingPath;
     // Normalizes a path like /a/b/c/../../d to /a/d.
     // Note: Does not work properly on Windows at the moment because it is hardcoded to use forward slashes rather than using the native path separator.
@@ -129,6 +131,8 @@ enum {
 - (NSString *)asRFC822Word;         /* Returns an 'atom' or 'quoted-string', or nil if not possible */
 - (NSString *)asRFC2047EncodedWord; /* Returns an 'encoded-word' representing the receiver */
 - (NSString *)asRFC2047Phrase;      /* Returns a sequence of atoms, quoted-strings, and encoded-words, as appropriate to represent the receiver in the syntax defined by RFC822 and RFC2047. */
+
+- (NSString *)stringByTruncatingToMaximumLength:(NSUInteger)maximumLength atSpaceAfterMinimumLength:(NSUInteger)minimumLength;
 
 @end
 

@@ -15,14 +15,14 @@ extern NSString * const OUIDocumentPickerScrollViewItemsBinding;
 
 @class OFPreference;
 @class ODSItem, ODSFileItem;
-@class OUIDragGestureRecognizer, OUIDocumentPickerItemView, OUIDocumentPickerFileItemView, OUIDocumentPickerScrollView;
+@class OUIDocumentPickerItemView, OUIDocumentPickerFileItemView, OUIDocumentPickerScrollView;
 @class OUIDocumentRenameSession;
 
 @protocol OUIDocumentPickerScrollViewDelegate <UIScrollViewDelegate>
 - (void)documentPickerScrollView:(OUIDocumentPickerScrollView *)scrollView itemViewTapped:(OUIDocumentPickerItemView *)itemView;
+- (void)documentPickerScrollView:(OUIDocumentPickerScrollView *)scrollView itemViewLongpressed:(OUIDocumentPickerItemView *)itemView;
 - (void)documentPickerScrollView:(OUIDocumentPickerScrollView *)scrollView itemViewStartedEditingName:(OUIDocumentPickerItemView *)itemView;
 - (void)documentPickerScrollView:(OUIDocumentPickerScrollView *)scrollView itemView:(OUIDocumentPickerItemView *)itemView finishedEditingName:(NSString *)name;
-- (void)documentPickerScrollView:(OUIDocumentPickerScrollView *)scrollView dragWithRecognizer:(OUIDragGestureRecognizer *)recognizer;
 - (void)documentPickerScrollView:(OUIDocumentPickerScrollView *)scrollView willDisplayItemView:(OUIDocumentPickerItemView *)itemView;
 - (void)documentPickerScrollView:(OUIDocumentPickerScrollView *)scrollView willEndDisplayingItemView:(OUIDocumentPickerItemView *)itemView;
 
@@ -30,6 +30,9 @@ extern NSString * const OUIDocumentPickerScrollViewItemsBinding;
 - (BOOL)isReadyOnlyForDocumentPickerScrollView:(OUIDocumentPickerScrollView *)scrollView;
 
 - (BOOL)documentPickerScrollView:(OUIDocumentPickerScrollView *)scrollView rectIsFullyVisible:(CGRect)rect;
+
+@optional
+- (BOOL)documentPickerScrollViewShouldMultiselect:(OUIDocumentPickerScrollView *)scrollView;
 
 @end
 
@@ -41,6 +44,7 @@ extern NSString * const OUIDocumentPickerScrollViewItemsBinding;
 @property(nonatomic,readonly) BOOL isShowingTitleLabel;
 
 - (CGFloat)contentOffsetYToHideTopControls;
+- (CGFloat)contentOffsetYToHideCompactTitleBehindNavBar;
 - (CGFloat)contentOffsetYForTopControlsFullAlpha;
 - (CGFloat)contentOffsetYToShowTopControls;
 
@@ -74,6 +78,8 @@ extern NSString * const OUIDocumentPickerScrollViewItemsBinding;
 
 - (CGRect)frameForItem:(ODSItem *)item;
 
+/// - point: Expected to be in OUIDocumentPickerScrollView's coordinates.
+- (OUIDocumentPickerItemView *)itemViewForPoint:(CGPoint)point;
 - (OUIDocumentPickerItemView *)itemViewForItem:(ODSItem *)item;
 - (OUIDocumentPickerFileItemView *)fileItemViewForFileItem:(ODSFileItem *)fileItem;
 - (OUIDocumentPickerItemView *)itemViewHitByRecognizer:(UIGestureRecognizer *)recognizer;

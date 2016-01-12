@@ -1,4 +1,4 @@
-// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -52,8 +52,8 @@ static void OUIDrawingInitialize(void)
 {
     if (OUILightContentOnDarkBackgroundShadowColor)
         return;
-    OUILightContentOnDarkBackgroundShadowColor = OQMakeUIColor(kOUILightContentOnDarkBackgroundShadowColor);
-    OUIDarkContentOnLightBackgroundShadowColor = OQMakeUIColor(kOUIDarkContentOnLightBackgroundShadowColor);
+    OUILightContentOnDarkBackgroundShadowColor = OAMakeUIColor(kOUILightContentOnDarkBackgroundShadowColor);
+    OUIDarkContentOnLightBackgroundShadowColor = OAMakeUIColor(kOUIDarkContentOnLightBackgroundShadowColor);
 }
 
 CGSize OUIShadowOffset(OUIShadowType type)
@@ -68,18 +68,6 @@ UIColor *OUIShadowColor(OUIShadowType type)
     UIColor *shadowColor = (type == OUIShadowTypeLightContentOnDarkBackground) ? OUILightContentOnDarkBackgroundShadowColor : OUIDarkContentOnLightBackgroundShadowColor;
     OBASSERT(shadowColor);
     return shadowColor;
-}
-
-void OUIGraphicsBeginImageContext(CGSize size)
-{
-    // NO = we want a transparent context
-    // 0 = scale factor is set to the scale factor of the device's main screen
-    UIGraphicsBeginImageContextWithOptions(size, NO, 0);
-}
-
-void OUIGraphicsEndImageContext(void) 
-{
-    UIGraphicsEndImageContext();
 }
 
 // Shifts the content within the rect so that it looks centered with the shadow applied. Assumes there is enough padding already so that we aren't going to shift the content far enough to get clipped.
@@ -153,13 +141,12 @@ void OUISetShadowOnLabel(UILabel *label, OUIShadowType type)
 
 void OUIDrawTransparentColorBackground(CGContextRef ctx, CGRect rect, CGSize phase)
 {
-    OUIDrawPatternBackground(ctx, @"OUITransparencyCheckerboardBackground-24", rect, phase);
+    OUIDrawPatternBackground(ctx, [UIImage imageNamed:@"OUITransparencyCheckerboardBackground-24" inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil], rect, phase);
 }
 
-void OUIDrawPatternBackground(CGContextRef ctx, NSString *imageName, CGRect rect, CGSize phase)
+void OUIDrawPatternBackground(CGContextRef ctx, UIImage *patternImage, CGRect rect, CGSize phase)
 {
-    UIImage *patternImage = [UIImage imageNamed:imageName];
-    OBASSERT(patternImage);
+    OBPRECONDITION(patternImage);
 
     UIColor *patternColor = [UIColor colorWithPatternImage:patternImage];
     

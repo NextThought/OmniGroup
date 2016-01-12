@@ -13,7 +13,6 @@
 #import <OmniUI/OUIInspectorSlice.h>
 #import <OmniUI/OUIStackedSlicesInspectorPane.h>
 #import <OmniUI/UIView-OUIExtensions.h>
-#import <OmniUI/OUINavigationController.h>
 
 #import "OUIParameters.h"
 
@@ -24,15 +23,6 @@ OBDEPRECATED_METHOD(-inspectorTitle:); // --> inspector:titleForPane:, taking an
 OBDEPRECATED_METHOD(-inspectorSlices:); // --> inspector:makeAvailableSlicesForStackedSlicesPane:, taking an OUIStackedSlicesInspectorPane
 OBDEPRECATED_METHOD(-inspector:slicesForStackedSlicesPane:); // -> -inspector:makeAvailableSlicesForStackedSlicesPane:
 OBDEPRECATED_METHOD(-updateInterfaceFromInspectedObjects); // -> -updateInterfaceFromInspectedObjects:
-
-@interface OUIInspectorNavigationController : OUINavigationController
-{
-    BOOL _onScreen;
-}
-
-@property (nonatomic, weak) UIView *gesturePassThroughView;
-
-@end
 
 @implementation OUIInspectorNavigationController
 
@@ -50,47 +40,102 @@ OBDEPRECATED_METHOD(-updateInterfaceFromInspectedObjects); // -> -updateInterfac
     [super viewDidLoad];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
-}
-
-- (void)viewWillAppear:(BOOL)animated{
-    [super viewWillAppear:animated];
-    _onScreen = YES;
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardDidChangeFrame:) name:UIKeyboardDidChangeFrameNotification object:nil];
 }
 
 - (void)viewDidDisappear:(BOOL)animated;
 {
     [super viewDidDisappear:animated];
-     _onScreen = NO;
     // Clear the selection from all the panes we've pushed. The objects in question could go away at any time and there is no reason for us to be observing or holding onto them! Clear stuff in reverse order (tearing down the opposite of setup).
     for (OUIInspectorPane *pane in [self.viewControllers reverseObjectEnumerator]) {
         if ([pane isKindOfClass:[OUIInspectorPane class]]) { // not all view controllers are panes - the image picker isn't!
             pane.inspectedObjects = nil;
-            [pane updateInterfaceFromInspectedObjects:OUIInspectorUpdateReasonDefault];
+            [pane updateInterfaceFromInspectedObjects:OUIInspectorUpdateReasonDismissed];
         }
     }
 }
 
-- (void)keyboardWillShow:(NSNotification*)note{
-    if (!self.popoverPresentationController && _onScreen) {
+- (void)keyboardWillShow:(NSNotification*)note
+{
+    if ([self _isCurrentlyPresentedWithCustomInspectorPresentation]) {
         // we might be in a partial height presentation and need to get taller
-        OUIInspectorPresentationController *presentationController = [self.presentationController isKindOfClass:[OUIInspectorPresentationController class]] ? (OUIInspectorPresentationController*)self.presentationController : nil;
+        OUIInspectorPresentationController *presentationController = (OUIInspectorPresentationController *)self.presentationController;
         NSNumber *duration = note.userInfo[UIKeyboardAnimationDurationUserInfoKey];
         NSNumber *curve = note.userInfo[UIKeyboardAnimationCurveUserInfoKey];
+        NSValue *frame = note.userInfo[UIKeyboardFrameEndUserInfoKey];
+        CGFloat height = [frame CGRectValue].size.height;
         UIViewAnimationOptions options = (curve.integerValue << 16) | UIViewAnimationOptionBeginFromCurrentState;  // http://macoscope.com/blog/working-with-keyboard-on-ios/  (Dec 20, 2013)
-        self.gesturePassThroughView.hidden = YES;
-        [presentationController presentedViewNowNeedsFullHeight:YES withAnimationDuration:duration.floatValue options:options];
+        __weak OUIInspectorNavigationController *weakSelf = self;
+        if (!self.willDismissInspector){
+            [presentationController presentedViewNowNeedsToGrowForKeyboardHeight:height withAnimationDuration:duration.floatValue options:options completion:^{
+                OUIInspectorNavigationController *strongSelf = weakSelf;
+                if (strongSelf) {
+                    if ([strongSelf.topViewController isKindOfClass:[OUIStackedSlicesInspectorPane class]]) {
+                        [(OUIStackedSlicesInspectorPane*)strongSelf.topViewController updateContentInsetsForKeyboard];
+                    }
+                    [strongSelf adjustHeightOfGesturePassThroughView];
+                }
+            }];
+        }
+    } else {
+        if ([self.topViewController isKindOfClass:[OUIStackedSlicesInspectorPane class]]) {
+            [(OUIStackedSlicesInspectorPane*)self.topViewController updateContentInsetsForKeyboard];
+        }
     }
 }
 
-- (void)keyboardWillHide:(NSNotification*)note{
-    if (!self.popoverPresentationController && _onScreen) {
+- (void)adjustHeightOfGesturePassThroughView
+{
+    CGRect frameOfGesturePassThrough = self.gesturePassThroughView.frame;
+    frameOfGesturePassThrough.size.height = self.view.window.frame.size.height - self.view.frame.size.height;
+    self.gesturePassThroughView.frame = frameOfGesturePassThrough;
+}
+
+- (void)keyboardWillHide:(NSNotification*)note
+{
+    if ([self _isCurrentlyPresentedWithCustomInspectorPresentation]) {
         // we might have been in a partial height presentation and need to get shorter
-        OUIInspectorPresentationController *presentationController = [self.presentationController isKindOfClass:[OUIInspectorPresentationController class]] ? (OUIInspectorPresentationController*)self.presentationController : nil;
+        OUIInspectorPresentationController *presentationController = (OUIInspectorPresentationController *)self.presentationController;
         NSNumber *duration = note.userInfo[UIKeyboardAnimationDurationUserInfoKey];
         NSNumber *curve = note.userInfo[UIKeyboardAnimationCurveUserInfoKey];
         UIViewAnimationOptions options = (curve.integerValue << 16) | UIViewAnimationOptionBeginFromCurrentState;  // http://macoscope.com/blog/working-with-keyboard-on-ios/  (Dec 20, 2013)
         self.gesturePassThroughView.hidden = NO;
-        [presentationController presentedViewNowNeedsFullHeight:NO withAnimationDuration:duration.integerValue options:options];
+        __weak OUIInspectorNavigationController *weakSelf = self;
+        [presentationController presentedViewNowNeedsToGrowForKeyboardHeight:0 withAnimationDuration:duration.integerValue options:options completion:^{
+            OUIInspectorNavigationController *strongSelf = weakSelf;
+            if (strongSelf) {
+                if ([strongSelf.topViewController isKindOfClass:[OUIStackedSlicesInspectorPane class]]) {
+                    [(OUIStackedSlicesInspectorPane*)strongSelf.topViewController updateContentInsetsForKeyboard];
+                    [strongSelf adjustHeightOfGesturePassThroughView];
+                }
+            }
+        }];
+    } else {
+        if ([self.topViewController isKindOfClass:[OUIStackedSlicesInspectorPane class]]) {
+            [(OUIStackedSlicesInspectorPane*)self.topViewController updateContentInsetsForKeyboard];
+        }
+    }
+}
+
+- (void)keyboardDidChangeFrame:(NSNotification*)note
+{
+    if ([self.topViewController isKindOfClass:[OUIStackedSlicesInspectorPane class]]) {
+        [(OUIStackedSlicesInspectorPane*)self.topViewController updateContentInsetsForKeyboard];
+    }
+}
+
+- (BOOL)_isCurrentlyPresentedWithCustomInspectorPresentation;
+{
+    BOOL isCurrentlyPresented = self.presentingViewController != nil;
+    
+    if (!isCurrentlyPresented) {
+        return NO;
+    }
+    else {
+        // View controllers seem to cache their presentationController/popoverPresentationController until the next time the presentation has been dismissed. Because of this, we guard the presentationController check until after we know the view controller is being presented.
+        
+        // By the time we get here, we know for sure we are currently being presented, so we just need to return wether we are using our custom presentation controller.
+        return (self.modalPresentationStyle == UIModalPresentationCustom && [self.presentationController isKindOfClass:[OUIInspectorPresentationController class]]);
     }
 }
 
@@ -116,6 +161,7 @@ OBDEPRECATED_METHOD(-updateInterfaceFromInspectedObjects); // -> -updateInterfac
 @end
 
 // Variable now, should really be turned into an accessor instead of this global. Popovers are required to be between 320 and 600; let's shoot for the minimum.
+// MT 8/20/15
 const CGFloat OUIConstantInspectorWidth = 320;
 CGFloat OUIInspectorContentWidth = OUIConstantInspectorWidth;
 
@@ -123,6 +169,7 @@ const NSTimeInterval OUICrossFadeDuration = 0.2;
 
 NSString * const OUIInspectorWillBeginChangingInspectedObjectsNotification = @"OUIInspectorWillBeginChangingInspectedObjectsNotification";
 NSString * const OUIInspectorDidEndChangingInspectedObjectsNotification = @"OUIInspectorDidEndChangingInspectedObjectsNotification";
+NSString * const OUIInspectorPopoverDidDismissNotification = @"OUIInspectorPopoverDidDismissNotification";
 
 @implementation OUIInspector
 {
@@ -141,7 +188,7 @@ NSString * const OUIInspectorDidEndChangingInspectedObjectsNotification = @"OUII
 
 + (UIBarButtonItem *)inspectorBarButtonItemWithTarget:(id)target action:(SEL)action;
 {
-    UIImage *image = [UIImage imageNamed:@"OUIToolbarInfo.png"];
+    UIImage *image = [UIImage imageNamed:@"OUIToolbarInfo.png" inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil];
     OBASSERT(image);
     UIBarButtonItem *item = [[UIBarButtonItem alloc] initWithImage:image style:UIBarButtonItemStylePlain target:target action:action];
     return item;
@@ -149,7 +196,7 @@ NSString * const OUIInspectorDidEndChangingInspectedObjectsNotification = @"OUII
 
 + (UIBarButtonItem *)inspectorOUIBarButtonItemWithTarget:(id)target action:(SEL)action;
 {
-    UIImage *image = [UIImage imageNamed:@"OUIToolbarInfo.png"];
+    UIImage *image = [UIImage imageNamed:@"OUIToolbarInfo.png" inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil];
     OBASSERT(image);
     UIBarButtonItem *item = [[OUIBarButtonItem alloc] initWithImage:image style:UIBarButtonItemStylePlain target:target action:action];
     return item;
@@ -232,6 +279,34 @@ NSString * const OUIInspectorDidEndChangingInspectedObjectsNotification = @"OUII
         pane.inspector = nil;
 }
 
+static CGFloat _currentDefaultInspectorContentWidth = 320;
+
++ (CGFloat)defaultInspectorContentWidth;
+{
+    return _currentDefaultInspectorContentWidth;
+}
+
+- (void)setDefaultInspectorContentWidth:(CGFloat)defaultInspectorContentWidth;
+{
+    _currentDefaultInspectorContentWidth = defaultInspectorContentWidth;
+}
+
+- (CGFloat)defaultInspectorContentWidth;
+{
+    return _currentDefaultInspectorContentWidth;
+}
+
+- (void)_useDefaultInspectorContentWidth;
+{
+    UITraitCollection *traitCollection = self.viewController.traitCollection;
+
+    if (traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassRegular && traitCollection.verticalSizeClass == UIUserInterfaceSizeClassCompact) {
+        [self setDefaultInspectorContentWidth:414.0f];
+    } else {
+        [self setDefaultInspectorContentWidth:320.0f];
+    }
+}
+
 - (OUIInspectorPane *)mainPane;
 {
     OBPRECONDITION(_mainPane);
@@ -260,7 +335,13 @@ NSString * const OUIInspectorDidEndChangingInspectedObjectsNotification = @"OUII
     return self.navigationController.presentingViewController != nil;
 }
 
-- (BOOL)inspectObjects:(NSArray *)objects withViewController:(UIViewController *)viewController useFullScreenOnHorizontalCompact:(BOOL)useFullScreenOnHorizontalCompact traitCollection:(UITraitCollection *)traitCollection fromBarButtonItem:(UIBarButtonItem *)item;
+/*
+- (UIStatusBarStyle)preferredStatusBarStyle;
+{
+    return UIStatusBarStyleDefault;
+}*/
+
+- (BOOL)inspectObjects:(NSArray *)objects withViewController:(UIViewController *)viewController useFullScreenOnHorizontalCompact:(BOOL)useFullScreenOnHorizontalCompact traitCollection:(UITraitCollection *)traitCollection fromBarButtonItem:(UIBarButtonItem *)item NS_EXTENSION_UNAVAILABLE_IOS("Inspection is not available in extensions.");
 {
     OBASSERT(viewController, @"Must provide a valid viewController");
     if (!viewController) {
@@ -284,8 +365,13 @@ NSString * const OUIInspectorDidEndChangingInspectedObjectsNotification = @"OUII
         [self.navigationController popToRootViewControllerAnimated:NO];
     }
     
-    [viewController presentViewController:self.navigationController animated:YES completion:_presentInspectorCompletion];
-    [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleDefault animated:YES];
+    
+    [viewController presentViewController:self.navigationController animated:YES completion:^{
+        self.navigationController.popoverPresentationController.passthroughViews = nil;
+        if (_presentInspectorCompletion) {
+            _presentInspectorCompletion();
+        }
+    }];
     if (_animationsToPerformAlongsidePresentation) {
         [self.navigationController.transitionCoordinator animateAlongsideTransition:_animationsToPerformAlongsidePresentation completion:nil];
     }
@@ -305,26 +391,32 @@ NSString * const OUIInspectorDidEndChangingInspectedObjectsNotification = @"OUII
 
 - (void)_dismissInspectorAnimated:(BOOL)animated completion:(void (^)(void))completion;
 {
+    _navigationController.willDismissInspector = YES;
     if (self.animatingPushOrPop) {
         return;  // hack to prevent dismissing when a navigation controller transition animation is in progress because if we do, the _animationsToPerformAlongsideDismissal will be ignored and they are crucial to the app's functioning
     }
     OBASSERT(self.navigationController.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
-
-    if (_dismissInspectorCompletion) {
-        if (completion) {
-            void (^totalCompletion)(void) = ^(void){
-                _dismissInspectorCompletion();
-                completion();
-            };
-            [self.navigationController dismissViewControllerAnimated:animated completion:totalCompletion];
-        } else {
-            [self.navigationController dismissViewControllerAnimated:animated completion:_dismissInspectorCompletion];
+    
+    void (^totalCompletion)(void) = ^(void){
+        if (_dismissInspectorCompletion)
+        {
+            _dismissInspectorCompletion();
         }
-    } else {
-        [self.navigationController dismissViewControllerAnimated:animated completion:completion];
-    }
+        if (completion) {
+            completion();
+        }
+        _navigationController.willDismissInspector = NO;
+    };
+    [self.navigationController dismissViewControllerAnimated:animated completion: totalCompletion];
+
     if (animated && _animationsToPerformAlongsideDismissal) {
-        [self.navigationController.transitionCoordinator animateAlongsideTransition:_animationsToPerformAlongsideDismissal completion:nil];
+        id<UIViewControllerTransitionCoordinator> coordinator = self.navigationController.transitionCoordinator;
+        if (coordinator) {
+            [coordinator animateAlongsideTransition:_animationsToPerformAlongsideDismissal completion:nil];
+        }
+        else {
+            _animationsToPerformAlongsideDismissal(nil /* we actually have no transitionCoordinator to pass in */);
+        }
     }
 }
 
@@ -353,7 +445,9 @@ NSString * const OUIInspectorDidEndChangingInspectedObjectsNotification = @"OUII
             [self.navigationController popToRootViewControllerAnimated:NO];
         }
         
-        [viewController presentViewController:self.navigationController animated:YES completion:NULL];
+        [viewController presentViewController:self.navigationController animated:YES completion:^{
+            self.navigationController.popoverPresentationController.passthroughViews = nil;
+        }];
     }
     return YES;
 }
@@ -367,12 +461,15 @@ NSString * const OUIInspectorDidEndChangingInspectedObjectsNotification = @"OUII
 {
     NSArray *inspectedObjects = self.mainPane.inspectedObjects;
     [self _dismissInspectorAnimated:NO completion:^{
-        if (self.popoverSourceView && self.viewController) {
-            [self inspectObjects:inspectedObjects withViewController:self.viewController fromRect:self.popoverSourceRect inView:self.popoverSourceView useFullScreenOnHorizontalCompact:self.useFullScreenOnHorizontalCompact permittedArrowDirections:self.popoverArrowDirections];
-        } else if (self.viewController) {
-            [self inspectObjects:inspectedObjects withViewController:self.viewController useFullScreenOnHorizontalCompact:self.useFullScreenOnHorizontalCompact traitCollection:traitCollection fromBarButtonItem:self.popoverPresentingItem];
+        UIViewController *strong_viewController = self.viewController;
+        UIView *strong_popoverSourceView = self.popoverSourceView;
+
+        if (strong_popoverSourceView && strong_viewController) {
+            [self inspectObjects:inspectedObjects withViewController:strong_viewController fromRect:self.popoverSourceRect inView:strong_popoverSourceView useFullScreenOnHorizontalCompact:self.useFullScreenOnHorizontalCompact permittedArrowDirections:self.popoverArrowDirections];
+        } else if (strong_viewController) {
+            [self inspectObjects:inspectedObjects withViewController:strong_viewController useFullScreenOnHorizontalCompact:self.useFullScreenOnHorizontalCompact traitCollection:traitCollection fromBarButtonItem:self.popoverPresentingItem];
         } else {
-            OBASSERT_NOT_REACHED(@"Inspector muast have either a view controller and an optional UIView defined.");
+            OBASSERT_NOT_REACHED(@"Inspector muast have either a view controller or an optional UIView defined.");
         }
     }];
 }
@@ -395,6 +492,9 @@ NSString * const OUIInspectorDidEndChangingInspectedObjectsNotification = @"OUII
 
 - (void)dismissAnimated:(BOOL)animated;
 {
+    if ([self.delegate respondsToSelector:@selector(inspectorWillDismiss:)]) {
+        [self.delegate inspectorWillDismiss:self];
+    }
     [self _dismissInspectorAnimated:animated completion:^{
         if (self.delegate && [self.delegate respondsToSelector:@selector(inspectorDidDismiss:)]) {
             [self.delegate inspectorDidDismiss:self];
@@ -429,14 +529,36 @@ NSString * const OUIInspectorDidEndChangingInspectedObjectsNotification = @"OUII
 
 - (void)updateInspectorWithTraitCollection:(UITraitCollection *)traitsCollection;
 {
+    [self createFreshNavigationController];  // because iOS 9 doesn't correctly handle switching presentation styles, see related <bug:///116856> (Bug: Half-height inspector with selected text can appear in landscape on the 6+) and jake's rdar:///21189053 (Asking a view controller for its presentationController before changing it causes it to cache and use the 'old' one.)
+    
     if (traitsCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact && !_useFullScreenOnHorizontalCompact) {
-        _inspectorTransitionDelegate = [[OUIInspectorOverlayTransitioningDelegate alloc] init];
+        self.inspectorTransitionDelegate = [[OUIInspectorOverlayTransitioningDelegate alloc] init];
+        self.navigationController.transitioningDelegate = self.inspectorTransitionDelegate;
         self.navigationController.modalPresentationStyle = UIModalPresentationCustom;
-        [self.navigationController setTransitioningDelegate:_inspectorTransitionDelegate];
     } else {
         self.navigationController.modalPresentationStyle = UIModalPresentationPopover;
+        self.navigationController.popoverPresentationController.barButtonItem = self.popoverPresentingItem;
+        self.navigationController.popoverPresentationController.delegate = self;
     }
     [self _setShowDoneButton:self.shouldShowDoneButton];
+}
+
+- (void)createFreshNavigationController {
+    // THIS IS A HACK required to get the presentation to switch properly between popover style and half-height inspector in beta iOS 9
+    OUIInspector *freshInspector = [[[self class] alloc] init];
+    NSArray *existingNavStack = [self.navigationController.viewControllers copy];
+    self.navigationController.viewControllers = @[];
+    for (OUIInspectorPane *pane in existingNavStack) {
+        pane.inspector = self;
+    }
+    freshInspector.navigationController.delegate = self;
+    freshInspector.gesturePassThroughView = self.gesturePassThroughView;
+    if ([freshInspector.navigationController isKindOfClass:[OUIInspectorNavigationController class]]) {
+        ((OUIInspectorNavigationController*)freshInspector.navigationController).gesturePassThroughView = self.gesturePassThroughView;
+    }
+    self.navigationController = freshInspector.navigationController;
+    freshInspector.navigationController = nil;
+    self.navigationController.viewControllers = existingNavStack;
 }
 
 - (NSArray *)makeAvailableSlicesForStackedSlicesPane:(OUIStackedSlicesInspectorPane *)pane;
@@ -463,7 +585,7 @@ static UINavigationController *_getNavigationController(OUIInspector *self)
     }
 }
 
-static void _configureContentSize(OUIInspector *self, UIViewController *vc, CGFloat height, BOOL animated)
+static void _configureContentSize(OUIInspector *self, UIViewController *vc, CGFloat height, BOOL animated) NS_EXTENSION_UNAVAILABLE_IOS("")
 {
     const CGFloat toolbarHeight = 38;
     
@@ -473,13 +595,12 @@ static void _configureContentSize(OUIInspector *self, UIViewController *vc, CGFl
     
     UIWindow *window = [[OUIAppController controller] window];
     if ([[window traitCollection] horizontalSizeClass] == UIUserInterfaceSizeClassCompact) {
-        OUIInspectorContentWidth = CGRectGetWidth([window frame]);
-    }
-    else {
-        OUIInspectorContentWidth = OUIConstantInspectorWidth;
+        [self setDefaultInspectorContentWidth:CGRectGetWidth([window frame])];
+    } else {
+        [self _useDefaultInspectorContentWidth];
     }
     
-    vc.preferredContentSize = CGSizeMake(OUIInspectorContentWidth, height);
+    vc.preferredContentSize = CGSizeMake(self.defaultInspectorContentWidth, height);
     [self->_navigationController setToolbarHidden:!wantsToolbar animated:animated];
     
     // This is necessary to reset the popover size if it is dismissed while the keyboard is up. It doesn't automatically fix this on itself. See <bug:///71703> (Popover doesn't restore size when closed with keyboard up)
@@ -618,10 +739,14 @@ static void _configureContentSize(OUIInspector *self, UIViewController *vc, CGFl
     return nil;
 }
 
+- (void)popoverPresentationControllerDidDismissPopover:(UIPopoverPresentationController *)popoverPresentationController{
+    [[NSNotificationCenter defaultCenter] postNotificationName:OUIInspectorPopoverDidDismissNotification object:popoverPresentationController];
+}
+
 #pragma mark -
 #pragma mark UINavigationControllerDelegate
 
-- (void)navigationController:(UINavigationController *)navigationController willShowViewController:(UIViewController *)viewController animated:(BOOL)animated;
+- (void)navigationController:(UINavigationController *)navigationController willShowViewController:(UIViewController *)viewController animated:(BOOL)animated NS_EXTENSION_UNAVAILABLE_IOS("");
 {
     // This delegate method gets called before the pane is queried for its popover content size but before -viewWillAppear: is called.
     // Need to make sure that the content size is correct, and as part of that, we send the pane -inspectorWillShow: to let it configure toolbar items.

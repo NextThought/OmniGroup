@@ -15,7 +15,7 @@
 
 @class ODSFileItem, OFFileEdit, ODSFileItemEdit, ODSScope;
 @class OFXAgentActivity, OFXServerAccount;
-@class OUIDocument, OUIDocumentPicker, OUIDocumentPickerViewController, OUIBarButtonItem, UIViewController;
+@class OUIDocument, OUIDocumentPicker, OUIDocumentPickerViewController, OUIDocumentOpenAnimator, OUIBarButtonItem, UIViewController;
 
 @interface OUIDocumentAppController : OUIAppController <OUIUndoBarButtonItemTarget, ODSStoreDelegate, ODSStoreDelegate>
 
@@ -31,6 +31,8 @@
 
 @property(nonatomic,readonly) OFXAgentActivity *agentActivity;
 
+@property(nonatomic,retain) NSURL *searchResultsURL; // document URL from continue user activity
+
 - (NSArray *)editableFileTypes;
 - (BOOL)canViewFileTypeWithIdentifier:(NSString *)uti;
 
@@ -44,11 +46,15 @@
 - (void)documentDidRebuildViewController:(OUIDocument *)document;
 
 - (void)openDocument:(ODSFileItem *)fileItem;
+- (void)openDocument:(ODSFileItem *)fileItem fromPeekWithWillPresentHandler:(void (^)(OUIDocumentOpenAnimator *openAnimator))willPresentHandler completionHandler:(void (^)(void))completionHandler;
 
 @property(nonatomic,readonly) OUIDocument *document;
 
 // This is for debugging and ninja use, not production
 - (void)invalidateDocumentPreviews;
+
+// For Quick Actions
+- (NSArray <ODSFileItem *>*)recentlyEditedFileItems;
 
 // Sample documents
 - (NSInteger)builtInResourceVersion;
@@ -81,7 +87,13 @@
 - (void)documentPicker:(OUIDocumentPicker *)picker openTappedFileItem:(ODSFileItem *)fileItem;
 - (void)documentPicker:(OUIDocumentPicker *)picker openCreatedFileItem:(ODSFileItem *)fileItem;
 
+// API for linking to external documents
+- (void)linkDocumentFromExternalContainer:(id)sender;
+- (NSURL *)documentProviderMoreInfoURL;
+
 // Subclass responsibility
+- (NSString *)recentDocumentShortcutIconImageName;
+- (NSString *)newDocumentShortcutIconImageName;
 - (UIImage *)documentPickerBackgroundImage;
 - (Class)documentClassForURL:(NSURL *)url;
 - (UIView *)pickerAnimationViewForTarget:(OUIDocument *)document;
@@ -100,6 +112,11 @@
 + (NSDictionary *)documentStateForFileEdit:(OFFileEdit *)fileEdit;
 + (void)setDocumentState:(NSDictionary *)documentState forFileEdit:(OFFileEdit *)fileEdit;
 + (void)copyDocumentStateFromFileEdit:(OFFileEdit *)fromFileEdit toFileEdit:(OFFileEdit *)toFileEdit;
+
+// core spotlight
++ (void)registerSpotlightID:(NSString *)uniqueID forDocumentFileURL:(NSURL *)fileURL;
++ (NSString *)spotlightIDForFileURL:(NSURL *)fileURL;
++ (NSURL *)fileURLForSpotlightID:(NSString *)uniqueID;
 
 @end
 

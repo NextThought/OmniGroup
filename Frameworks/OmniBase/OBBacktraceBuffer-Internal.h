@@ -14,17 +14,18 @@
 */
 
 /* These can be adjusted as needed - CrashCatcher reads their values from the crashed process's OBBacktraceBufferInfo */
-#define OBBacktraceBufferAddressCount 24    /* Max depth of stack to record per trace */
-#define OBBacktraceBufferTraceCount 8       /* Number of recent traces to retain */
+#define OBBacktraceBufferAddressCount (64)    /* Max depth of stack to record per trace */
+#define OBBacktraceBufferTraceCount (16)       /* Number of recent traces to retain */
 
 struct OBBacktraceBuffer {
     volatile uintptr_t type;
-    const char *context;
+    const char *message;
+    const void *context;
     uintptr_t tv_sec, tv_usec;
     void *frames[OBBacktraceBufferAddressCount];
 };
 
-#define OBBacktraceBufferInfoVersionMagic  3
+#define OBBacktraceBufferInfoVersionMagic  4
 struct OBBacktraceBufferInfo {
     // The first four fields provide info for CrashCatcher
     unsigned char version;
@@ -37,4 +38,3 @@ struct OBBacktraceBufferInfo {
     // A pointer to the integer which holds the index of the next free buffer entry
     volatile int32_t *nextTrace;
 };
-

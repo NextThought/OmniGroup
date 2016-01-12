@@ -138,16 +138,10 @@ BOOL OFXShouldSyncAllPathExtensions(NSSet *pathExtensions)
 
     NSURLSessionConfiguration *configuration = [[NSURLSessionConfiguration defaultSessionConfiguration] copy];
     
-    // This is off by default. Turn it on?
-    //configuration.HTTPShouldUsePipelining = YES;
-    
-    configuration.allowsCellularAccess = [self isCellularSyncEnabled];
-
     configuration.HTTPShouldUsePipelining = YES;
 #else
     ODAVConnectionConfiguration *configuration = [ODAVConnectionConfiguration new];
     
-    configuration.allowsCellularAccess = [self isCellularSyncEnabled];
     configuration.userAgent = UserAgent;
 #endif
     
@@ -214,15 +208,15 @@ BOOL OFXShouldSyncAllPathExtensions(NSSet *pathExtensions)
                 BOOL isPackage = NO;
                 
                 for (NSString *conformsToType in conformsToTypes) {
-                    if (UTTypeConformsTo((__bridge CFStringRef)conformsToType, kUTTypeData))
+                    if (OFTypeConformsTo(conformsToType, kUTTypeData))
                         isFile = YES;
-                    if (UTTypeConformsTo((__bridge CFStringRef)conformsToType, kUTTypeFolder)) // kUTTypeFolder is a user-navigable sub-type of kUTTypeDirectory
+                    if (OFTypeConformsTo(conformsToType, kUTTypeFolder)) // kUTTypeFolder is a user-navigable sub-type of kUTTypeDirectory
                         isFolder = YES;
-                    if (UTTypeConformsTo((__bridge CFStringRef)conformsToType, kUTTypePackage))
+                    if (OFTypeConformsTo(conformsToType, kUTTypePackage))
                         isPackage = YES;
                 }
                 
-                OBASSERT((isFile?1:0) + (isFolder?1:0) + (isPackage?1:0) == 1, "Should be a file, folder, or package");
+                OBASSERT((isFile?1:0) + (isFolder?1:0) + (isPackage?1:0) == 1, "Should be a file, folder, or package"); // TODO: This can fail when a file has a UTI that isn't registered on the current system (i.e., UTTypeIsDeclared() returns NO). How should we handle that?
                 OB_UNUSED_VALUE(isFile);
                 OB_UNUSED_VALUE(isFolder);
                 

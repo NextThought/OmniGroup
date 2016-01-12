@@ -11,6 +11,7 @@
 #import <OmniDocumentStore/ODSScope-Subclass.h>
 #import <OmniDocumentStore/ODSFileItem.h>
 #import <OmniDocumentStore/ODSUtilities.h>
+#import <OmniFoundation/NSArray-OFExtensions.h>
 #import <OmniFoundation/NSFileCoordinator-OFExtensions.h>
 #import <OmniFoundation/NSSet-OFExtensions.h>
 #import <OmniFoundation/NSURL-OFExtensions.h>
@@ -19,6 +20,7 @@
 
 #import "ODSScope-Internal.h"
 #import "ODSFileItem-Internal.h"
+#import "ODSStore-Internal.h"
 
 RCS_ID("$Id$");
 
@@ -147,13 +149,22 @@ RCS_ID("$Id$");
         }
     }
 
-    NSMutableArray *deletions = [NSMutableArray new];
-    for (ODSItem *item in items) {
-        [item eachFile:^(ODSFileItem *file) {
-            [deletions addObject:[[ODSFileItemDeletion alloc] initWithFileItem:file]];
-        }];
+    NSArray *deletions;
+    {
+        NSMutableArray *collectingDeletions = [NSMutableArray new];
+        for (ODSItem *item in items) {
+            [item eachFile:^(ODSFileItem *file) {
+                [collectingDeletions addObject:[[ODSFileItemDeletion alloc] initWithFileItem:file]];
+            }];
+        }
+        deletions = [collectingDeletions copy];
     }
     DEBUG_STORE(@"Deletions %@", [deletions valueForKey:@"shortDescription"]);
+    
+    [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+        NSArray *fileItems = [deletions arrayByPerformingBlock:^(ODSFileItemDeletion *deletion){ return deletion.fileItem; }];
+        [self.documentStore _willRemoveFileItems:fileItems];
+    }];
     
     [self performAsynchronousFileAccessUsingBlock:^{
         // Passing nil for the presenter so that we get our normal deletion notification via file coordination.
@@ -291,6 +302,8 @@ RCS_ID("$Id$");
 {
     if (_isTrash)
         return 999;
+    else if (_isTemplate)
+        return 998;
     else
         return -1;
 }

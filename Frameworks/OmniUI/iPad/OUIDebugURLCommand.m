@@ -1,4 +1,4 @@
-// Copyright 2014 The Omni Group. All rights reserved.
+// Copyright 2014-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -57,7 +57,7 @@ RCS_ID("$Id$");
     NSArray *encodedParameters = [_parameterString componentsSeparatedByString:@":"];
     NSMutableArray *decodedParameters = [NSMutableArray array];
     for (NSString *encodedParameter in encodedParameters) {
-        NSString *decodedParameter = [encodedParameter stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+        NSString *decodedParameter = [encodedParameter stringByRemovingPercentEncoding];
         [decodedParameters addObject:decodedParameter];
     }
     return decodedParameters;
@@ -93,6 +93,10 @@ RCS_ID("$Id$");
         }
         
         exit(0);
+    } else {
+        // Finish starting up if we postponed to handle the DEBUG url
+        OUIAppController *controller = [OUIAppController controller];
+        controller.shouldPostponeLaunchActions = NO;
     }
 }
 

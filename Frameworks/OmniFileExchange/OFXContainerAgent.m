@@ -7,6 +7,7 @@
 
 #import "OFXContainerAgent-Internal.h"
 
+#import <OmniDAV/ODAVConnection.h>
 #import <OmniDAV/ODAVErrors.h>
 #import <OmniDAV/ODAVFileInfo.h>
 #import <OmniFileExchange/OFXAgent.h>
@@ -18,7 +19,6 @@
 
 #import "OFXAccountAgent-Internal.h"
 #import "OFXAccountClientParameters.h"
-#import "OFXConnection.h"
 #import "OFXContainerDocumentIndex.h"
 #import "OFXContainerScan.h"
 #import "OFXContentIdentifier.h"
@@ -175,7 +175,7 @@ static NSString * const OFXNoPathExtensionContainerIdentifier = @"no.extension";
     _documentIndex = nil;
 }
 
-- (BOOL)syncIfChanged:(ODAVFileInfo *)containerFileInfo serverDate:(NSDate *)serverDate connection:(OFXConnection *)connection error:(NSError **)outError;
+- (BOOL)syncIfChanged:(ODAVFileInfo *)containerFileInfo serverDate:(NSDate *)serverDate connection:(ODAVConnection *)connection error:(NSError **)outError;
 {
     NSUInteger retries = 0;
     
@@ -495,7 +495,7 @@ tryAgain:
     }
     OBASSERT(fileItem.remoteState.missing || fileItem.localState.edited || fileItem.localState.userMoved);
 
-    OFXConnection *connection = [self _makeConnection];
+    ODAVConnection *connection = [self _makeConnection];
     if (!connection)
         return nil;
     
@@ -591,7 +591,7 @@ tryAgain:
         return nil;
     }
     
-    OFXConnection *connection = [self _makeConnection];
+    ODAVConnection *connection = [self _makeConnection];
     if (!connection)
         return nil;
     
@@ -682,7 +682,7 @@ tryAgain:
         return nil;
     }
     
-    OFXConnection *connection = [self _makeConnection];
+    ODAVConnection *connection = [self _makeConnection];
     if (!connection)
         return nil;
     
@@ -1287,7 +1287,7 @@ tryAgain:
     if (!otherItem) {
         // The thing in our way appeared very recently (possibly as a result of our provoking autosave, as in -[OFXConflictTestCase testIncomingMoveVsLocalAutosaveCreation]).
         // Make a file item for it right now and mark it as auto-moved immediately, so that we record the user's intended name, rather than doing a conflict move here and promoting that name to the user intended name).
-        NSError *error = nil;
+        __autoreleasing NSError *error = nil;
         if (!(otherItem = [[OFXFileItem alloc] initWithNewLocalDocumentURL:fileURL container:self error:&error])) {
             // Well, we tried. Move aside the file by itself -- thus promoting the file name to the user intended name, but at least preserving the contents.
             // The coordinator should have a file presenter so that this move is not interpreted as moving *us*, but sadly we have no way of asserting that here.
@@ -1502,7 +1502,7 @@ tryAgain:
     return fileItem;
 }
 
-- (OFXConnection *)_makeConnection;
+- (ODAVConnection *)_makeConnection;
 {
     OBPRECONDITION([self _runningOnAccountAgentQueue]);
 

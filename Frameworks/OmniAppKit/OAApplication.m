@@ -261,6 +261,8 @@ BOOL OADebugTargetSelection = NO;
 
 - (BOOL)sendAction:(SEL)theAction to:(id)theTarget from:(id)sender;
 {
+    OBRecordBacktrace(sel_getName(theAction), OBBacktraceBuffer_PerformSelector);
+
     if (OATargetSelection) {
         // The normal NSApplication version, sadly, uses internal target lookup for the nil case. It should really call -targetForAction:to:from:.
         if (!theTarget)
@@ -525,26 +527,6 @@ static void _applyFullSearch(OAApplication *self, SEL theAction, id theTarget, i
 - (NSUInteger)launchModifierFlags;
 {
     return launchModifierFlags;
-}
-
-- (void)scheduleModalPanelForTarget:(id)modalController selector:(SEL)modalSelector userInfo:(id)userInfo;
-{
-    OBPRECONDITION(modalController != nil);
-    OBPRECONDITION([modalController respondsToSelector:modalSelector]);
-    
-    // Create an invocation out of this request
-    NSMethodSignature *modalSignature = [modalController methodSignatureForSelector:modalSelector];
-    if (modalSignature == nil)
-        return;
-    NSInvocation *modalInvocation = [NSInvocation invocationWithMethodSignature:modalSignature];
-    [modalInvocation setTarget:modalController];
-    [modalInvocation setSelector:modalSelector];
-    
-    // Pass userInfo if modalSelector takes it
-    if ([modalSignature numberOfArguments] > 2) // self, _cmd
-        [modalInvocation setArgument:&userInfo atIndex:2];
-
-    [self _scheduleModalPanelWithInvocation:modalInvocation];
 }
 
 // Prefix the URL string with "anchor:" if the string is the name of an anchor in the help files. Prefix it with "search:" to search for the string in the help book.
@@ -973,29 +955,6 @@ static void _applyFullSearch(OAApplication *self, SEL theAction, id theTarget, i
     mouseButtonState = [event data2];
 }
 
-- (void)_scheduleModalPanelWithInvocation:(NSInvocation *)modalInvocation;
-{
-    OBPRECONDITION(modalInvocation != nil);
-    
-    NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
-    if ([[runLoop currentMode] isEqualToString:NSModalPanelRunLoopMode]) {
-        NSTimer *timer = [NSTimer timerWithTimeInterval:0.0 target:self selector:@selector(_rescheduleModalPanel:) userInfo:modalInvocation repeats:NO];
-        [runLoop addTimer:timer forMode:NSDefaultRunLoopMode];
-    } else {
-        [modalInvocation invoke];
-    }
-}
-
-- (void)_rescheduleModalPanel:(NSTimer *)timer;
-{
-    OBPRECONDITION(timer != nil);
-    
-    NSInvocation *invocation = [timer userInfo];
-    OBASSERT(invocation != nil);
-    
-    [self _scheduleModalPanelWithInvocation:invocation];
-}
-
 @end
 
 #pragma mark -
@@ -1109,8 +1068,31 @@ static id _selfIfValidElseNil(id self, SEL validateSelector, id sender)
     return NO;
 }
 
+- (BOOL)_appearsInResponderChainAfterResponder:(NSResponder *)responder
+{
+    NSResponder *nomad = responder;
+    while (nomad) {
+        if (nomad == self) {
+            return YES;
+        }
+        nomad = nomad.nextResponder;
+    }
+    return NO;
+}
+
+- (BOOL)_isInResponderChainLoop
+{
+    return [self _appearsInResponderChainAfterResponder:self.nextResponder];
+}
+
 - (BOOL)applyToResponderChain:(OAResponderChainApplier)applier;
 {
+    // <bug:///116560> (Crasher: Crash [needs repro]: OATargetSelection loop)
+    // At this writing (26 June 2015) this is the second-most-common crash in OmniOutliner. Unfortunately we don't have a reproducible case (though it seems to happen — sometimes — when looking up a word).
+    if ([self _isInResponderChainLoop]) {
+        DEBUG_TARGET_SELECTION(@"---> NOT applying to NSWindow because of a responder chain loop");
+       return NO;
+    }
     if (![super applyToResponderChain:applier])
         return NO;
     
@@ -1123,9 +1105,14 @@ static id _selfIfValidElseNil(id self, SEL validateSelector, id sender)
     BOOL shouldCheckDelegate = YES;
     if ([delegate respondsToSelector:@selector(nextResponder)] && [delegate nextResponder]) {
         shouldCheckDelegate = ![self _objectIsInResponderChainPriorToWindow:delegate];
-    }
-    if (!shouldCheckDelegate) {
-        DEBUG_TARGET_SELECTION(@"---> NOT checking NSWindow delegate because it appears in the responder chain before now and it has a nextResponder");
+        if (!shouldCheckDelegate) {
+            DEBUG_TARGET_SELECTION(@"---> NOT checking NSWindow delegate because it appears in the responder chain before now and it has a nextResponder");
+        } else {
+            shouldCheckDelegate = ![self _appearsInResponderChainAfterResponder:delegate];
+            if (!shouldCheckDelegate) {
+                DEBUG_TARGET_SELECTION(@"---> NOT checking NSWindow delegate because of a responder chain loop");
+            }
+        }
     }
 
     if (shouldCheckDelegate && delegate && ![delegate applyToResponderChain:applier])

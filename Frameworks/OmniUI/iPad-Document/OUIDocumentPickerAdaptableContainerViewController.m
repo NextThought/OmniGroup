@@ -28,7 +28,10 @@ RCS_ID("$Id$")
 
 - (instancetype)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil;
 {
-    if ((self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil])) {
+    OBPRECONDITION(nibNameOrNil == nil);
+    OBPRECONDITION(nibBundleOrNil == nil);
+    
+    if ((self = [super initWithNibName:@"OUIDocumentPickerAdaptableContainerViewController" bundle:OMNI_BUNDLE])) {
         self.definesPresentationContext = YES;
         self.providesPresentationContextTransitionStyle = YES;
     }
@@ -54,6 +57,23 @@ RCS_ID("$Id$")
 }
 
 #pragma mark - API
+
+#if 0 && defined(DEBUG_shannon)
+- (NSString*)description{
+    __block NSString *usefulDescription = [super description];
+    usefulDescription = [usefulDescription stringByAppendingFormat:@" with wrappedViewController: %@ {", self.wrappedViewController];
+    UINavigationController *wrappedNavController = [self.wrappedViewController isKindOfClass:[UINavigationController class]] ? (UINavigationController*)self.wrappedViewController : nil;
+    if (wrappedNavController.viewControllers.count) {
+        [wrappedNavController.viewControllers enumerateObjectsUsingBlock:^(__kindof UIViewController * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            usefulDescription  = [usefulDescription stringByAppendingFormat:@"\n\t\t\t[%lu]%@", (unsigned long)idx, obj];
+        }];
+    } else {
+        usefulDescription = [usefulDescription stringByAppendingFormat:@"\n\t\t\tno view controllers"];
+    }
+    usefulDescription = [usefulDescription stringByAppendingString:@"\n\t\t}"];
+    return usefulDescription;
+}
+#endif
 
 - (UIImageView *)backgroundView;
 {

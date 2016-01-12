@@ -110,7 +110,13 @@ RCS_ID("$Id$")
     }
     
     @try {
-        NSTask *task = [NSTask launchedTaskWithLaunchPath:self.scriptPath arguments:self.scriptArguments];
+        NSTask *task = [[NSTask alloc] init];
+        task.launchPath = self.scriptPath;
+        task.arguments = self.scriptArguments;
+        task.standardOutput = self.stdoutFileHandle;
+        task.standardError = self.stderrFileHandle;
+        [task launch];
+        
         [task waitUntilExit];
         
         int terminationStatus = [task terminationStatus];
@@ -127,8 +133,6 @@ RCS_ID("$Id$")
         if (stderrData == nil) {
             return NO;
         }
-        
-        NSAssert([stdoutData length] == 0, @"Nothing should be written to stdout, only stderr");
 
         if (terminationStatus != 0) {
             if (error != NULL) {
@@ -139,8 +143,8 @@ RCS_ID("$Id$")
                 NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
                 userInfo[NSLocalizedDescriptionKey] = description;
                 userInfo[NSLocalizedFailureReasonErrorKey] = reason;
-                userInfo[@"stderr"] = [self reportableValueForCapturedOutputData:stdoutData];
-                userInfo[@"stdout"] = [self reportableValueForCapturedOutputData:stderrData];
+                userInfo[@"stderr"] = [self reportableValueForCapturedOutputData:stderrData];
+                userInfo[@"stdout"] = [self reportableValueForCapturedOutputData:stdoutData];
 
                 *error = [NSError errorWithDomain:OSUErrorDomain code:OSUUnableToUpgrade userInfo:userInfo];
             }
@@ -195,7 +199,7 @@ RCS_ID("$Id$")
 - (void)cleanupTemporaryFiles;
 {
     for (NSString *path in @[self.scriptPath, self.stdoutPath, self.stderrPath]) {
-        NSError *error = nil;
+        __autoreleasing NSError *error = nil;
         if (![[NSFileManager defaultManager] removeItemAtPath:path error:&error]) {
             NSLog(@"Error cleaning up temporary file at path: %@ - %@", path, error);
         }

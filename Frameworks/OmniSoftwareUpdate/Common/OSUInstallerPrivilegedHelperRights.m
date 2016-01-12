@@ -9,6 +9,7 @@
 
 #import <Foundation/Foundation.h>
 #import <OmniBase/rcsid.h>
+#import <OmniBase/assertions.h>
 
 RCS_ID("$Id$")
 

@@ -19,11 +19,11 @@
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string></string>
+	<string>1.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>2001A</string>
+	<string>1.0</string>
 	<key>OFRegistrations</key>
 	<dict>
 		<key>NSUserDefaults</key>
@@ -32,22 +32,26 @@
 			<dict>
 				<key>DisabledBundles</key>
 				<array/>
-				<key>OFScratchDirectory</key>
-				<string>NSTemporaryDirectory</string>
-				<key>OFCompletionMatchScoreForFullMatch</key>
-				<integer>100</integer>
-				<key>OFCompletionMatchScoreForPhraseStart</key>
-				<integer>20</integer>
-				<key>OFCompletionMatchScoreForPhraseEnd</key>
-				<integer>5</integer>
+				<key>OFCompletionMatchScoreForCapitalLetter</key>
+				<integer>15</integer>
 				<key>OFCompletionMatchScoreForConsecutiveCharacter</key>
 				<integer>25</integer>
 				<key>OFCompletionMatchScoreForConsecutiveWord</key>
 				<integer>10</integer>
+				<key>OFCompletionMatchScoreForFullMatch</key>
+				<integer>100</integer>
+				<key>OFCompletionMatchScoreForPhraseEnd</key>
+				<integer>5</integer>
+				<key>OFCompletionMatchScoreForPhraseStart</key>
+				<integer>20</integer>
 				<key>OFCompletionMatchScoreForWordStart</key>
 				<integer>10</integer>
-				<key>OFCompletionMatchScoreForCapitalLetter</key>
-				<integer>15</integer>
+				<key>OFHTTPStateMachineLogLevel</key>
+				<false/>
+				<key>OFScratchDirectory</key>
+				<string>NSTemporaryDirectory</string>
+				<key>RelativeDateFormatterDateFormatStyle</key>
+				<string>short</string>
 				<key>RelativeDateFormatterDefaultHour</key>
 				<integer>23</integer>
 				<key>RelativeDateFormatterDefaultMinute</key>
@@ -56,8 +60,6 @@
 				<false/>
 				<key>RelativeDateFormatterShowTime</key>
 				<false/>
-				<key>RelativeDateFormatterDateFormatStyle</key>
-				<string>short</string>
 			</dict>
 		</dict>
 	</dict>

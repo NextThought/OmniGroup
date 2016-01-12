@@ -23,8 +23,6 @@
 #import <OmniFoundation/OFGeometry.h>
 #import <MobileCoreServices/MobileCoreServices.h>
 
-#import "OUITextView-NoArc.h"
-
 RCS_ID("$Id$");
 
 // Deprecated methods from OUIEditableFrameDelegate
@@ -52,6 +50,13 @@ NSString * const OUITextViewInsertionPointDidChangeNotification = @"OUITextViewI
 {
     OUIInspector *_textInspector;
     OUITextViewSelectedTextHighlightView *_selectedTextHighlightView;
+}
+
+static OUITextView *_activeFirstResponderTextView = nil;
+
++ (OUITextView *)activeFirstResponderTextView;
+{
+    return _activeFirstResponderTextView;
 }
 
 #pragma mark Debugging helpers
@@ -156,25 +161,24 @@ static NSString *_positionDescription(OUITextView *self, OUEFTextPosition *posit
     _textInspector.delegate = nil;
 }
 
-- (void)replaceTextStorage:(NSTextStorage *)textStorage;
+- (void)setFrame:(CGRect)frame
 {
-    NSTextStorage *oldTextStorage = self.textStorage;
-    OBPOSTCONDITION(self.layoutManager.textStorage == oldTextStorage);
+    NSTextContainer *textContainer = self.textContainer;
+    CGSize oldContainerSize = textContainer.size;
+    [super setFrame:frame];
+    CGSize updatedContainerSize = textContainer.size;
+    CGSize newContainerSize;
+    newContainerSize.width = textContainer.widthTracksTextView ? updatedContainerSize.width : oldContainerSize.width;
+    newContainerSize.height = textContainer.heightTracksTextView ? updatedContainerSize.height : oldContainerSize.height;
+    if (!CGSizeEqualToSize(newContainerSize, updatedContainerSize)) {
+        textContainer.size = newContainerSize;
+    }
 
-    if (oldTextStorage == textStorage)
-        return;
-    
-    NSLayoutManager *layoutManager = self.layoutManager;
-
-    // Have to remove the old one first. If we add the new one and then remove the old one, the layout manager's text storage gets set to nil.
-    [oldTextStorage removeLayoutManager:layoutManager];
-    [textStorage addLayoutManager:layoutManager];
-    
-    // ARC-unfriendly portion of this fix
-    OUITextViewFixTextStorageIvar(self, oldTextStorage, textStorage);
-
-    OBPOSTCONDITION(self.textStorage == textStorage);
-    OBPOSTCONDITION(self.layoutManager.textStorage == textStorage);
+    if (_selectedTextHighlightView) {
+        frame.origin = CGPointZero;
+        _selectedTextHighlightView.frame = frame;
+        [_selectedTextHighlightView setNeedsDisplay];
+    }
 }
 
 - (CGFloat)textHeight;
@@ -332,7 +336,7 @@ static void _scrollVerticallyInView(OUITextView *textView, CGRect viewRect, BOOL
     
     DEBUG_SCROLL(@" viewRect %@", NSStringFromCGRect(viewRect));
     
-    CGRect scrollBounds = UIEdgeInsetsInsetRect(textView.bounds, textView.contentInset);
+    CGRect scrollBounds = textView.bounds;
     
     OFExtent targetViewYExtent = OFExtentFromRectYRange(viewRect);
     OFExtent scrollBoundsYExtent = OFExtentFromRectYRange(scrollBounds);
@@ -416,6 +420,11 @@ static void _scrollVerticallyInView(OUITextView *textView, CGRect viewRect, BOOL
     return firstSpan;
 }
 
+- (OUIInspector *)textInspector;
+{
+    return _textInspector;
+}
+
 - (void)dismissInspectorImmediatelyIfVisible;
 {
     [_textInspector dismissImmediatelyIfVisible];
@@ -426,10 +435,9 @@ static void _scrollVerticallyInView(OUITextView *textView, CGRect viewRect, BOOL
     NSArray *runs = [self _configureInspector];
     if (setupBlock != NULL)
         setupBlock(_textInspector);
-    [_textInspector inspectObjects:runs withViewController:viewController fromBarButtonItem:barButtonItem];
 
-    _selectedTextHighlightView = [[OUITextViewSelectedTextHighlightView alloc] initWithFrame:self.bounds];
-    [self addSubview:_selectedTextHighlightView];
+    [_textInspector inspectObjects:runs withViewController:viewController fromBarButtonItem:barButtonItem];
+    self.alwaysHighlightSelectedText = YES;
 }
 
 - (void)selectAllShowingMenu:(BOOL)show;
@@ -510,6 +518,11 @@ static BOOL _rangeIsInsertionPoint(OUITextView  *self, UITextRange *r)
     else
         [textStorage removeAttribute:attr range:characterRange];
     [textStorage endEditing];
+    
+    if ([self.delegate respondsToSelector:@selector(textView:didChangeAttributesInRange:)]) {
+        [self.delegate textView:self didChangeAttributesInRange:range];
+        [_selectedTextHighlightView setNeedsDisplay];
+    }
 }
 
 - (void)insertAfterSelection:(NSAttributedString *)attributedString;
@@ -891,6 +904,8 @@ static BOOL _rangeIsInsertionPoint(OUITextView  *self, UITextRange *r)
     if (![super becomeFirstResponder])
         return NO;
 
+    _activeFirstResponderTextView = self;
+
     NSArray *menuItems = nil;
     id <OUITextViewDelegate> delegate = self.delegate;
     if ([delegate respondsToSelector:@selector(textViewCustomMenuItems:)])
@@ -898,10 +913,39 @@ static BOOL _rangeIsInsertionPoint(OUITextView  *self, UITextRange *r)
 
     [UIMenuController sharedMenuController].menuItems = menuItems;
 
-    [_selectedTextHighlightView removeFromSuperview];
-    _selectedTextHighlightView = nil;
+    self.alwaysHighlightSelectedText = NO;
 
     return YES;
+}
+
+- (BOOL)resignFirstResponder;
+{
+    if (![super resignFirstResponder])
+        return NO;
+
+    OBASSERT(_activeFirstResponderTextView == self);
+    _activeFirstResponderTextView = nil;
+
+    return YES;
+}
+
+- (BOOL)alwaysHighlightSelectedText;
+{
+    return (_selectedTextHighlightView != nil);
+}
+
+- (void)setAlwaysHighlightSelectedText:(BOOL)shouldAlwaysHighlight;
+{
+    if (self.alwaysHighlightSelectedText == shouldAlwaysHighlight)
+        return;
+
+    if (shouldAlwaysHighlight) {
+        _selectedTextHighlightView = [[OUITextViewSelectedTextHighlightView alloc] initWithFrame:self.bounds];
+        [self addSubview:_selectedTextHighlightView];
+    } else {
+        [_selectedTextHighlightView removeFromSuperview];
+        _selectedTextHighlightView = nil;
+    }
 }
 
 static NSArray *_readableTypes(void)
@@ -1003,6 +1047,10 @@ static BOOL _canReadFromTypes(UIPasteboard *pasteboard, NSArray *types)
 
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender;
 {
+    if (self.keepContextualMenuHidden) {
+        return NO;
+    }
+    
     // We want to provide extendable copy/paste support.
     if (action == @selector(paste:) || action == @selector(pasteTogglingPreserveStyle:)) {
         id <OUITextViewDelegate> delegate = self.delegate;
@@ -1261,7 +1309,7 @@ static void _copyAttribute(NSMutableDictionary *dest, NSDictionary *src, NSStrin
         NSMutableAttributedString *result = [NSMutableAttributedString new];
         _enumerateBestDataForTypes(pasteboard, _readableTypes(), ^(NSData *data){
             __autoreleasing NSError *error = nil;
-            NSAttributedString *attributedString = [[NSAttributedString alloc] initWithData:data options:[NSDictionary new] documentAttributes:NULL error:&error];
+            NSAttributedString *attributedString = [[NSAttributedString alloc] initWithData:data options:@{} documentAttributes:NULL error:&error];
             if (!attributedString)
                 [error log:@"Error reading pasteboard item"];
             else {
@@ -1324,8 +1372,7 @@ static void _copyAttribute(NSMutableDictionary *dest, NSDictionary *src, NSStrin
 
 - (void)inspectorDidDismiss:(OUIInspector *)inspector;
 {
-    [_selectedTextHighlightView removeFromSuperview];
-    _selectedTextHighlightView = nil;
+    self.alwaysHighlightSelectedText = NO;
 
     [self becomeFirstResponder];
     

@@ -145,6 +145,12 @@ static BOOL _methodSignaturesCompatible(Class cls, SEL sel, const char *sig1, co
             _signaturesMatch(sig1, sig2, "v24@0:4@8{CGPoint=ff}12I20", "v24@0:4@8{CGPoint=ff}12L20"))
             return YES;
         
+        // <bug:///122392> (Bug: Swift subclass of Obj-C class:  .cxx_destruct has conflicting type signatures between class and its superclass)
+        // Swift generated code includes a cxx_destruct method that mismatches some superclasses (e.g. UIGestureRecognizer)
+        // This method shouldn't be our problem, regardless of where it appears or what signature it has
+        if (sel == FIND_SEL(.cxx_destruct))
+            return YES;
+        
     }
     return compatible;
 }
@@ -180,7 +186,8 @@ static NSString *describeMethod(Method m, BOOL *nonSystem)
             ![path hasPrefix:@"/usr/lib/"] &&
             ([path rangeOfString:@"/Developer/Platforms/"].location == NSNotFound) && // iPhone simulator
             ![path hasSuffix:@"FBAccess"] && // Special case for FrontBase framework
-            ![path hasSuffix:@"Growl"]) // Special case for Growl framework
+            ![path hasSuffix:@"Growl"] && // Special case for Growl framework
+            ![path hasSuffix:@"libswiftCore.dylib"]) // Special case for embedded Swift runtime
             *nonSystem = YES;
     }
     
@@ -322,10 +329,9 @@ static void _checkForCommonClassMethodNameTypos(Class metaClass, Class class, Me
     }
 }
 
-static void _checkSignaturesVsSuperclass(Class cls, Method *methods, unsigned int methodCount)
+static void _checkSignaturesVsSuperclass(Class cls, Class superClass, Method *methods, unsigned int methodCount)
 {
     // Any method that is implemented by a class and its superclass should have the same signature.  ObjC doesn't encode static type declarations in method signatures, so we can't check for covariance.
-    Class superClass = class_getSuperclass(cls);
     if (!superClass)
         return;
     
@@ -510,19 +516,21 @@ static void _validateMethodSignatures(void)
 
 #undef CLASSNAME_HAS_PREFIX
 
+		Class superClass = class_getSuperclass(cls);
+		
         unsigned int methodIndex = 0;
         Method *methods = class_copyMethodList(cls, &methodIndex);
-        _checkSignaturesVsSuperclass(cls, methods, methodIndex); // instance methods
+        _checkSignaturesVsSuperclass(cls, superClass, methods, methodIndex); // instance methods
         // _checkSignaturesWithinClass(cls, methods, methodIndex); 
         free(methods);
         
         methodIndex = 0;
         Class metaClass = object_getClass(cls);
-        methods = class_copyMethodList(metaClass, &methodIndex);
-        _checkSignaturesVsSuperclass(metaClass, methods, methodIndex); // ... and class methods
-        // _checkSignaturesWithinClass(metaClass, methods, methodIndex);
-        _checkForCommonClassMethodNameTypos(metaClass, cls, methods, methodIndex);
-        free(methods);
+		methods = class_copyMethodList(metaClass, &methodIndex);
+		_checkSignaturesVsSuperclass(metaClass, object_getClass(superClass), methods, methodIndex); // ... and class methods
+		// _checkSignaturesWithinClass(metaClass, methods, methodIndex);
+		_checkForCommonClassMethodNameTypos(metaClass, cls, methods, methodIndex);
+		free(methods);
         
         _checkSignaturesVsProtocols(cls); // checks instance and class and methods, so don't call with the metaclass
     }
@@ -742,11 +750,13 @@ void OBPerformRuntimeChecks(void)
     NSString *executableName = [[[NSBundle mainBundle] executablePath] lastPathComponent];
     BOOL shouldCheck = ![@"ibtool" isEqualToString:executableName] && ![@"Interface Builder" isEqualToString:executableName] && ![@"IBCocoaSimulator" isEqualToString:executableName];
     if (shouldCheck) {
+        NSTimeInterval runtimeChecksStart = [NSDate timeIntervalSinceReferenceDate];
         _validateMethodSignatures();
         _checkForMethodsInDeprecatedProtocols();
 #ifdef OB_CHECK_COPY_WITH_ZONE
         _checkCopyWithZoneImplementations();
 #endif
+        NSLog(@"*** OBPerformRuntimeChecks finished in %.2f seconds.", [NSDate timeIntervalSinceReferenceDate] - runtimeChecksStart);
     }
 }
 

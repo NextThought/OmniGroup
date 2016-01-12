@@ -78,8 +78,6 @@ static const CFDictionaryValueCallBacks CFTypeDictionaryValueCallbacks = {
     .equal = OFCFTypeIsEqual
 };
 
-static CFStringRef kOUIDocumentPreviewTypeEmptyMarker = CFSTR("kOUIDocumentPreviewTypeEmptyMarker");
-
 + (void)initialize;
 {
     OBINITIALIZE;
@@ -664,7 +662,10 @@ static CGImageRef _copyPlaceholderPreviewImage(Class self, Class documentClass, 
                     [[UIColor whiteColor] set];
                     UIRectFill(paperRect);
                     
-                    CGImageRef previewImage = [[UIImage imageNamed:placeholderImageName] CGImage];
+                    CGImageRef previewImage = [[UIImage imageNamed:placeholderImageName] CGImage]; // Allow the main bundle to override
+                    if (!previewImage)
+                        previewImage = [[UIImage imageNamed:placeholderImageName inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil] CGImage];
+                    
                     if (!previewImage) {
                         // We'll just end up with a white rectangle in this case
                         OBASSERT_NOT_REACHED("No image found for default image name returned");

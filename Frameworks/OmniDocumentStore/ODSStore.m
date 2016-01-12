@@ -59,13 +59,13 @@ NSString *ODSPathExtensionForFileType(NSString *fileType, BOOL *outIsPackage)
 {
     OBPRECONDITION(fileType);
     
-    NSString *extension = CFBridgingRelease(UTTypeCopyPreferredTagWithClass((__bridge CFStringRef)fileType, kUTTagClassFilenameExtension));
+    NSString *extension = OFPreferredPathExtensionForUTI(fileType);
     OBASSERT(extension);
     OBASSERT([extension hasPrefix:@"dyn."] == NO, "UTI not registered in the Info.plist?");
     
     if (outIsPackage) {
-        BOOL isPackage = UTTypeConformsTo((__bridge CFStringRef)fileType, kUTTypePackage);
-        OBASSERT_IF(!isPackage, !UTTypeConformsTo((__bridge CFStringRef)fileType, kUTTypeFolder), "Types should be declared as conforming to kUTTypePackage, not kUTTypeFolder");
+        BOOL isPackage = OFTypeConformsTo(fileType, kUTTypePackage);
+        OBASSERT_IF(!isPackage, !OFTypeConformsTo(fileType, kUTTypeFolder), "Types should be declared as conforming to kUTTypePackage, not kUTTypeFolder");
         *outIsPackage = isPackage;
     }
     
@@ -277,17 +277,23 @@ static unsigned ScopeContext;
     completionHandler = [completionHandler copy];
     
     if (fromScope != toScope) {
+        NSMutableArray *relinquishErrors = [[NSMutableArray alloc] init];
+
         for (ODSItem *item in items) {
             __autoreleasing NSError *error;
-            if (![fromScope prepareToRelinquishItem:item error:&error]) {
-                if (completionHandler)
-                    completionHandler(nil, @[error]);
-                return;
-            }
+            if (![fromScope prepareToRelinquishItem:item error:&error])
+                [relinquishErrors addObject:error];
         }
-        
-        [toScope takeItems:items toFolder:parentFolder ignoringFileItems:nil completionHandler:^(NSSet *movedFileItems, NSArray *errorsOrNil){
+
+        if (relinquishErrors.count != 0) {
+            if (completionHandler != NULL)
+                completionHandler(nil, relinquishErrors);
+            return;
+        }
+
+        [toScope takeItems:items toFolder:parentFolder ignoringFileItems:nil completionHandler:^(NSSet *movedFileItems, NSArray *errorsOrNil) {
             OBASSERT([NSThread isMainThread]);
+            [fromScope finishRelinquishingMovedItems:movedFileItems];
             if (completionHandler)
                 completionHandler(movedFileItems, errorsOrNil);
         }];
@@ -542,7 +548,7 @@ static unsigned ScopeContext;
 
 - (void)_flushAfterInitialDocumentScanActions;
 {
-    if (![self _allScopesHaveFinishedInitialScan])
+    if (![self _allScopesHaveFinishedInitialScan] || [self.scopes count] == 0) // there's no legitimate way to have no scopes, so we must just not have them set up yet.
         return;
     
     if (_afterInitialDocumentScanActions) {
@@ -563,6 +569,15 @@ static unsigned ScopeContext;
     }];
 }
 
+- (void)_fileItem:(ODSFileItem *)fileItem willMoveToURL:(NSURL *)newURL;
+{
+    OBPRECONDITION([NSThread isMainThread]);
+    
+    id <ODSStoreDelegate> delegate = _weak_delegate;
+    if ([delegate respondsToSelector:@selector(documentStore:fileItem:willMoveToURL:)])
+        [delegate documentStore:self fileItem:fileItem willMoveToURL:newURL];
+}
+
 - (void)_fileItemEdit:(ODSFileItemEdit *)fileItemEdit willCopyToURL:(NSURL *)newURL;
 {
     OBPRECONDITION([NSThread isMainThread]);
@@ -579,6 +594,18 @@ static unsigned ScopeContext;
     id <ODSStoreDelegate> delegate = _weak_delegate;
     if ([delegate respondsToSelector:@selector(documentStore:fileItemEdit:finishedCopyToURL:withFileItemEdit:)])
         [delegate documentStore:self fileItemEdit:fileItemEdit finishedCopyToURL:destinationURL withFileItemEdit:destinationFileItemEditOrNil];
+}
+
+- (void)_willRemoveFileItems:(NSArray <ODSFileItem *> *)fileItems;
+{
+    OBPRECONDITION([NSThread isMainThread]);
+
+    id <ODSStoreDelegate> delegate = _weak_delegate;
+
+    if ([delegate respondsToSelector:@selector(documentStore:willRemoveFileItemAtURL:)]) {
+        for (ODSFileItem *item in fileItems)
+            [delegate documentStore:self willRemoveFileItemAtURL:item.fileURL];
+    }
 }
 
 @end

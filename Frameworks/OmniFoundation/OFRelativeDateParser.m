@@ -617,8 +617,11 @@ static NSMutableDictionary *_englishSpecialCaseTimeNames;
         dateFormatter.locale = _locale;
         dateFormatter.dateFormat = shortFormat;
         if (![dateFormatter getObjectValue:&date forString:dateString range:NULL error:NULL]) {
+            NSString *stringWithDotSpace = nil;
+            
             // Some formats have dots and spaces as a separator and will fail to match our formattedDateRegex otherwise
             if ([dateString rangeOfString:@". "].location != NSNotFound) {
+                stringWithDotSpace = dateString;
                 dateString = [dateString stringByReplacingOccurrencesOfString:@". " withString:@"."];
             }
             
@@ -650,6 +653,9 @@ static NSMutableDictionary *_englishSpecialCaseTimeNames;
                 date = [self _parseFormattedDate:dateString withDate:startingDate withShortDateFormat:shortFormat withMediumDateFormat:mediumFormat withLongDateFormat:longFormat withseparator:separator calendar:calendar];
                 OBASSERT(date != nil);
             } else {
+                if (stringWithDotSpace)
+                    dateString = stringWithDotSpace;
+                
                 date = [self _parseDateNaturalLanguage:dateString withDate:startingDate timeSpecific:&timeSpecific useEndOfDuration:useEndOfDuration calendar:calendar error:error];
                 if (date == nil) {
                     if (outDate != NULL)
@@ -913,7 +919,7 @@ static NSString *PMSymbolForCalendar(NSCalendar *calendar)
 	separator = @":";
 
     NSArray *timeComponents = [[timeString stringByCollapsingWhitespaceAndRemovingSurroundingWhitespace] componentsSeparatedByString:separator];
-    DEBUG_DATE( @"TimeToken: %@, isPM: %d", timeToken, isPM);
+    DEBUG_DATE( @"meridianString: %@, isPM: %d", meridianString, isPM);
     DEBUG_DATE(@"time comps: %@", timeComponents);
     
     int hours = -1;
@@ -1233,6 +1239,49 @@ static NSString *PMSymbolForCalendar(NSCalendar *calendar)
     return returnValue;
 }
 
+- (BOOL)_nextTokenIsExactMatch:(NSScanner *)scanner string:(NSString *)string
+{
+    // It's an exact match if 1) can scan the string and 2) the scanner is at the end, or the string is followed by a digit or whitespace.
+    // Preserves scanner.scanLocation before returning.
+
+    if (scanner.isAtEnd) {
+        return NO;
+    }
+
+    NSInteger savedScanLocation = scanner.scanLocation;
+    BOOL foundExactMatch = NO;
+
+    if ([scanner scanString:string intoString:nil]) {
+
+        if (scanner.isAtEnd) {
+            foundExactMatch = YES;
+        } else {
+            if ([scanner scanInteger:NULL] || [scanner scanCharactersFromSet:[NSCharacterSet whitespaceCharacterSet] intoString:nil]) {
+                foundExactMatch = YES;
+            }
+        }
+    }
+
+    scanner.scanLocation = savedScanLocation;
+    return foundExactMatch;
+}
+
+- (BOOL)_nextTokenHasExactMatch:(NSScanner *)scanner strings:(NSArray *)strings
+{
+    for (NSString *oneString in strings) {
+        if ([self _nextTokenIsExactMatch:scanner string:oneString]) {
+            return YES;
+        }
+    }
+
+    return NO;
+}
+
+- (BOOL)_nextTokenIsCode:(NSScanner *)scanner
+{
+    return [self _nextTokenHasExactMatch:scanner strings:_codes.allKeys];
+}
+
 - (NSDate *)_parseDateNaturalLanguage:(NSString *)dateString withDate:(NSDate *)date timeSpecific:(BOOL *)timeSpecific useEndOfDuration:(BOOL)useEndOfDuration calendar:(NSCalendar *)calendar relativeDateNames:(NSDictionary *)relativeDateNames error:(NSError **)outError;
 {
     DEBUG_DATE(@"Parse Natural Language Date String (before normalization): \"%@\"", dateString );
@@ -1414,66 +1463,6 @@ static NSString *PMSymbolForCalendar(NSCalendar *calendar)
 	    [scanner scanCharactersFromSet:[NSCharacterSet whitespaceCharacterSet] intoString:NULL];
 	}
 	
-	if (number != -1) {
-	    needToProcessNumber = NO;
-
-            NSArray *keys = [_codes allKeys];
-            NSDictionary *codesTable = _codes;
-            NSArray *sortedKeyArray = [keys sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
-            NSEnumerator *codeEnum = [[sortedKeyArray reversedArray] objectEnumerator];
-            NSString *codeString = nil;
-            BOOL foundCode = NO;
-            while ((codeString = [codeEnum nextObject]) && !foundCode && (![scanner isAtEnd])) {
-                if ([scanner scanString:codeString intoString:NULL]) {
-                    dpCode = [[codesTable objectForKey:codeString] intValue];
-                    if (number != 0) // if we aren't going to add anything don't call
-                        [self _addToComponents:componentsToAdd codeString:dpCode codeInt:number withMultiplier:multiplier];
-                    DEBUG_DATE( @"codeString:%@, number:%d, mult:%d", codeString, number, multiplier );
-                    daySpecific = YES;
-                    isYear = NO; // '97d gets you 97 days
-                    foundCode = YES;
-                    scanned = YES;
-                    modifierForNumber = NO;
-                    number = -1;
-                }
-            }
-
-	    if (isYear) {
-		year = number;
-		number = -1;
-	    } else if (!foundCode) {
-		if (modifierForNumber) {
-		    // we had a modifier with no code attached, assume day
-		    if (day == -1) {
-			if (number < 31 )
-			    day = number;
-			else
-			    year = number;
-		    } else {
-			year = number;
-		    }
-		    modifierForNumber = NO;
-		    daySpecific = YES;
-		    DEBUG_DATE(@"free number, marking added to day as true");
-		} else if (number > 31 || day != -1) {
-		    year = number;
-		    if (year > 90 && year < 100)
-			year += 1900;
-		    else if (year < 90)
-			year +=2000;
-		} else {
-		    day = number;
-		    daySpecific = YES;
-		}
-		number = -1;  
-	    } else if (isTickYear) {
-		if (year > 90)
-		    year += 1900;
-		else 
-		    year +=2000;
-	    }
-	}
-
         // scan weekday names
         if (weekday == -1) {
             for (NSString *name in _weekdays) {
@@ -1488,8 +1477,8 @@ static NSString *PMSymbolForCalendar(NSCalendar *calendar)
         }
         [scanner scanCharactersFromSet:[NSCharacterSet whitespaceCharacterSet] intoString:NULL];
 
-	// scan short weekdays after codes to allow for months to be read instead of mon
-	if (weekday == -1) {
+        // Don't allow "month" to get matched by "mon"
+	if (weekday == -1 && ![self _nextTokenIsCode:scanner]) {
             for (NSString *name in _shortdays) {
 		NSString *match;
 		if ([scanner scanString:name intoString:&match]) {
@@ -1501,9 +1490,9 @@ static NSString *PMSymbolForCalendar(NSCalendar *calendar)
 	    }
 	}
 	[scanner scanCharactersFromSet:[NSCharacterSet whitespaceCharacterSet] intoString:NULL];
-        
+
         // scan the alternate short weekdays (stripped of punctuation)
-	if (weekday == -1) {
+	if (weekday == -1 && ![self _nextTokenIsCode:scanner]) {
             for (NSString *name in _alternateShortdays) {
 		NSString *match;
 		if ([scanner scanString:name intoString:&match]) {
@@ -1541,8 +1530,8 @@ static NSString *PMSymbolForCalendar(NSCalendar *calendar)
             }
         }
         [scanner scanCharactersFromSet:[NSCharacterSet whitespaceCharacterSet] intoString:NULL];
-	// scan english short weekdays after codes to allow for months to be read instead of mon
-	if (weekday == -1) {
+
+        if (weekday == -1 && ![self _nextTokenIsCode:scanner]) {
 	    NSEnumerator *shortdaysEnum = [englishShortdays objectEnumerator];
 	    NSString *name;
 	    while ((name = [shortdaysEnum nextObject])) {
@@ -1555,6 +1544,69 @@ static NSString *PMSymbolForCalendar(NSCalendar *calendar)
 		}
 	    }
 	}
+        
+        // Do this after looking for short/normal day/month names so that '29 dec. 2012' isn't interpreted as '29 d' followed by some junk. Could also adjust the code parsing to not match if there are following alphabetic characters ("2d4h" should work, but "2dec" should prefer "december").
+        if (number != -1) {
+            needToProcessNumber = NO;
+            
+            NSArray *keys = [_codes allKeys];
+            NSDictionary *codesTable = _codes;
+            NSArray *sortedKeyArray = [keys sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
+            NSEnumerator *codeEnum = [[sortedKeyArray reversedArray] objectEnumerator];
+            NSString *codeString = nil;
+            BOOL foundCode = NO;
+            while ((codeString = [codeEnum nextObject]) && !foundCode && (![scanner isAtEnd])) {
+                if ([scanner scanString:codeString intoString:NULL]) {
+                    dpCode = [[codesTable objectForKey:codeString] intValue];
+                    if (number != 0) // if we aren't going to add anything don't call
+                        [self _addToComponents:componentsToAdd codeString:dpCode codeInt:number withMultiplier:multiplier];
+                    DEBUG_DATE( @"codeString:%@, number:%d, mult:%d", codeString, number, multiplier );
+                    daySpecific = YES;
+                    isYear = NO; // '97d gets you 97 days
+                    foundCode = YES;
+                    scanned = YES;
+                    modifierForNumber = NO;
+                    number = -1;
+                }
+            }
+            
+            if (isYear) {
+                year = number;
+                number = -1;
+            } else if (!foundCode) {
+                if (modifierForNumber) {
+                    // we had a modifier with no code attached, assume day
+                    if (day == -1) {
+                        if (number < 31 )
+                            day = number;
+                        else
+                            year = number;
+                    } else {
+                        year = number;
+                    }
+                    modifierForNumber = NO;
+                    daySpecific = YES;
+                    DEBUG_DATE(@"free number, marking added to day as true");
+                } else if (number > 31 || day != -1) {
+                    year = number;
+                    if (year > 90 && year < 100)
+                        year += 1900;
+                    else if (year < 90)
+                        year +=2000;
+                } else {
+                    day = number;
+                    daySpecific = YES;
+                }
+                number = -1;  
+            } else if (isTickYear) {
+                if (year > 90)
+                    year += 1900;
+                else 
+                    year +=2000;
+            }
+        }
+        
+        
 	[scanner scanCharactersFromSet:[NSCharacterSet whitespaceCharacterSet] intoString:NULL];
 	
 	if (weekday != -1) {

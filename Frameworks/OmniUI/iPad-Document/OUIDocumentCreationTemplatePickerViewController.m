@@ -12,12 +12,12 @@
 #import <OmniFoundation/OFEnumNameTable.h>
 #import <OmniFoundation/OFPreference.h>
 #import <OmniUI/OUIAppController.h>
+#import <OmniUI/OUIEmptyOverlayView.h>
 #import <OmniUIDocument/OUIDocumentPickerDelegate.h>
 #import <OmniUIDocument/OUIDocumentPicker.h>
 #import <OmniUIDocument/OUIDocumentPickerItemView.h>
 #import <OmniUIDocument/OUIDocumentPickerFileItemView.h>
 #import <OmniUIDocument/OUIDocumentPickerFilter.h>
-#import <OmniUI/OUIEmptyOverlayView.h>
 
 RCS_ID("$Id$");
 
@@ -140,7 +140,20 @@ RCS_ID("$Id$");
 
 - (void)ensureSelectedFilterMatchesFileItem:(ODSFileItem *)fileItem;
 {
-    // nothing to do here.
+    if (self.navigationController.viewControllers.count > 1) {
+        [self.navigationController popViewControllerAnimated:NO];
+        OUIDocumentPickerViewController *scopeViewController = OB_CHECKED_CAST(OUIDocumentPickerViewController, self.navigationController.topViewController);
+        [scopeViewController ensureSelectedFilterMatchesFileItem:fileItem];
+    }
+}
+
+- (BOOL)canPerformAction:(SEL)action withSender:(id)sender;
+{
+    if (action == @selector(newDocument:)) {
+        return NO;
+    }
+
+    return [super canPerformAction:action withSender:sender];
 }
 
 #pragma mark -
@@ -153,17 +166,23 @@ RCS_ID("$Id$");
         OBASSERT([fileItem isKindOfClass:[ODSFileItem class]]);
 
         if (fileItem.isDownloaded == NO) {
-            NSError *error = nil;
+            __autoreleasing NSError *error = nil;
             if (![fileItem requestDownload:&error]) {
-                OUI_PRESENT_ERROR(error);
+                OUI_PRESENT_ERROR_FROM(error, self);
             }
             return;
         }
 
         [self _beginIgnoringDocumentsDirectoryUpdates]; // prevent the possibility of the newly created document showing up in the template chooser.  This will only happen if you are creating a new template.
-        [self newDocumentWithTemplateFileItem:fileItem documentType:self.type];
-        // do not call _endIgnoringDocumentsDirectoryUpdates.  Otherwise we will get updates before we animate away opening the document.  We will not be returning to this view controller so this should not be an issue.
+        [self newDocumentWithTemplateFileItem:fileItem documentType:self.type completion:^{
+            [self _endIgnoringDocumentsDirectoryUpdates];
+        }];
     }
+}
+
+- (BOOL)documentPickerScrollViewShouldMultiselect:(OUIDocumentPickerScrollView *)scrollView
+{
+    return NO;
 }
 
 @end

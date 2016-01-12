@@ -1,4 +1,4 @@
-// Copyright 1997-2014 Omni Development, Inc. All rights reserved.
+// Copyright 1997-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -181,6 +181,11 @@ static NSComparisonResult compareWithSelector(id obj1, id obj2, void *context)
     }];
 }
 
+- (BOOL)isSortedUsingComparator:(NSComparator)comparator;
+{
+    return OFCFArrayIsSortedAscendingUsingComparator((CFArrayRef)self, comparator);
+}
+
 - (BOOL)isSortedUsingFunction:(NSComparisonResult (*)(id, id, void *))comparator context:(void *)context;
 {
     return OFCFArrayIsSortedAscendingUsingFunction((CFArrayRef)self, (CFComparatorFunction)comparator, context);
@@ -230,6 +235,16 @@ static NSComparisonResult compareWithSelector(id obj1, id obj2, void *context)
     return result;
 }
 
+- (NSArray *)arrayByInsertingObjectsFromArray:(NSArray *)objects atIndex:(NSUInteger)index;
+{
+    if ([objects count] == 0)
+        return [[self copy] autorelease];
+    
+    NSMutableArray *result = [[self mutableCopy] autorelease];
+    [result replaceObjectsInRange:NSMakeRange(index, 0) withObjectsFromArray:objects];
+    return result;
+}
+
 - (NSArray *)arrayByRemovingObject:(id)anObject;
 {    
     if (![self containsObject:anObject])
@@ -250,6 +265,13 @@ static NSComparisonResult compareWithSelector(id obj1, id obj2, void *context)
     [filteredArray removeObjectIdenticalTo:anObject];
 
     return [NSArray arrayWithArray:filteredArray];
+}
+
+- (NSArray *)arrayByRemovingObjectAtIndex:(NSUInteger)index;
+{
+    NSMutableArray *updated = [[self mutableCopy] autorelease];
+    [updated removeObjectAtIndex:index];
+    return updated;
 }
 
 - (NSArray *)arrayByReplacingObjectAtIndex:(NSUInteger)index withObject:(id)anObject;
@@ -356,6 +378,25 @@ static NSComparisonResult compareWithSelector(id obj1, id obj2, void *context)
             [result addObject:selectorResult];
     }
         
+    return result;
+}
+
+- (NSArray *)flattenedArrayByPerformingBlock:(OFObjectToObjectBlock)blk;
+{
+    NSMutableArray *result = [[NSMutableArray new] autorelease];
+    for (id singleObject in self) {
+        id selectorResult = blk(singleObject);
+        if (selectorResult == nil) {
+            continue;
+        }
+        
+        if ([selectorResult isKindOfClass:[NSArray class]]) {
+            [result addObjectsFromArray:selectorResult];
+        } else {
+            [result addObject:selectorResult];
+        }
+    }
+    
     return result;
 }
 

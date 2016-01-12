@@ -67,7 +67,7 @@
 "Help and Settings" = "Aiuto e impostazioni";
 
 /* Purchasing is disabled details */
-"In-App Purchasing is unavailable or not allowed on this device. To enable purchasing, check Restrictions in the Settings app." = "L'acquisto dall'app non è disponibile o non è consentito su questo dispositivo. Per abilitare l'acquisto, verifica le restrizioni nelle Impostazioni.";
+"In-App Purchasing is unavailable or not allowed on this device. To enable purchasing, check Restrictions in the Settings app." = "L'acquisto dall'app non è disponibile o non è consentito su questo dispositivo. Per abilitare l'acquisto, verifica le restrizioni nelle impostazioni di iOS.";
 
 /* increment button accessibility label */
 "Increment" = "Aumenta";

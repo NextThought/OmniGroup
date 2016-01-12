@@ -12,6 +12,7 @@
 #import <OmniFoundation/OFSaveType.h>
 #import <OmniUIDocument/OUIDocumentPreview.h> // OUIDocumentPreviewArea
 
+@class UIResponder, UIView, UIViewController;
 @class ODSFileItem, OUIDocumentViewController, OUIDocumentPreview;
 
 @protocol OUIDocumentViewController;
@@ -80,6 +81,15 @@
 - (void)didUndo;
 - (void)didRedo;
 - (UIView *)viewToMakeFirstResponderWhenInspectorCloses;
+
+// Subclass points for displaying a last updated message.
+@property (nonatomic, readonly, copy) NSString *lastQueuedUpdateMessage;
+/// Subclasses are responsible for overriding this method and handling the acutal displaying of the UI. Use -lastQueuedUpdateMessage in your UI, which is setup for you by OUIDocument.
+- (void)displayLastQueuedUpdateMessage NS_REQUIRES_SUPER;
+/// Subclasses are responsible for overriding this method and dismissing the UI they displayed via -displayLastQueuedUpdateMessage.
+- (void)dismissUpdateMessage NS_REQUIRES_SUPER;
+/// Subclasses can override to decide if the update message should be displayed.
+- (BOOL)shouldShowUpdateMessage;
 
 - (NSString *)alertTitleForIncomingEdit;
 

@@ -1,4 +1,4 @@
-// Copyright 2010-2013 The Omni Group. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -9,7 +9,7 @@
 
 #import <OmniUI/OUIInspectorWell.h>
 #import <OmniUI/OUIDrawing.h>
-#import <OmniQuartz/OQColor.h>
+#import <OmniAppKit/OAColor.h>
 #import <OmniQuartz/OQDrawing.h>
 
 #import "OUIParameters.h"
@@ -19,16 +19,16 @@ RCS_ID("$Id$");
 @interface OUIColorComponentSliderKnobLayer : CALayer
 {
 @private
-    OQColor *_color;
+    OAColor *_color;
 }
-@property(strong,nonatomic) OQColor *color;
+@property(strong,nonatomic) OAColor *color;
 @end
 
 @implementation OUIColorComponentSliderKnobLayer
 
 static UIImage *_handleImage(void)
 {
-    UIImage *image = [UIImage imageNamed:@"OUIColorComponentSliderKnob.png"];
+    UIImage *image = [UIImage imageNamed:@"OUIColorComponentSliderKnob.png" inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil];
     OBASSERT(image);
     return image;
 }
@@ -44,7 +44,7 @@ static const CGFloat kKnobBorderThickness = 6;
     KnobSize = [_handleImage() size];
 }
 
-- (void)setColor:(OQColor *)color;
+- (void)setColor:(OAColor *)color;
 {
     _color = color;
     [self setNeedsDisplay];
@@ -91,7 +91,7 @@ static const CGFloat kKnobBorderThickness = 6;
     BOOL _needsShading;
     
     CGFloat _value; // Our component's value
-    OQColor *_color; // The full calculated color
+    OAColor *_color; // The full calculated color
     
     NSTextAlignment _lastLabelAlignment;
     CGFloat _leftLuma;
@@ -180,7 +180,7 @@ static id _commonInit(OUIColorComponentSlider *self)
 }
 
 // We want the knob interior to show the calculated color
-- (void)setColor:(OQColor *)color;
+- (void)setColor:(OAColor *)color;
 {
     if (OFISEQUAL(_color, color))
         return;

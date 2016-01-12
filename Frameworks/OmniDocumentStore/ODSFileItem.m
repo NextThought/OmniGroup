@@ -95,8 +95,8 @@ NSString * const ODSFileItemInfoKey = @"fileItem";
     // OBPRECONDITION(fileEdit); // This is nil for files that haven't been downloaded (since we don't publish stub files any more).
     OBPRECONDITION(userModificationDate);
     OBPRECONDITION(scope.documentStore);
-    OBPRECONDITION([scope isFileInContainer:fileURL]);
-    OBPRECONDITION(isDirectory == [[fileURL absoluteString] hasSuffix:@"/"]); // We can't compute isDirectory here based on the filesystem state since the file URL might not currently exist (if it represents a non-downloaded file in a cloud scope).
+    OBPRECONDITION([scope isFileInContainer:fileURL] || scope.documentsURL == nil);
+    // OBPRECONDITION(isDirectory == [[fileURL absoluteString] hasSuffix:@"/"]); // We can't compute isDirectory here based on the filesystem state since the file URL might not currently exist (if it represents a non-downloaded file in a cloud scope). However, it's not clear that we can rely on always having a / suffix in our URLs either, since the URL might be a security scoped resource that we need to preserve in its original form.
     
     if (!fileURL) {
         OBASSERT_NOT_REACHED("Bad caller");
@@ -197,6 +197,11 @@ NSString * const ODSFileItemInfoKey = @"fileItem";
     OBPRECONDITION([NSThread isMainThread]);
     
     return [[self.fileURL path] lastPathComponent];
+}
+
+- (NSData *)dataForWritingToExternalStorage
+{
+    return nil;
 }
 
 - (NSString *)editingName;
@@ -384,8 +389,9 @@ NSString * const ODSFileItemInfoKey = @"fileItem";
 - (NSString *)shortDescription;
 {
     ODSScope *scope = self.scope;
-
-    NSString *relativePath = OFFileURLRelativePath(scope.documentsURL, self.fileURL);
+    NSURL *documentsURL = scope.documentsURL;
+    NSURL *fileURL = self.fileURL;
+    NSString *relativePath = documentsURL != nil ? OFFileURLRelativePath(documentsURL, fileURL) : fileURL.path;
     return [NSString stringWithFormat:@"<%@:%p %@:'%@' date:%@>", NSStringFromClass([self class]), self, scope.identifier, relativePath, [self.userModificationDate xmlString]];
 }
 

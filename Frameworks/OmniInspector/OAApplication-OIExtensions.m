@@ -1,19 +1,19 @@
-// Copyright 2005-2006, 2012, 2014 Omni Development, Inc. All rights reserved.
+// Copyright 2005-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
 // distributed with this project and can also be found at
 // <http://www.omnigroup.com/developer/sourcecode/sourcelicense/>.
 
-#import "OAApplication-OIExtensions.h"
+#import <OmniInspector/OAApplication-OIExtensions.h>
 
 #import <Cocoa/Cocoa.h>
 #import <OmniBase/OmniBase.h>
 #import <OmniFoundation/OmniFoundation.h>
+#import <OmniInspector/OIInspectorGroup.h>
+#import <OmniInspector/OIInspectorRegistry.h>
 
 #import "OIColorInspector.h"
-#import "OIInspectorGroup.h"
-#import "OIInspectorRegistry.h"
 
 RCS_ID("$Id$")
 
@@ -23,6 +23,11 @@ RCS_ID("$Id$")
 {
     // [OIInspectorRegistry toggleAllInspectors] seems inviting, but it makes _all_ inspectors visible, or hides them all if they were already all visible. We, instead, want to toggle between the user's chosen visible set and hiding them all.
     [[OIInspectorRegistry inspectorRegistryForMainWindow] tabShowHidePanels];
+}
+
+- (void)revealEmbeddedInspectorFromMenuItem:(id)sender;
+{
+    [[OIInspectorRegistry inspectorRegistryForMainWindow] revealEmbeddedInspectorFromMenuItem:sender];
 }
 
 - (IBAction)toggleFrontColorPanel:(id)sender;
@@ -47,14 +52,18 @@ RCS_ID("$Id$")
             hideString = NSLocalizedStringFromTableInBundle(@"Hide Inspectors", @"OmniInspector", [OIInspectorRegistry bundle], "menu title");
         }
 	
-        if ([[[OIInspectorRegistry inspectorRegistryForMainWindow] visibleGroups] count] > 0) {
+        if ([[OIInspectorRegistry inspectorRegistryForMainWindow] hasVisibleInspector]) {
             [item setTitle:hideString];
         } else {
             [item setTitle:showString];
         }
         return YES;
     }
-    
+
+    if (action == @selector(revealEmbeddedInspectorFromMenuItem:)) {
+        return [[OIInspectorRegistry inspectorRegistryForMainWindow] validateMenuItem:item];
+    }
+
     return [super validateMenuItem:item];
 }
 

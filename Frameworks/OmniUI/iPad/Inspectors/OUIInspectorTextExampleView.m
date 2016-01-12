@@ -1,4 +1,4 @@
-// Copyright 2010-2013 The Omni Group. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -11,7 +11,7 @@
 #import <OmniUI/OUIDrawing.h>
 #import <OmniUI/OUIGradientView.h>
 #import <OmniQuartz/OQDrawing.h>
-#import <OmniQuartz/OQColor.h>
+#import <OmniAppKit/OAColor.h>
 
 RCS_ID("$Id$");
 
@@ -43,7 +43,7 @@ static id _commonInit(OUIInspectorTextExampleView *self)
     return _commonInit(self);
 }
 
-- (void)setStyleBackgroundColor:(OQColor *)color;
+- (void)setStyleBackgroundColor:(OAColor *)color;
 {
     if (OFISEQUAL(_styleBackgroundColor, color))
         return;
@@ -92,7 +92,7 @@ static id _commonInit(OUIInspectorTextExampleView *self)
         UIRectFill(rect);
     } else {
         if (backgroundAlpha < 1.0) {
-            OUIDrawPatternBackground(ctx, @"OUITransparencyCheckerboardBackground-24", bounds, CGSizeZero);
+            OUIDrawPatternBackground(ctx, [UIImage imageNamed:@"OUITransparencyCheckerboardBackground-24" inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil], bounds, CGSizeZero);
         }
         
         [[_styleBackgroundColor toColor] set];

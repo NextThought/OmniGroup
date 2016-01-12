@@ -7,9 +7,10 @@
 
 #import <OmniUIDocument/OUIDocumentPickerHomeScreenViewController.h>
 
-#import <OmniDocumentStore/ODSStore.h>
-#import <OmniDocumentStore/ODSScope.h>
+#import <OmniDocumentStore/ODSExternalScope.h>
 #import <OmniDocumentStore/ODSFilter.h>
+#import <OmniDocumentStore/ODSScope.h>
+#import <OmniDocumentStore/ODSStore.h>
 #import <OmniFoundation/OFBinding.h>
 #import <OmniFoundation/OFEnumNameTable.h>
 #import <OmniFoundation/OFPreference.h>
@@ -167,7 +168,6 @@ static void *ScopeOrderingObservationContext = &ScopeOrderingObservationContext;
 {
     [super viewDidAppear:animated];
     [[OUIDocumentPickerViewController scopePreference] setStringValue:@""];
-    [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleDefault animated:NO];
     [self _updateEditButton];
 }
 
@@ -204,6 +204,24 @@ static void *ScopeOrderingObservationContext = &ScopeOrderingObservationContext;
     [tableView reloadRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationFade];
     
     [self.documentPicker enableAppMenuBarButtonItem:!editing];
+}
+
+- (void)willTransitionToTraitCollection:(UITraitCollection *)newCollection withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator;
+{
+    [super willTransitionToTraitCollection:newCollection withTransitionCoordinator:coordinator];
+    
+    // Dismiss any presented view controller if presented as a popover
+    if (self.presentedViewController.popoverPresentationController != nil) {
+        [self.presentedViewController dismissViewControllerAnimated:YES completion:^{
+            [self setEditing:NO animated:YES];
+        }];
+    }
+
+}
+
+- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id <UIViewControllerTransitionCoordinator>)coordinator NS_AVAILABLE_IOS(8_0);
+{
+    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
 }
 
 #pragma mark - API
@@ -444,12 +462,13 @@ static BOOL _canEditScope(ODSScope <ODSConcreteScope> *scope)
 {
     OBASSERT_NOTNULL(cell);
     
-    static UIImage *localImage, *cloudImage, *trashImage;
+    static UIImage *localImage, *cloudImage, *externalImage, *trashImage;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        cloudImage = [[UIImage imageNamed:@"OUIDocumentPickerCloudLocationIcon.png" inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-        localImage = [[UIImage imageNamed:@"OUIDocumentPickerLocalDocumentsLocationIcon.png" inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-        trashImage = [[UIImage imageNamed:@"OUIDocumentPickerTrashLocationIcon.png" inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        cloudImage = [[UIImage imageNamed:@"OUIDocumentPickerCloudLocationIcon" inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        externalImage = [[UIImage imageNamed:@"OUIDocumentPickerExternalLocationIcon" inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        localImage = [[UIImage imageNamed:@"OUIDocumentPickerLocalDocumentsLocationIcon" inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        trashImage = [[UIImage imageNamed:@"OUIDocumentPickerTrashLocationIcon" inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
     });
     
     cell.textLabel.text = scope.displayName;
@@ -478,6 +497,11 @@ static BOOL _canEditScope(ODSScope <ODSConcreteScope> *scope)
         cell.editingAccessoryType = UITableViewCellAccessoryDisclosureIndicator;
         cell.textLabel.textColor = nil;
         cell.detailTextLabel.textColor = nil;
+    } else if ([scope isKindOfClass:[ODSExternalScope class]]) {
+        cell.imageView.image = externalImage;
+        cell.editingAccessoryType = UITableViewCellAccessoryNone;
+        cell.textLabel.textColor = self.isEditing ? [UIColor lightGrayColor] : nil;
+        cell.detailTextLabel.textColor = self.isEditing ? [UIColor lightGrayColor] : nil;
     } else {
         cell.imageView.image = scope.isTrash ? trashImage : localImage;
         cell.editingAccessoryType = UITableViewCellAccessoryNone;
@@ -507,7 +531,7 @@ static BOOL _canEditScope(ODSScope <ODSConcreteScope> *scope)
         _ButtonishTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:AddCloudAccountReuseIdentifier];
         if (!cell)
             cell = [[_ButtonishTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:AddCloudAccountReuseIdentifier];
-        cell.textLabel.text = NSLocalizedStringFromTableInBundle(@"Add Cloud Account", @"OmniUIDocument", OMNI_BUNDLE, @"home screen button label");
+        cell.textLabel.text = NSLocalizedStringFromTableInBundle(@"Add OmniPresence Account", @"OmniUIDocument", OMNI_BUNDLE, @"home screen button label");
         cell.textLabel.textColor = [self.view tintColor];
         return cell;
     }
@@ -571,7 +595,7 @@ static BOOL _canEditScope(ODSScope <ODSConcreteScope> *scope)
         OBPRECONDITION(indexPath.section == EditModeSection);
         OBPRECONDITION(indexPath.row == AddCloudAccountRow);
         
-        if ([[OUIAppController controller] showFeatureDisabledForRetailDemoAlert]) {
+        if ([[OUIAppController controller] showFeatureDisabledForRetailDemoAlertFromViewController:self]) {
             // Early out if we are currently in retail demo mode.
             return;
         }

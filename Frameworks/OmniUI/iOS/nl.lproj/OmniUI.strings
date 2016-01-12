@@ -131,7 +131,7 @@
 /* App menu item title
    release notes html screen title */
 
-"Release Notes" = "Release-opmerkingen";
+"Release Notes" = "Versiegegevens";
 
 /* No purchases found title */
 "Restore Complete" = "Herstel is voltooid";

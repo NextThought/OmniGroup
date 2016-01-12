@@ -10,7 +10,8 @@
 #import <OmniFileExchange/OFXServerAccountType.h>
 #import <OmniUIDocument/OUIDocumentAppController.h>
 #import <OmniFileExchange/OFXServerAccountRegistry.h>
-#import <OmniUI/OUIAppearance.h>
+#import <OmniAppKit/OAAppearance.h>
+#import <OmniAppKit/OAAppearanceColors.h>
 
 #import "OUIServerAccountSetupViewController.h"
 #import "OUIDocumentAppController-Internal.h"
@@ -100,7 +101,7 @@ RCS_ID("$Id$");
         cell.textLabel.text = accountType.addAccountTitle;
         cell.detailTextLabel.font = [UIFont systemFontOfSize:13.0];
         cell.detailTextLabel.text = accountType.addAccountDescription;
-        cell.detailTextLabel.textColor = [UIColor omniNeutralDeemphasizedColor];
+        cell.detailTextLabel.textColor = [OAAppearanceDefaultColors appearance].omniNeutralDeemphasizedColor;
     }
     
     return cell;
@@ -110,7 +111,7 @@ RCS_ID("$Id$");
 
 - (NSIndexPath *)tableView:(UITableView *)tableView willSelectRowAtIndexPath:(NSIndexPath *)indexPath;
 {
-    if ([[OUIAppController controller] showFeatureDisabledForRetailDemoAlert])
+    if ([[OUIAppController controller] showFeatureDisabledForRetailDemoAlertFromViewController:self])
         return nil;
 
     return indexPath;

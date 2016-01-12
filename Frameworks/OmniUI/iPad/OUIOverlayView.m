@@ -9,6 +9,7 @@
 
 #import <OmniUI/OUITextLayout.h>
 #import <Foundation/NSAttributedString.h>
+#import <OmniFoundation/OmniFoundation.h>
 
 RCS_ID("$Id$");
 
@@ -27,7 +28,7 @@ RCS_ID("$Id$");
 {
     static UIImage *_backgroundImage = nil;
     if (!_backgroundImage) {
-        UIImage *image = [UIImage imageNamed:@"OUIOverlayBackground.png"];
+        UIImage *image = [UIImage imageNamed:@"OUIOverlayBackground.png" inBundle:OMNI_BUNDLE compatibleWithTraitCollection:nil];
         _backgroundImage = [image stretchableImageWithLeftCapWidth:7 topCapHeight:7];
     }
     return _backgroundImage;
@@ -270,7 +271,7 @@ RCS_ID("$Id$");
     
     // setting defaults on nsattributedstring
     NSMutableAttributedString *mutableText = [aString mutableCopy];
-    [mutableText addAttribute:NSFontAttributeName value:[UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline] range:NSMakeRange(0, [mutableText length])];
+    [mutableText addAttribute:NSFontAttributeName value:[UIFont monospacedDigitSystemFontOfSize:17 weight:UIFontWeightRegular] range:NSMakeRange(0, [mutableText length])];
     self.attributedText = mutableText;
 }
 

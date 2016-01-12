@@ -4,8 +4,14 @@
 /* error description */
 "%@ cannot open this type of file." = "%@ kan dit type bestand niet openen.";
 
+/* Location label format for external documents */
+"%@ Documents" = "%@ documenten";
+
 /* gigabytes */
 "%@ GB" = "%@ GB";
+
+/* doc picker multiple items accessibility value */
+"%@ items" = "%@ onderdelen";
 
 /* kilobytes */
 "%@ KB" = "%@ KB";
@@ -28,6 +34,9 @@
 /* Main toolbar title for a single selected document. */
 "1 Document Selected" = "1 document geselecteerd";
 
+/* doc picker single item accessibility value */
+"1 item" = "1 onderdeel";
+
 /* Main toolbar title for a single selected folder. */
 "1 Item Selected" = "1 onderdeel geselecteerd";
 
@@ -44,14 +53,14 @@
 "Account Name" = "Accountnaam";
 
 /* Menu option in the document picker view */
-"Actions" = "Acties";
+"Actions" = "Taken";
 
 /* Cloud Setup button title to add a new account */
 
 "Add an Account" = "Voeg een account toe";
 
-/* Cloud setup modal sheet title */
-"Add Cloud Account" = "Voeg een Cloud-account toe";
+/* home screen button label */
+"Add OmniPresence Account" = "OmniPresence-account toevoegen";
 
 /* button title
    cancel button title
@@ -81,6 +90,12 @@
 /* export options title */
 "Choose Format" = "Kies een opmaak";
 
+/* doc picker custom accessibility action name */
+"Clear name field" = "Wis naamveld";
+
+/* title view clear button accessibility label. */
+"Clear Title" = "Wis titel";
+
 /* Success label when connecting to an OmniPresence or WebDAV server account */
 "Connected" = "Aangesloten";
 
@@ -89,6 +104,12 @@
 
 /* Menu option in the document picker view */
 "Copy as Image" = "Kopieer als afbeelding";
+
+/* gear menu item */
+"Copy from WebDAV" = "Kopieer van WebDAV";
+
+/* gear menu item */
+"Copy from…" = "Kopieer van …";
 
 /* moved aside custom sample document name */
 "CustomizedSampleDocumentName" = "%@ aangepast";
@@ -138,6 +159,12 @@
 /* When displaying a sync error, this is the option to change the username and password. */
 "Edit Credentials" = "Wijzig gegevens";
 
+/* doc picker custom accessibility action name */
+"Edit name" = "Wijzig naam";
+
+/* title view edit button item accessibility hint. */
+"Edits the document's title." = "Bewerkt de titel van het document.";
+
 /* empty trash button title */
 "Empty Trash" = "Leeg prullenmand";
 
@@ -146,10 +173,14 @@
 
 /* export button title
    export options title
-   Export toolbar item accessibility label. */
+   Export toolbar item accessibility label.
+   Menu option in the document picker view */
 
 
 "Export" = "Exporteer";
+
+/* export to description */
+"Export \"%@\" as:" = "Exporteer “%@” als:";
 
 /* export action description */
 "Export \"%@\" to %@ as:" = "Exporteer “%1$@” naar %2$@ als:";
@@ -157,28 +188,47 @@
 /* Menu option in the document picker view */
 "Export to WebDAV" = "Exporteer naar WebDAV";
 
+/* Menu option in the document picker view */
+"Export to…" = "Exporteer naar ...";
+
 /* finished */
 "Finished" = "Voltooid";
 
-/* gear menu item
-   Import WebDAV server account list */
+/* doc picker folder type accessibility value */
+"Folder" = "Map";
 
+/* Import section title */
 "Import" = "Importeer";
 
 /* Info item accessibility label */
-"Info" = "info";
+"Info" = "Info";
 
 /* error title */
 "Invalid Zip Archive" = "Ongeldig zip-archief";
 
-/* Message format for alert informing user that the document has been reloaded with cloud edits from another device */
-"Last edited on %@." = "Laatst bewerkt op %@.";
+/* doc picker title label editing accessibility value */
+"Is editing" = "Is bezig met bewerken";
+
+/* Notice for the user about the last edit to a document (unknown device) */
+"Last edit: %@" = "Laatste bewerking: %@";
+
+/* Notice for the user about the last edit to a document (another device) */
+"Last edit: %@ on another device" = "Laatste bewerking: %@ op een ander apparaat";
+
+/* Notice for the user about the last edit to a document (this device) */
+"Last edit: %@ on this device" = "Laatste bewerking: %@ op dit apparaat";
+
+/* Link External Document toolbar item accessibility label. */
+"Link External Document" = "Extern document koppelen";
 
 /* Server Account Setup label: location */
 "Location" = "Locatie";
 
 /* top level doc picker title */
 "Locations" = "Locaties";
+
+/* modified date accessibility value */
+"Modified %@" = "%@ is gewijzigd";
 
 /* Menu option in the document picker view
    Move toolbar item accessibility label. */
@@ -193,8 +243,9 @@
 
 "Move to Trash" = "Verplaats naar prullenmand";
 
-/* Share menu title */
-"Move to..." = "Verplaats naar";
+/* Action sheet button title
+   Menu popover title */
+"Move to..." = "Verplaats naar...";
 
 /* Message format for alert informing user that the document has been moved out of a folder to the top level */
 "Moved out of folder %@." = "Verplaatst uit map %@.";
@@ -223,6 +274,9 @@
 /* Import message for empty table view */
 "No accounts are configured for importing." = "Er zijn geen accounts geconfigureerd voor het importeren.";
 
+/* doc picker no items accessibility value */
+"No items" = "Geen items";
+
 /* Not downloaded accessibility label. */
 "Not downloaded" = "Niet gedownload";
 
@@ -230,7 +284,8 @@
 "Not uploaded" = "Niet geüpload";
 
 /* button title
-   When displaying a sync error, this is the option to ignore the error. */
+   Dismiss failed purchase alert
+   Dismiss failed restore alert */
 
 "OK" = "OK";
 
@@ -240,6 +295,9 @@
 /* Omni Presence config email body */
 "Open this file on another device to configure OmniPresence there." = "Open dit bestand op een ander apparaat om OmniPresence daar te configureren.";
 
+/* Generic name for location of external documents */
+"Other" = "Overige";
+
 /* Server Account Setup label: password */
 "Password" = "Wachtwoord";
 
@@ -248,6 +306,18 @@
 
 /* Menu option in the document picker view */
 "Print" = "Druk af";
+
+/* purchase now button title */
+"Purchase Now." = "Koop nu.";
+
+/* Remove from external container toolbar item accessibility label. */
+"Remove" = "Verwijder";
+
+/* remove button title */
+"Remove %ld Documents" = "Verwijder %ld documenten";
+
+/* remove button title */
+"Remove Document" = "Verwijder document";
 
 /* rename button title */
 "Rename" = "Wijzig naam";
@@ -271,16 +341,19 @@
 "Report Error" = "Meld fout";
 
 /* Restore Sample Documents Title */
-"Restore Sample Documents" = "Herstel voorbeelddocum.";
+"Restore Sample Documents" = "Herstel voorbeelddocumenten";
 
 /* Share menu title */
-"Restore to..." = "Herstel naar…";
+"Restore to..." = "Herstel naar...";
 
 /* When displaying a sync error, this is the option to retry syncing. */
 "Retry Sync" = "Probeer opnieuw te synchroniseren";
 
 /* Account setup toolbar button title to save account settings */
 "Save" = "Bewaar";
+
+/* document picker compact title view accessibility hint */
+"Scroll down to show sort and filter controls" = "Schuif omlaag om bedieningselementen voor het sorteren en filteren weer te geven";
 
 /* document picker button label */
 "Search" = "Zoek";
@@ -295,13 +368,13 @@
 "Send \"%@\" to app as:" = "Verstuur “%@” naar app als:";
 
 /* Omni Sync Server send settings button title */
-"Send Settings via Email" = "Verstuur instellingen via e-mail…";
+"Send Settings via Email" = "Verstuur instellingen via e-mail...";
 
 /* Menu option in the document picker view */
 "Send to App" = "Verstuur naar app";
 
 /* Menu option in the document picker view */
-"Send to Photos" = "Verstuur naar foto's";
+"Send to Photos" = "Verstuur naar Foto's";
 
 /* export options title
    Menu option in the document picker view */
@@ -317,6 +390,9 @@
 /* Omni Sync Server sign up button title */
 "Sign Up For a New Account" = "Meld u aan voor een nieuwe account";
 
+/* sort by accessibility label */
+"Sort by %@" = "Sorteren op %@";
+
 /* Presence toolbar item accessibility label. */
 "Sync Now" = "Synchroniseer nu";
 
@@ -325,6 +401,9 @@
 
 /* empty picker button text */
 "Tap here, or on the + in the toolbar, to add a document." = "Tik hier of op de + in de werkbalk om een document toe te voegen.";
+
+/* empty picker text for Other Documents */
+"Tap on the + in the toolbar to add a document stored on iCloud Drive or provided by another app." = "Tik op de + in de werkbalk om een document dat op iCloud Drive is opgeslagen of door een andere app is geleverd, toe te voegen.";
 
 /* file name label for template filte types */
 "Template:" = "Sjabloon:";
@@ -363,4 +442,4 @@
 "Unable to open file." = "Kan bestand niet openen.";
 
 /* Account validation status string. */
-"Validating account..." = "Bezig met valideren van de account…";
+"Validating account..." = "Bezig met valideren van de account...";

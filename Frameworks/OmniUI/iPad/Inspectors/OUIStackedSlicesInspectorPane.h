@@ -1,4 +1,4 @@
-// Copyright 2010-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -30,6 +30,8 @@
 - (NSArray *)appropriateSlices:(NSArray *)availableSlices forInspectedObjects:(NSArray *)inspectedObjects;  // Called from appropriateSlicesForInspectedObjects to allow subclasses the chance to use a subset of objects/slices
 
 // The default implementation just sets the value of the slices property.  OG will want to instead call setSlices:newSlices maintainViewHierarchy:NO.
+
+- (void)setNeedsSliceLayout;
 - (void)updateSlices;
 
 - (BOOL)inspectorPaneOfClassHasAlreadyBeenPresented:(Class)paneClass;
@@ -38,4 +40,7 @@
 // The scrollview containing the slices. This is just self.view here, but can be overridden in subclasses if there needs to be more view hierarchy.
 - (UIView *)contentView;
 
+- (void)updateContentInsetsForKeyboard;
+
+@property (nonatomic, assign) BOOL isAnimating;
 @end

@@ -515,7 +515,22 @@ static OANamedColorEntry *_addColorsFromList(OANamedColorEntry *colorEntries, NS
     if (colorList == nil)
 	return colorEntries;
 
-    NSArray *allColorKeys = [colorList allKeys];
+    // -allKeys lazily decodes the color list and can throw if the user has a corrupt color list.
+    // See <bug:///120632> where one of the problems leading up to the crashes was an exception with this message, from two different users
+    // Reason: *** -[NSKeyedUnarchiver initForReadingWithData:]: incomprehensible archive (0x31, 0x31, 0xa, 0x30, 0x20, 0x30, 0x2e, 0x30)
+
+    NSArray *allColorKeys = nil;
+    @try {
+        allColorKeys = [colorList allKeys];
+    } @catch(NSException *exc) {
+        NSLog(@"Exception raised while trying to use color list: %@", exc);
+        @try {
+            NSLog(@"Color list located at %@", [colorList valueForKey:@"fileName"]);
+        } @catch(NSException *){
+            // Ignore ...
+        }
+    }
+
     NSUInteger colorIndex, colorCount = [allColorKeys count];
     
     // Make room for the extra entries

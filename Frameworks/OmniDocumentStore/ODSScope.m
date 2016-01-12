@@ -578,13 +578,13 @@ static OFFileEdit *_performAdd(ODSScope *scope, NSURL *fromURL, NSURL *toURL, Ad
     completionHandler = [completionHandler copy]; // preserve scope
     
     // Convenience for dispatching the completion handler to the main queue.
-    void (^callCompletaionHandlerOnMainQueue)(ODSFileItem *duplicateFileItem, NSError *error) = ^(ODSFileItem *duplicateFileItem, NSError *error){
+    void (^callCompletionHandlerOnMainQueue)(ODSFileItem *duplicateFileItem, NSError *error) = ^(ODSFileItem *duplicateFileItem, NSError *error){
         OBPRECONDITION(![NSThread isMainThread]);
         [[NSOperationQueue mainQueue] addOperationWithBlock:^{
             completionHandler(duplicateFileItem, error);
         }];
     };
-    callCompletaionHandlerOnMainQueue = [callCompletaionHandlerOnMainQueue copy];
+    callCompletionHandlerOnMainQueue = [callCompletionHandlerOnMainQueue copy];
     
     // We cannot decide on the destination URL w/o synchronizing with the action queue. In particular, if you try to duplicate "A" and "A 2", both operations could pick "A 3".
     [self performAsynchronousFileAccessUsingBlock:^{
@@ -597,7 +597,7 @@ static OFFileEdit *_performAdd(ODSScope *scope, NSURL *fromURL, NSURL *toURL, Ad
             __autoreleasing NSError *urlError = nil;
             toURL = [self _urlForFolderAtURL:folderURL fileName:toFileName isDirectory:isDirectory error:&urlError];
             if (!toURL) {
-                callCompletaionHandlerOnMainQueue(nil, urlError);
+                callCompletionHandlerOnMainQueue(nil, urlError);
                 return;
             }
         }
@@ -615,7 +615,7 @@ static OFFileEdit *_performAdd(ODSScope *scope, NSURL *fromURL, NSURL *toURL, Ad
             __autoreleasing NSError *urlError = nil;
             toURL = [self _urlForFolderAtURL:folderURL fileName:toFileName isDirectory:isDirectory error:&urlError];
             if (!toURL) {
-                callCompletaionHandlerOnMainQueue(nil, urlError);
+                callCompletionHandlerOnMainQueue(nil, urlError);
                 return;
             }
         }
@@ -624,7 +624,7 @@ static OFFileEdit *_performAdd(ODSScope *scope, NSURL *fromURL, NSURL *toURL, Ad
             __autoreleasing NSError *urlError = nil;
             toURL = [self _urlForFolderAtURL:folderURL fileName:toFileName isDirectory:isDirectory error:&urlError];
             if (!toURL) {
-                callCompletaionHandlerOnMainQueue(nil, urlError);
+                callCompletionHandlerOnMainQueue(nil, urlError);
                 return;
             }
             
@@ -632,8 +632,8 @@ static OFFileEdit *_performAdd(ODSScope *scope, NSURL *fromURL, NSURL *toURL, Ad
         }
         else {
             // TODO: Perhaps we should create an error and assign it to outError?
-            OBASSERT_NOT_REACHED("ODSStoreAddOpiton not given or invalid.");
-            callCompletaionHandlerOnMainQueue(nil, nil);
+            OBASSERT_NOT_REACHED("ODSStoreAddOption not given or invalid.");
+            callCompletionHandlerOnMainQueue(nil, nil);
             return;
         }
         
@@ -720,7 +720,7 @@ static OFFileEdit *_performAdd(ODSScope *scope, NSURL *fromURL, NSURL *toURL, Ad
             if (!destinationFileURL) {
                 // Top level file (instead of something nested in a folder) that needs uniquing based on the used filenames in the destination.
                 NSString *sourceFileName = [sourceFileURL lastPathComponent];
-                NSString *baseName = nil;
+                __autoreleasing NSString *baseName = nil;
                 NSUInteger counter;
                 [[sourceFileName stringByDeletingPathExtension] splitName:&baseName andCounter:&counter];
                 
@@ -852,14 +852,13 @@ static NSURL *_destinationURLForMove(NSURL *sourceURL, NSURL *destinationDirecto
     // The document should already live in the local documents directory, a sync container documents directory or a folder there under. Keep it in whichever one it was in.
     NSURL *containingDirectoryURL = [fileItem.fileURL URLByDeletingLastPathComponent];
     OBASSERT(containingDirectoryURL);
-    OBASSERT(!ODSInInInbox(containingDirectoryURL), "scanItemsWithCompletionHandler: now ignores the 'Inbox' so we should never get into this situation.");
+    OBASSERT(!ODSIsInInbox(containingDirectoryURL), "scanItemsWithCompletionHandler: now ignores the 'Inbox' so we should never get into this situation.");
     
-    CFStringRef extension = UTTypeCopyPreferredTagWithClass((__bridge CFStringRef)fileType, kUTTagClassFilenameExtension);
+    NSString *extension = OFPreferredPathExtensionForUTI(fileType);
     if (!extension)
         OBRequestConcreteImplementation(self, _cmd); // UTI not registered in the Info.plist?
     
-    NSString *destinationFileName = [baseName stringByAppendingPathExtension:(__bridge NSString *)extension];
-    CFRelease(extension);
+    NSString *destinationFileName = [baseName stringByAppendingPathExtension:extension];
     
     NSURL *sourceURL = fileItem.fileURL;
     NSURL *destinationURL = _destinationURLForMove(sourceURL, containingDirectoryURL, destinationFileName);
@@ -1092,14 +1091,16 @@ static ODSScope *_trashScope = nil;
     assert(trashScope != nil);
 
     __block BOOL success = NO;
+    __block NSURL *resultingURL = nil;
     [trashScope _performSynchronousFileAccessUsingBlock:^{
         NSMutableSet *usedFilenames = [trashScope _copyCurrentlyUsedFileNamesInFolderAtURL:nil];
-        NSURL *newURL = [trashScope _moveURL:url avoidingFileNames:usedFilenames usingCoordinator:NO error:outError];
-        if (outResultingURL != NULL)
-            *outResultingURL = newURL;
-        success = newURL != nil;
+        resultingURL = [trashScope _moveURL:url avoidingFileNames:usedFilenames usingCoordinator:NO error:outError];
+        success = (resultingURL != nil);
     }];
 
+    if (outResultingURL != NULL && resultingURL != nil)
+        *outResultingURL = resultingURL;
+    
     return success;
 }
 
@@ -1122,9 +1123,29 @@ static ODSScope *_templateScope = nil;
     OBPRECONDITION(_templateScope == nil || [_templateScope isTemplate]); // The template scope should know it's the template scope
 }
 
+- (BOOL)canRenameDocuments;
+{
+    return YES;
+}
+
+- (BOOL)canCreateFolders;
+{
+    return !self.isTrash;
+}
+
+- (BOOL)isExternal;
+{
+    return NO;
+}
+
 - (BOOL)prepareToRelinquishItem:(ODSItem *)item error:(NSError **)outError;
 {
     return YES;
+}
+
+- (void)finishRelinquishingMovedItems:(NSSet *)movedItems;
+{
+    // For subclasses
 }
 
 - (void)_moveItems:(NSSet *)items toFolder:(ODSFolderItem *)parentFolder completionHandler:(void (^)(NSSet *movedFileItems, NSArray *errorsOrNil))completionHandler;
@@ -1187,10 +1208,14 @@ static ODSScope *_templateScope = nil;
          }
          
          [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+             [self.documentStore _fileItem:sourceItemMotion.fileItem willMoveToURL:destinationFileURL];
+             
              // Make sure our file item knows it got moved w/o waiting for file presenter notifications so that the document picker's lookups can find the right file item for animations. This means that when doing coordinated file moves, we should try to avoid getting notified by passing a file presenter to the coordinator (either the OFXAccountAgent, or the ODSLocalDirectoryScope).
-             if (movingWithinSameScope) {
-                 [self completedMoveOfFileItem:sourceItemMotion.fileItem toURL:destinationFileURL];
+             if (!movingWithinSameScope) {
+                 sourceItemMotion.fileItem.scope = self;
              }
+             
+             [self completedMoveOfFileItem:sourceItemMotion.fileItem toURL:destinationFileURL];
          }];
          return result;
      }];
@@ -1301,6 +1326,7 @@ static ODSScope *_templateScope = nil;
 {
     OBPRECONDITION([NSThread isMainThread]);
     
+    [self.documentStore _fileItem:fileItem willMoveToURL:destinationURL];
     [fileItem didMoveToURL:destinationURL];
 
     // We don't call -_updateItemTree since this gets called for moves w/in a folder. The caller is responsible for handling this if needed.
@@ -1465,14 +1491,18 @@ static ODSFolderItem *_folderItemWithRelativePath(ODSScope *self, NSString *rela
     }];
     
     NSURL *documentsURL = self.documentsURL;
-    
+
     for (ODSFileItem *fileItem in _fileItems) {
         NSURL *fileURL = fileItem.fileURL;
-        OBASSERT(OFURLContainsURL(documentsURL, fileURL));
+        NSString *folderRelativePath;
+        if (documentsURL == nil) {
+            folderRelativePath = @"";
+        } else {
+            OBASSERT(OFURLContainsURL(documentsURL, fileURL));
         
-        NSString *relativePath = OFFileURLRelativePath(documentsURL, fileURL);
-        NSString *folderRelativePath = [relativePath stringByDeletingLastPathComponent];
-        
+            NSString *relativePath = OFFileURLRelativePath(documentsURL, fileURL);
+            folderRelativePath = [relativePath stringByDeletingLastPathComponent];
+        }
         ODSFolderItem *folderItem = _folderItemWithRelativePath(self, folderRelativePath, folderItemByRelativePath, folderItemToChildItems);
         _addChildItem(folderItemByRelativePath, folderItemToChildItems, folderItem, fileItem);
     }

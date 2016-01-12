@@ -5,11 +5,16 @@
 // distributed with this project and can also be found at
 // <http://www.omnigroup.com/developer/sourcecode/sourcelicense/>.
 
+//ContentInsets
+
 #import <OmniUI/OUISegmentedViewController.h>
 
 RCS_ID("$Id$")
 
-@interface OUISegmentedViewController () <UINavigationBarDelegate, UINavigationControllerDelegate>
+@interface OUISegmentedViewController () <UINavigationBarDelegate, UINavigationControllerDelegate>{
+    BOOL _tempHidingDismissButton;
+    BOOL _shouldShowDismissButton;
+}
 
 @property (nonatomic, strong) UINavigationBar *navigationBar;
 @property (nonatomic, strong) UISegmentedControl *segmentedControl;
@@ -21,14 +26,8 @@ RCS_ID("$Id$")
 @end
 
 @implementation OUISegmentedViewController
-
-- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
-    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
-    if (self) {
-        // Custom initialization
-    }
-    return self;
+    BOOL _invalidated;
 }
 
 - (void)awakeFromNib;
@@ -40,6 +39,8 @@ RCS_ID("$Id$")
 
 - (void)viewDidLoad
 {
+    OBPRECONDITION(_invalidated == NO);
+
     [super viewDidLoad];
 	// Do any additional setup after loading the view.
     self.view.backgroundColor = [UIColor whiteColor];
@@ -56,32 +57,63 @@ RCS_ID("$Id$")
     [self.view addConstraint:[NSLayoutConstraint constraintWithItem:self.navigationBar attribute:NSLayoutAttributeTop relatedBy:NSLayoutRelationEqual toItem:self.topLayoutGuide attribute:NSLayoutAttributeBottom multiplier:1.0 constant:0.0]];
 }
 
+- (void)viewDidDisappear:(BOOL)animated;
+{
+    [super viewDidDisappear:animated];
+
+    if (_invalidated) {
+        // If we do this in -oui_invalidate, we can be in the middle of an appearance transition. This can cause <bug:///121483> (Crasher: Crash (sometimes) tapping 'Documents' to close document) by removing the selected view controller from its parent while in the middle of an appearance transition.
+        self.viewControllers = @[];
+    }
+}
+
 #pragma mark - Public API
+
+- (void)oui_invalidate;
+{
+    _invalidated = YES;
+
+    [self.navigationBar popNavigationItemAnimated:NO];
+    [self.navigationBar removeFromSuperview];
+    self.navigationBar = nil;
+
+    self.view = nil;
+}
+
+- (CGFloat)topLayoutLength;{
+    return CGRectGetMaxY(self.navigationBar.frame);
+}
+
 - (void)setViewControllers:(NSArray *)viewControllers;
 {
-    OBPRECONDITION(viewControllers && [viewControllers count] > 0);
-    
     if (_viewControllers == viewControllers) {
         return;
     }
     
     _viewControllers = [viewControllers copy];
     self.selectedViewController = [_viewControllers firstObject];
-    
-    [self _setupSegmentedControl];
+
+    if (_viewControllers)
+        [self _setupSegmentedControl];
 }
 
 - (void)setSelectedViewController:(UIViewController *)selectedViewController;
 {
-    OBPRECONDITION([_viewControllers containsObject:selectedViewController]);
-    
+    OBPRECONDITION(!selectedViewController || [_viewControllers containsObject:selectedViewController]);
+
     if (_selectedViewController == selectedViewController) {
         return;
     }
     
     // Remove currently selected view controller.
     if (_selectedViewController) {
+          // we used to try to only send appearance transitions if we were "on screen".  But that dropped some on the floor when this controller is in a splitview sidebar.  So now we send them always.  Which sometimes results in child view controllers getting doubled appearance messages.  So we deal with that.
+        BOOL performTransition = [self isViewLoaded] && !_invalidated;
+
         [_selectedViewController willMoveToParentViewController:nil];
+
+        if (performTransition)
+            [_selectedViewController beginAppearanceTransition:NO animated:NO];
         
         if ([_selectedViewController isKindOfClass:[UINavigationController class]]) {
             UINavigationController *selectedNavigationController = (UINavigationController *)_selectedViewController;
@@ -90,50 +122,62 @@ RCS_ID("$Id$")
         [_selectedViewController.view removeFromSuperview];
         
         [_selectedViewController removeFromParentViewController];
+        if (performTransition)
+            [_selectedViewController endAppearanceTransition];
+        
         _selectedViewController = nil;
     }
     
     _selectedViewController = selectedViewController;
-    _selectedViewController.view.translatesAutoresizingMaskIntoConstraints = NO;
-    
-    // Move in new view controller/view. addChildViewController: automatically calls the childs willMoveToParentViewController: passing in the new parent. We shouldn't call that directly while adding the child VC.
-//    [_selectedViewController willMoveToParentViewController:self];
-    [self addChildViewController:_selectedViewController];
 
-    [self.view addSubview:_selectedViewController.view];
-    
-    // Add constraints
-    NSDictionary *views = @{ @"navigationBar" : _navigationBar, @"childView" : _selectedViewController.view };
-    
-    [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[childView]|"
-                                                                      options:0
-                                                                      metrics:nil
-                                                                        views:views]];
+    if (_selectedViewController) {
+        _selectedViewController.view.translatesAutoresizingMaskIntoConstraints = NO;
 
-    if ([_selectedViewController isKindOfClass:[UINavigationController class]]) {
-        [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[navigationBar][childView]|"
+        // Move in new view controller/view. addChildViewController: automatically calls the childs willMoveToParentViewController: passing in the new parent. We shouldn't call that directly while adding the child VC.
+        //    [_selectedViewController willMoveToParentViewController:self];
+        [_selectedViewController beginAppearanceTransition:YES animated:NO];
+        [self addChildViewController:_selectedViewController];
+
+        [self.view addSubview:_selectedViewController.view];
+    
+        // Add constraints
+        NSDictionary *views = @{ @"navigationBar" : _navigationBar, @"childView" : _selectedViewController.view };
+    
+        [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[childView]|"
                                                                           options:0
                                                                           metrics:nil
                                                                             views:views]];
-        UINavigationController *selectedNavigationController = (UINavigationController *)_selectedViewController;
-        self.originalNavDelegate = selectedNavigationController.delegate;
-        selectedNavigationController.delegate = self;
+
+        if ([_selectedViewController isKindOfClass:[UINavigationController class]]) {
+            [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[navigationBar][childView]|"
+                                                                              options:0
+                                                                              metrics:nil
+                                                                                views:views]];
+            UINavigationController *selectedNavigationController = (UINavigationController *)_selectedViewController;
+            self.originalNavDelegate = selectedNavigationController.delegate;
+            selectedNavigationController.delegate = self;
         
-    }
-    else {
-        [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[childView]|"
-                                                                          options:0
-                                                                          metrics:nil
-                                                                            views:views]];
-    }
+        }
+        else {
+            [self.view addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[childView]|"
+                                                                              options:0
+                                                                              metrics:nil
+                                                                                views:views]];
+        }
     
-    [_selectedViewController didMoveToParentViewController:self];
+        [_selectedViewController didMoveToParentViewController:self];
+        [_selectedViewController endAppearanceTransition];
     
-    // Ensure that the segmented control is showing the correctly selected segment.
-    // Make sure to use the _selectedIndex ivar directly here because the setter will end up calling into this method and we don't want to create an infinite loop.
-    _selectedIndex = [self.viewControllers indexOfObject:_selectedViewController];
-    self.segmentedControl.selectedSegmentIndex = _selectedIndex;
-    [self.view bringSubviewToFront:self.navigationBar];
+        // Ensure that the segmented control is showing the correctly selected segment.
+        // Make sure to use the _selectedIndex ivar directly here because the setter will end up calling into this method and we don't want to create an infinite loop.
+        _selectedIndex = [self.viewControllers indexOfObject:_selectedViewController];
+        self.segmentedControl.selectedSegmentIndex = _selectedIndex;
+    } else {
+        _selectedIndex = NSNotFound;
+    }
+
+    if (self.isViewLoaded && !_invalidated)
+        [self.view bringSubviewToFront:self.navigationBar];
 }
 
 - (void)setSelectedIndex:(NSUInteger)selectedIndex;
@@ -149,6 +193,7 @@ RCS_ID("$Id$")
 }
 
 #pragma mark - Private API
+
 - (void)_setupSegmentedControl;
 {
     NSMutableArray *segmentTitles = [NSMutableArray array];
@@ -188,7 +233,8 @@ RCS_ID("$Id$")
 
 - (void)setShouldShowDismissButton:(BOOL)shouldShow;
 {
-    if (shouldShow) {
+    _shouldShowDismissButton = shouldShow;
+    if (_shouldShowDismissButton && !_tempHidingDismissButton) {
         self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(_dismiss:)];
     }
     else {
@@ -196,7 +242,14 @@ RCS_ID("$Id$")
     }
 }
 
+- (void)temporarilyHideDismissButton:(BOOL)hide;
+{
+    _tempHidingDismissButton = hide;
+    [self setShouldShowDismissButton:_shouldShowDismissButton];
+}
+
 #pragma mark - UINavigationBarDelegate
+
 - (UIBarPosition)positionForBar:(id <UIBarPositioning>)bar;
 {
     if (bar == self.navigationBar) {
@@ -224,13 +277,11 @@ RCS_ID("$Id$")
     }
 }
 
-#ifdef __IPHONE_9_0
-#define NTIUIInterfaceOrientationMaskType UIInterfaceOrientationMask
+#if defined(__IPHONE_9_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_9_0
+- (UIInterfaceOrientationMask)navigationControllerSupportedInterfaceOrientations:(UINavigationController *)navigationController;
 #else
-#define NTIUIInterfaceOrientationMaskType NSUInteger
+- (NSUInteger)navigationControllerSupportedInterfaceOrientations:(UINavigationController *)navigationController;
 #endif
-
-- (NTIUIInterfaceOrientationMaskType)navigationControllerSupportedInterfaceOrientations:(UINavigationController *)navigationController;
 {
     if ([self.originalNavDelegate respondsToSelector:@selector(navigationControllerSupportedInterfaceOrientations:)]) {
         return [self.originalNavDelegate navigationControllerSupportedInterfaceOrientations:navigationController];

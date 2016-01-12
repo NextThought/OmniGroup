@@ -9,7 +9,7 @@
 
 RCS_ID("$Id$");
 
-#import <OmniUI/OUIAppearance.h>
+#import <OmniAppKit/OAAppearance.h>
 #import <OmniUI/OUIInspector.h>
 #import <OmniUI/OUIInspectorWell.h>
 #import <OmniUI/OUIMenuController.h>
@@ -19,7 +19,7 @@ RCS_ID("$Id$");
 #import <UIKit/UITableView.h>
 
 #import "OUIParameters.h"
-#import <OmniUI/OUIAppearanceColors.h>
+#import <OmniAppKit/OAAppearanceColors.h>
 
 @interface OUIMenuOptionTableViewCell : UITableViewCell
 @property (nonatomic) BOOL showsFullwidthSeparator;
@@ -48,7 +48,7 @@ RCS_ID("$Id$");
             _fullwidthSeparator.frame = separatorFrame;
         } else {
             _fullwidthSeparator = [[UIView alloc] initWithFrame:separatorFrame];
-            _fullwidthSeparator.backgroundColor = [[OUIAppearanceDefaultColors appearance] omniNeutralPlaceholderColor];
+            _fullwidthSeparator.backgroundColor = [[OAAppearanceDefaultColors appearance] omniNeutralPlaceholderColor];
             _fullwidthSeparator.translatesAutoresizingMaskIntoConstraints = YES;
             _fullwidthSeparator.autoresizingMask = UIViewAutoresizingNone;
         }
@@ -104,6 +104,12 @@ RCS_ID("$Id$");
 - (void)loadView;
 {
     UITableView *tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, kOUIMenuControllerTableWidth, 0) style:UITableViewStylePlain];
+    
+    UIColor *menuBackgroundColor = [_weak_controller menuBackgroundColor];
+    if (menuBackgroundColor != nil) {
+        // Only configure the menuBackgroundColor if explicitly configured by the OUIMenuController. We want default behavior otherwise.
+        tableView.backgroundColor = menuBackgroundColor;
+    }
     tableView.delegate = self;
     tableView.dataSource = self;
     tableView.rowHeight = 44.0f;
@@ -169,14 +175,11 @@ RCS_ID("$Id$");
     self.preferredContentSize = (CGSize){.width = preferredWidth, .height = ((UITableView *)self.view).contentSize.height};
 }
 
-- (void)viewWillAppear:(BOOL)animated;
+- (void)willMoveToParentViewController:(UIViewController *)parent
 {
-    [super viewWillAppear:animated];
-    
-    [UIView performWithoutAnimation:^{
-        [self _updatePreferredContentSizeFromOptions];
-        [self.view layoutIfNeeded];
-    }];
+    //When we move to our parent view controller, its view encompasses the whole screen because that is the default size. So, starting in iOS9, when we move to the parent, we also inherit that size. If we calculate our preferred content size *after* moving, our calculation that relies on our table view staying at its initial size is wrong. Calculating before the move makes our preferred content size calculation correct, and everything resizes properly.
+    [self _updatePreferredContentSizeFromOptions];
+    [super willMoveToParentViewController:parent];
 }
 
 - (void)viewDidAppear:(BOOL)animated;
@@ -214,13 +217,32 @@ RCS_ID("$Id$");
     OUIMenuOptionTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"option"];
     if (!cell) {
         cell = [[OUIMenuOptionTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"option"];
-        cell.backgroundColor = nil;
-        cell.opaque = NO;
         
-        cell.textLabel.backgroundColor = nil;
-        cell.textLabel.opaque = NO;
         cell.textLabel.font = [UIFont systemFontOfSize:17];
         cell.textLabel.textAlignment = _textAlignment;
+    }
+    
+    // Default transparency ...
+    cell.opaque = NO;
+    cell.backgroundColor = nil;
+
+    cell.textLabel.opaque = NO;
+    cell.textLabel.backgroundColor = nil;
+
+    // ... unless a menu option background color is otherwise requested
+    UIColor *menuOptionBackgroundColor = [_weak_controller menuOptionBackgroundColor];
+    if (menuOptionBackgroundColor != nil) {
+        cell.textLabel.backgroundColor = [_weak_controller menuOptionBackgroundColor];
+        cell.backgroundColor = [_weak_controller menuOptionBackgroundColor];
+    }
+
+    // Add a selectedBackgroundView if the menu controller requests it
+    UIColor *menuOptionSelectionColor = [_weak_controller menuOptionSelectionColor];
+    if (menuOptionSelectionColor != nil) {
+        UIView *selectedBackgroundView = [[UIView alloc] initWithFrame:cell.bounds];
+        selectedBackgroundView.autoresizingMask = (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
+        selectedBackgroundView.backgroundColor = menuOptionSelectionColor;
+        cell.selectedBackgroundView = selectedBackgroundView;
     }
     
     UILabel *label = cell.textLabel;
@@ -231,8 +253,9 @@ RCS_ID("$Id$");
     
     OBASSERT_IF(option.destructive, option.action, "Cannot have a disabled destructive action");
     if (option.destructive) {
-        label.textColor = [UIColor omniDeleteColor];
-        cell.imageView.tintColor = [UIColor omniDeleteColor];
+        UIColor *omniDeleteColor = [[OAAppearanceDefaultColors appearance] omniDeleteColor];
+        label.textColor = omniDeleteColor;
+        cell.imageView.tintColor = omniDeleteColor;
     }
     else if (option.isEnabled || [option.options count] > 0) {
         label.textColor = _tintColor;

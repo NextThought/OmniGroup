@@ -44,7 +44,7 @@ RCS_ID("$Id$")
 @end
 
 #pragma mark - OUIExportOptionsController
-@interface OUIExportOptionsController () <UICollectionViewDataSource, UICollectionViewDelegate> //<OFSFileManagerDelegate>
+@interface OUIExportOptionsController () <UICollectionViewDataSource, UICollectionViewDelegate, UIDocumentPickerDelegate> //<OFSFileManagerDelegate>
 
 @property (weak, nonatomic) IBOutlet UICollectionView *collectionView;
 @property (weak, nonatomic) IBOutlet UILabel *exportDescriptionLabel;
@@ -75,12 +75,17 @@ RCS_ID("$Id$")
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil;
 {
-    return [super initWithNibName:@"OUIExportOptions" bundle:OMNI_BUNDLE];
+    OBRejectUnusedImplementation(self, _cmd);
+}
+
+- (id)initWithCoder:(NSCoder *)coder NS_UNAVAILABLE;
+{
+    OBRejectUnusedImplementation(self, _cmd);
 }
 
 - (id)initWithServerAccount:(OFXServerAccount *)serverAccount exportType:(OUIExportOptionsType)exportType;
 {
-    if (!(self = [super initWithNibName:nil bundle:nil]))
+    if (!(self = [super initWithNibName:@"OUIExportOptions" bundle:OMNI_BUNDLE]))
         return nil;
     
     self.automaticallyAdjustsScrollViewInsets = YES;
@@ -113,7 +118,7 @@ static NSString * const exportOptionCellReuseIdentifier = @"exportOptionCell";
     self.navigationItem.title = NSLocalizedStringFromTableInBundle(@"Choose Format", @"OmniUIDocument", OMNI_BUNDLE, @"export options title");
     
     self.collectionView.backgroundColor = [UIColor whiteColor];
-    [self.collectionView registerNib:[UINib nibWithNibName:@"OUIExportOptionViewCell" bundle:nil] forCellWithReuseIdentifier:exportOptionCellReuseIdentifier];
+    [self.collectionView registerNib:[UINib nibWithNibName:@"OUIExportOptionViewCell" bundle:OMNI_BUNDLE] forCellWithReuseIdentifier:exportOptionCellReuseIdentifier];
     if ([self.collectionView.collectionViewLayout isKindOfClass:[OUIExportOptionsCollectionViewLayout class]]) {
         OUIExportOptionsCollectionViewLayout *layout =((OUIExportOptionsCollectionViewLayout *)(self.collectionView.collectionViewLayout));
         layout.minimumInterItemSpacing = 0.0;
@@ -133,27 +138,36 @@ static NSString * const exportOptionCellReuseIdentifier = @"exportOptionCell";
     NSString *docName = fileItem.name;
     
     NSString *actionDescription = nil;
-    if (_exportType == OUIExportOptionsEmail) {
-        self.navigationItem.title = NSLocalizedStringFromTableInBundle(@"Send via Mail", @"OmniUIDocument", OMNI_BUNDLE, @"export options title");
-        
-        _exportDestinationLabel.text = nil;
-        
-        actionDescription = [NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"Choose a format for emailing \"%@\":", @"OmniUIDocument", OMNI_BUNDLE, @"email action description"), docName, nil];
-    }
-    else if (_exportType == OUIExportOptionsSendToApp) {
-        _exportDestinationLabel.text = nil;
-        
-        actionDescription = [NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"Send \"%@\" to app as:", @"OmniUIDocument", OMNI_BUNDLE, @"send to app description"), docName, nil];
-    }
-    else if (_exportType == OUIExportOptionsExport) {
-        if (OFISEQUAL(_serverAccount.type.identifier, OFXiTunesLocalDocumentsServerAccountTypeIdentifier)) {
+    switch (_exportType) {
+        case OUIExportOptionsNone:
+            OBASSERT_NOT_REACHED("We don't present a controller if we're not exporting");
+            break;
+
+        case OUIExportOptionsEmail:
+            self.navigationItem.title = NSLocalizedStringFromTableInBundle(@"Send via Mail", @"OmniUIDocument", OMNI_BUNDLE, @"export options title");
             _exportDestinationLabel.text = nil;
-        } else {
-            NSString *addressString = [_serverAccount.remoteBaseURL absoluteString];
-            _exportDestinationLabel.text = [NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"Server address: %@", @"OmniUIDocument", OMNI_BUNDLE, @"email action description"), addressString, nil];
-        }
-                
-        actionDescription = [NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"Export \"%@\" to %@ as:", @"OmniUIDocument", OMNI_BUNDLE, @"export action description"), docName, _serverAccount.displayName, nil];
+            actionDescription = [NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"Choose a format for emailing \"%@\":", @"OmniUIDocument", OMNI_BUNDLE, @"email action description"), docName, nil];
+            break;
+
+        case OUIExportOptionsSendToApp:
+            _exportDestinationLabel.text = nil;
+            actionDescription = [NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"Send \"%@\" to app as:", @"OmniUIDocument", OMNI_BUNDLE, @"send to app description"), docName, nil];
+            break;
+
+        case OUIExportOptionsSendToService:
+            _exportDestinationLabel.text = nil;
+            actionDescription = [NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"Export \"%@\" as:", @"OmniUIDocument", OMNI_BUNDLE, @"export to description"), docName, nil];
+            break;
+
+        case OUIExportOptionsExport:
+            if (OFISEQUAL(_serverAccount.type.identifier, OFXiTunesLocalDocumentsServerAccountTypeIdentifier)) {
+                _exportDestinationLabel.text = nil;
+            } else {
+                NSString *addressString = [_serverAccount.remoteBaseURL absoluteString];
+                _exportDestinationLabel.text = [NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"Server address: %@", @"OmniUIDocument", OMNI_BUNDLE, @"email action description"), addressString, nil];
+            }
+            actionDescription = [NSString stringWithFormat:NSLocalizedStringFromTableInBundle(@"Export \"%@\" to %@ as:", @"OmniUIDocument", OMNI_BUNDLE, @"export action description"), docName, _serverAccount.displayName, nil];
+            break;
     }
     
     _exportDescriptionLabel.text = actionDescription;
@@ -207,7 +221,7 @@ static NSString * const exportOptionCellReuseIdentifier = @"exportOptionCell";
     __autoreleasing NSError *error = nil;
     OUIWebDAVSyncListController *syncListController = [[OUIWebDAVSyncListController alloc] initWithServerAccount:_serverAccount exporting:YES error:&error];
     if (!syncListController) {
-        OUI_PRESENT_ERROR(error);
+        OUI_PRESENT_ERROR_FROM(error, self);
         return;
     }
     
@@ -273,25 +287,43 @@ static NSString * const exportOptionCellReuseIdentifier = @"exportOptionCell";
 {
     OBPRECONDITION([NSThread isMainThread]);
     
-    if (_exportType != OUIExportOptionsSendToApp) {
-        [self exportFileWrapper:fileWrapper];
-        return;
+    switch (_exportType) {
+        case OUIExportOptionsNone:
+            OBASSERT_NOT_REACHED("We shouldn't have built a file wrapper if we're not exporting");
+            break;
+        case OUIExportOptionsExport:
+            [self exportFileWrapper:fileWrapper];
+            break;
+        case OUIExportOptionsEmail:
+            OBASSERT_NOT_REACHED("The email option takes another path: -_performActionForExportOption: calls -_foreground_emailExportOfType: directly");
+            break;
+        case OUIExportOptionsSendToApp:
+            [self _foreground_exportSendToAppWithFileWrapper:fileWrapper];
+            break;
+        case OUIExportOptionsSendToService:
+            [self _foreground_exportSendToServiceWithFileWrapper:fileWrapper];
+            break;
     }
+}
+
+- (NSURL *)_tempURLForExportedFileWrapper:(NSFileWrapper *)fileWrapper shouldZipDirectories:(BOOL)shouldZipDirectories;
+{
+    OBPRECONDITION([NSThread isMainThread]);
     
     // Write to temp folder (need URL of file on disk to pass off to Doc Interaction.)
     NSString *temporaryDirectory = NSTemporaryDirectory();
     NSString *tempPath = [temporaryDirectory stringByAppendingPathComponent:[fileWrapper preferredFilename]];
     NSURL *tempURL = nil;
     
-    if ([fileWrapper isDirectory]) {
+    if (shouldZipDirectories && [fileWrapper isDirectory]) {
         // We need to zip this mother up!
         NSString *tempZipPath = [tempPath stringByAppendingPathExtension:@"zip"];
         
         @autoreleasepool {
             __autoreleasing NSError *error = nil;
             if (![OUZipArchive createZipFile:tempZipPath fromFileWrappers:[NSArray arrayWithObject:fileWrapper] error:&error]) {
-                OUI_PRESENT_ERROR(error);
-                return;
+                OUI_PRESENT_ERROR_FROM(error, self);
+                return nil;
             }
         }
 
@@ -306,19 +338,26 @@ static NSString * const exportOptionCellReuseIdentifier = @"exportOptionCell";
         // If the temp file exists, we delete it.
         if ([fileManager fileExistsAtPath:[tempURL path]]) {
             if (![fileManager removeItemAtURL:tempURL error:&error]) {
-                OUI_PRESENT_ERROR(error);
-                return;
+                OUI_PRESENT_ERROR_FROM(error, self);
+                return nil;
             }
         }
         
         // Write to temp dir.
         if (![fileWrapper writeToURL:tempURL options:0 originalContentsURL:nil error:&error]) {
-            OUI_PRESENT_ERROR(error);
-            return;
+            OUI_PRESENT_ERROR_FROM(error, self);
+            return nil;
         }
     }
-    
+    return tempURL;
+}
+
+- (void)_foreground_exportSendToAppWithFileWrapper:(NSFileWrapper *)fileWrapper;
+{
+    NSURL *tempURL = [self _tempURLForExportedFileWrapper:fileWrapper shouldZipDirectories:YES];
     [self _foreground_enableInterfaceAfterExportConversion];
+    if (tempURL == nil)
+        return;
     
     // By now we have written the project out to a temp dir. Time to handoff to Doc Interaction.
     self.documentInteractionController = [UIDocumentInteractionController interactionControllerWithURL:tempURL];
@@ -334,23 +373,35 @@ static NSString * const exportOptionCellReuseIdentifier = @"exportOptionCell";
     }
 }
 
+- (void)_foreground_exportSendToServiceWithFileWrapper:(NSFileWrapper *)fileWrapper;
+{
+    NSURL *tempURL = [self _tempURLForExportedFileWrapper:fileWrapper shouldZipDirectories:NO];
+    [self _foreground_enableInterfaceAfterExportConversion];
+    if (tempURL == nil)
+        return;
+    
+    UIDocumentPickerViewController *pickerViewController = [[UIDocumentPickerViewController alloc] initWithURL:tempURL inMode:UIDocumentPickerModeExportToService];
+    pickerViewController.delegate = self;
+    [self presentViewController:pickerViewController animated:YES completion:nil];
+}
+
 - (void)_foreground_exportDocumentOfType:(NSString *)fileType;
 {
     OBPRECONDITION([NSThread isMainThread]);
     @autoreleasepool {
-        OUIDocumentPickerViewController *documentPicker = [[[OUIDocumentAppController controller] documentPicker] selectedScopeViewController];
-        ODSFileItem *fileItem = documentPicker.singleSelectedFileItem;
+        OUIDocumentPickerViewController *documentPickerController = [[[OUIDocumentAppController controller] documentPicker] selectedScopeViewController];
+        ODSFileItem *fileItem = documentPickerController.singleSelectedFileItem;
         if (!fileItem) {
             OBASSERT_NOT_REACHED("no selected document");
             [self _foreground_enableInterfaceAfterExportConversion];
             return;
         }
         
-        [documentPicker exportFileWrapperOfType:fileType forFileItem:fileItem withCompletionHandler:^(NSFileWrapper *fileWrapper, NSError *error) {
+        [documentPickerController exportFileWrapperOfType:fileType forFileItem:fileItem withCompletionHandler:^(NSFileWrapper *fileWrapper, NSError *error) {
             // Need to make sure all of this happens on the main thread.
             main_async(^{
                 if (fileWrapper == nil) {
-                    OUI_PRESENT_ERROR(error);
+                    OUI_PRESENT_ERROR_FROM(error, self);
                     [self _foreground_enableInterfaceAfterExportConversion];
                 } else {
                     [self _foreground_exportFileWrapper:fileWrapper];
@@ -447,7 +498,7 @@ static NSString * const exportOptionCellReuseIdentifier = @"exportOptionCell";
         
         [documentPicker exportFileWrapperOfType:exportType forFileItem:fileItem withCompletionHandler:^(NSFileWrapper *fileWrapper, NSError *error) {
             if (fileWrapper == nil) {
-                OUI_PRESENT_ERROR(error);
+                OUI_PRESENT_ERROR_FROM(error, self);
                 [self _foreground_enableInterfaceAfterExportConversion];
             }
             else {
@@ -461,11 +512,14 @@ static NSString * const exportOptionCellReuseIdentifier = @"exportOptionCell";
 {
     NSString *exportType = option.exportType;
     
-    if (_exportType == OUIExportOptionsEmail) {
-        [self _foreground_disableInterfaceForExportConversion];
-        [self _foreground_emailExportOfType:exportType];
-    } else {
-        [self _beginBackgroundExportDocumentOfType:exportType];
+    switch (_exportType) {
+        case OUIExportOptionsEmail:
+            [self _foreground_disableInterfaceForExportConversion];
+            [self _foreground_emailExportOfType:exportType];
+            break;
+        default:
+            [self _beginBackgroundExportDocumentOfType:exportType];
+            break;
     }
 }
 
@@ -558,6 +612,22 @@ static NSString * const exportOptionCellReuseIdentifier = @"exportOptionCell";
 #pragma mark - UIDocumentInteractionControllerDelegate
 
 - (void)documentInteractionController:(UIDocumentInteractionController *)controller willBeginSendingToApplication:(NSString *)application;
+{
+    OUIDocumentPickerViewController *documentPickerController = [[[OUIDocumentAppController controller] documentPicker] selectedScopeViewController];
+    main_async(^{
+        [documentPickerController clearSelection:YES];
+    });
+    [self dismissViewControllerAnimated:NO completion:nil];
+}
+
+#pragma mark - UIDocumentPickerDelegate
+
+- (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentAtURL:(NSURL *)url;
+{
+    [self dismissViewControllerAnimated:NO completion:nil];
+}
+
+- (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)controller;
 {
     [self dismissViewControllerAnimated:NO completion:nil];
 }

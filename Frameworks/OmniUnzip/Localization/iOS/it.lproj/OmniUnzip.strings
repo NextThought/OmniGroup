@@ -27,6 +27,7 @@
 
 /* error description
    error reason */
+
 "Unable to read zip data." = "Impossibile leggere i dati compressi.";
 
 /* error description */
@@ -34,4 +35,3 @@
 
 /* error description */
 "Unable to write zip file." = "Impossibile scrivere nel documento compresso.";
-

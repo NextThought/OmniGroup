@@ -14,7 +14,6 @@
 #import <OmniFoundation/OFExtent.h>
 #import <OmniUI/OUIAppController.h>
 #import <OmniUI/OUIDirectTapGestureRecognizer.h>
-#import <OmniUI/OUIDragGestureRecognizer.h>
 #import <OmniUI/UIGestureRecognizer-OUIExtensions.h>
 #import <OmniUI/UIView-OUIExtensions.h>
 #import <OmniUIDocument/OUIDocumentAppController.h>
@@ -60,7 +59,7 @@ static CGRect _frameForPositionAtIndex(NSUInteger itemIndex, LayoutInfo layoutIn
     
     NSUInteger row = itemIndex / layoutInfo.itemsPerRow;
     NSUInteger column = itemIndex % layoutInfo.itemsPerRow;
-    
+  
     // If the item views plus their padding don't completely fill our layoutWidth, distribute the remaining space as margins on either sides of the scrollview.
 
     CGFloat sideMargin = (layoutInfo.contentRect.size.width - (layoutInfo.horizontalPadding + layoutInfo.itemsPerRow * (layoutInfo.itemSize.width + layoutInfo.horizontalPadding))) / 2;
@@ -93,7 +92,6 @@ static CGPoint _clampContentOffset(OUIDocumentPickerScrollView *self, CGPoint co
 @property(nonatomic,readwrite) BOOL isUsingSmallItems;
 
 - (CGSize)_gridSize;
-- (void)_startDragRecognizer:(OUIDragGestureRecognizer *)recognizer;
 - (CGFloat)_horizontalPadding;
 - (CGFloat)_verticalPadding;
 @end
@@ -122,8 +120,6 @@ static CGPoint _clampContentOffset(OUIDocumentPickerScrollView *self, CGPoint co
     NSArray *_fileItemViews;
     NSArray *_groupItemViews;
         
-    OUIDragGestureRecognizer *_startDragRecognizer;
-    
     NSTimeInterval _rotationDuration;
     
     NSMutableArray *_scrollFinishedCompletionHandlers;
@@ -141,6 +137,7 @@ static id _commonInit(OUIDocumentPickerScrollView *self)
     self.showsHorizontalScrollIndicator = NO;
     self.alwaysBounceVertical = YES;
     self.isUsingSmallItems = YES;
+  
     return self;
 }
 
@@ -167,9 +164,6 @@ static id _commonInit(OUIDocumentPickerScrollView *self)
     for (ODSItem *item in _items) {
         [self _endObservingSortKeysForItem:item];
     }
-    
-    _startDragRecognizer.delegate = nil;
-    _startDragRecognizer = nil;
 }
 
 
@@ -177,7 +171,7 @@ static id _commonInit(OUIDocumentPickerScrollView *self)
     BOOL topControlsWereHidden = self.topControls.alpha < 0.7;
     [super setContentInset:contentInset];
     if (topControlsWereHidden) {
-        if (self.contentOffset.y < self.contentOffsetYToHideTopControls) {
+        if (self.contentOffset.y < [self contentOffsetYToHideCompactTitleBehindNavBar]) {
             self.contentOffset = CGPointMake(self.contentOffset.x, self.contentOffsetYToHideTopControls);
         }
     }
@@ -224,6 +218,10 @@ static NSArray *_newItemViews(OUIDocumentPickerScrollView *self, Class itemViewC
         [itemViews addObject:itemView];
 
         [itemView addTarget:self action:@selector(_itemViewTapped:) forControlEvents:UIControlEventTouchUpInside];
+        if (![self.delegate respondsToSelector:@selector(documentPickerScrollViewShouldMultiselect:)] || [self.delegate documentPickerScrollViewShouldMultiselect:self])
+        {
+            [itemView addGestureRecognizer:[[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(_itemViewLongpressed:)]];
+        }
         
         itemView.hidden = YES;
         [self addSubview:itemView];
@@ -249,6 +247,18 @@ static NSArray *_newItemViews(OUIDocumentPickerScrollView *self, Class itemViewC
     } else {
         // the top controls should be invisible when they are fully off screen
         offset = CGRectGetMaxY(_topControls.frame) - self.contentInset.top;
+    }
+    return ceilf(offset);
+}
+
+- (CGFloat)contentOffsetYToHideCompactTitleBehindNavBar;
+{
+    CGFloat offset;
+    if ([self isShowingTitleLabel]) {
+        // the title view is overlaid on the top controls, so hide the top controls when the title view is at the top of the visible window
+        offset = CGRectGetMaxY(_topControls.frame) - self.contentInset.top;
+    } else {
+        offset = self.contentInset.top;
     }
     return ceilf(offset);
 }
@@ -625,6 +635,29 @@ static CGPoint _contentOffsetForCenteringItem(OUIDocumentPickerScrollView *self,
     return _frameForPositionAtIndex(positionIndex, layoutInfo);
 }
 
+- (OUIDocumentPickerItemView *)itemViewForPoint:(CGPoint)point;
+{
+    for (OUIDocumentPickerItemView *itemView in _fileItemViews) {
+        // The -hitTest:withEvent: below doesn't consider ancestor isHidden flags.
+        if (itemView.hidden)
+            continue;
+        UIView *hitView = [itemView hitTest:[itemView convertPoint:point fromView:self] withEvent:nil];
+        if (hitView)
+            return itemView;
+    }
+
+    for (OUIDocumentPickerItemView *itemView in _groupItemViews) {
+        // The -hitTest:withEvent: below doesn't consider ancestor isHidden flags.
+        if (itemView.hidden)
+            continue;
+        UIView *hitView = [itemView hitTest:[itemView convertPoint:point fromView:self] withEvent:nil];
+        if (hitView)
+            return itemView;
+    }
+
+    return nil;
+}
+
 - (OUIDocumentPickerItemView *)itemViewForItem:(ODSItem *)item;
 {
     for (OUIDocumentPickerFileItemView *itemView in _fileItemViews) {
@@ -769,28 +802,15 @@ static OUIDocumentPickerItemView *_itemViewHitByRecognizer(NSArray *itemViews, U
     }
 }
 
-#pragma mark - UIView
-
-- (void)willMoveToWindow:(UIWindow *)newWindow;
+#pragma mark - UIScrollView
+- (void)setContentOffset:(CGPoint)contentOffset
 {
-    [super willMoveToWindow:newWindow];
-    
-    if (newWindow && _startDragRecognizer == nil && ![self.delegate isReadyOnlyForDocumentPickerScrollView:self]) {
-        // UIScrollView has recognizers, but doesn't delcare that it is their delegate. Hopefully they are leaving this open for subclassers.
-        OBASSERT([UIScrollView conformsToProtocol:@protocol(UIGestureRecognizerDelegate)] == NO);
-
-        _startDragRecognizer = [[OUIDragGestureRecognizer alloc] initWithTarget:self action:@selector(_startDragRecognizer:)];
-        _startDragRecognizer.delegate = self;
-        _startDragRecognizer.holdDuration = 0.5; // taken from UILongPressGestureRecognizer.h
-        _startDragRecognizer.requiresHoldToComplete = YES;
-        
-        [self addGestureRecognizer:_startDragRecognizer];
-    } else if (newWindow == nil && _startDragRecognizer != nil) {
-        [self removeGestureRecognizer:_startDragRecognizer];
-        _startDragRecognizer.delegate = nil;
-        _startDragRecognizer = nil;
-    }
+    [super setContentOffset:contentOffset];
+    // when the content offset changes, post a layout change. This will cause another -layoutSubviews to get called, setting up the previous/next rows for VoiceOver to scroll to for selection.
+    UIAccessibilityPostNotification(UIAccessibilityLayoutChangedNotification, nil);
 }
+
+#pragma mark - UIView
 
 static LayoutInfo _updateLayout(OUIDocumentPickerScrollView *self)
 {
@@ -805,10 +825,11 @@ static LayoutInfo _updateLayout(OUIDocumentPickerScrollView *self)
         
     NSUInteger itemsPerRow = gridSize.width;
     CGSize layoutSize = self.bounds.size;
+    layoutSize.height -= self.contentInset.top;
     CGSize itemSize = CGSizeMake(kOUIDocumentPickerItemNormalSize, kOUIDocumentPickerItemNormalSize);
-;
+
     // For devices where screen sizes are too small for our preferred items, here's a smaller size
-    if (layoutSize.width / gridSize.width < (itemSize.width + kOUIDocumentPickerItemSmallHorizontalPadding)) {
+    if (layoutSize.width < (itemsPerRow * kOUIDocumentPickerItemNormalSize) + ((itemsPerRow - 1) * kOUIDocumentPickerItemHorizontalPadding)) {
         itemSize = CGSizeMake(kOUIDocumentPickerItemSmallSize, kOUIDocumentPickerItemSmallSize);
         self.isUsingSmallItems = YES;
     } else {
@@ -834,7 +855,7 @@ static LayoutInfo _updateLayout(OUIDocumentPickerScrollView *self)
     {
         NSUInteger itemCount = [self->_sortedItems count];
         NSUInteger rowCount = (itemCount / itemsPerRow) + ((itemCount % itemsPerRow) == 0 ? 0 : 1);
-        
+    
         CGRect bounds = self.bounds;
         CGSize contentSize = CGSizeMake(layoutSize.width, rowCount * (itemSize.height + [self _verticalPadding]) + topControlsHeight + [self _verticalPadding]);
         contentSize.height = MAX(contentSize.height, layoutSize.height);
@@ -945,9 +966,6 @@ static LayoutInfo _updateLayout(OUIDocumentPickerScrollView *self)
     // Expand the visible content rect to preload nearby previews
     CGRect previewLoadingRect = CGRectInset(contentRect, 0, -contentRect.size.height);
     
-    // We don't need this for the scroller and calling it causes our item views to layout their contents out before we've adjusted their frames (and we don't even want to layout the hidden views).
-    // [super layoutSubviews];
-    
     // The newly created views need to get laid out the first time w/o animation on.
     OUIWithAnimationsDisabled(_flags.isAnimatingRotationChange, ^{
         // Keep track of which item views are in use by visible items
@@ -984,9 +1002,17 @@ static LayoutInfo _updateLayout(OUIDocumentPickerScrollView *self)
             CGRect frame = _frameForPositionAtIndex(positionIndex, layoutInfo);
             
             // If the item is on screen, give it a view to use
-            BOOL itemVisible = CGRectIntersectsRect(frame, contentRect);
+            CGRect adjustedContentRect = contentRect;
+            
+            if (UIAccessibilityIsVoiceOverRunning()) {
+                // make sure VoiceOver knows about the the items in the row above the on screen top row, and below the on screen bottom row.
+                adjustedContentRect.size.height += itemSize.height;
+            }
+            
+            BOOL itemVisible = CGRectIntersectsRect(frame, adjustedContentRect);
             
             BOOL shouldLoadPreview = CGRectIntersectsRect(frame, previewLoadingRect);
+            
             if ([item isKindOfClass:[ODSFileItem class]]) {
                 ODSFileItem *fileItem = (ODSFileItem *)item;
                 OUIDocumentPreview *preview = [previousFileItemToPreview objectForKey:fileItem];
@@ -1112,21 +1138,7 @@ static LayoutInfo _updateLayout(OUIDocumentPickerScrollView *self)
                 [self.delegate documentPickerScrollView:self willEndDisplayingItemView:view];
         }
     });
-}
-
-#pragma mark - UIGestureRecognizerDelegate
-
-- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer;
-{
-    if (gestureRecognizer == _startDragRecognizer) {
-        if (_startDragRecognizer.wasATap)
-            return NO;
-        
-        // Only start editing and float up a preview if we hit a file preview
-        return ([self itemViewHitByRecognizer:_startDragRecognizer] != nil);
-    }
-    
-    return YES;
+    [super layoutSubviews];
 }
 
 #pragma mark - NSObject (OUIDocumentPickerItemMetadataView)
@@ -1163,6 +1175,18 @@ static LayoutInfo _updateLayout(OUIDocumentPickerScrollView *self)
     [self.delegate documentPickerScrollView:self itemViewTapped:itemView];
 }
 
+- (void)_itemViewLongpressed:(UIGestureRecognizer*)gesture
+{
+    if (gesture.state == UIGestureRecognizerStateBegan) {        
+        OUIDocumentPickerItemView *itemView = OB_CHECKED_CAST(OUIDocumentPickerItemView, gesture.view);
+        
+        // should be one of ours, not some other temporary animating item view
+        OBASSERT([_fileItemViews containsObjectIdenticalTo:itemView] ^ [_groupItemViews containsObjectIdenticalTo:itemView]);
+        
+        [self.delegate documentPickerScrollView:self itemViewLongpressed:itemView];
+    }
+}
+
 // The size of the document prevew grid in items. That is, if gridSize.width = 4, then 4 items will be shown across the width.
 // The width must be at least one and integral. The height must be at least one, but may be non-integral if you want to have a row of itemss peeking out.
 - (CGSize)_gridSize;
@@ -1171,12 +1195,9 @@ static LayoutInfo _updateLayout(OUIDocumentPickerScrollView *self)
     if (layoutSize.width <= 0 || layoutSize.height <= 0)
         return CGSizeMake(1,1); // placeholder because layoutSize not set yet
 
-    // Adding a single kOUIDocumentPickerItemHorizontalPadding here because we want to compute the space for itemWidth*nItems + padding*(nItems-1), moving padding*1 to the other side of the equation simplifies everything else
-    layoutSize.width += [self _horizontalPadding];
-    
     CGFloat itemWidth = kOUIDocumentPickerItemNormalSize;
-    CGFloat itemsAcross = floor(layoutSize.width / (itemWidth + [self _horizontalPadding]));
-    CGFloat rotatedItemsAcross = floor(layoutSize.height / (itemWidth + [self _horizontalPadding]));
+    CGFloat itemsAcross = floor((layoutSize.width + kOUIDocumentPickerItemHorizontalPadding) / (itemWidth + kOUIDocumentPickerItemHorizontalPadding));
+    CGFloat rotatedItemsAcross = floor(layoutSize.height / (itemWidth + kOUIDocumentPickerItemHorizontalPadding));
 
     if (itemsAcross < 3 || rotatedItemsAcross < 3) {
         itemWidth = kOUIDocumentPickerItemSmallSize;
@@ -1184,12 +1205,6 @@ static LayoutInfo _updateLayout(OUIDocumentPickerScrollView *self)
         itemsAcross = floor(layoutSize.width / (itemWidth + [self _horizontalPadding]));
     }
     return CGSizeMake(itemsAcross, layoutSize.height / (itemWidth + [self _verticalPadding]));
-}
-
-- (void)_startDragRecognizer:(OUIDragGestureRecognizer *)recognizer;
-{
-    OBPRECONDITION(recognizer == _startDragRecognizer);
-    [self.delegate documentPickerScrollView:self dragWithRecognizer:_startDragRecognizer];
 }
 
 - (CGFloat)_horizontalPadding;

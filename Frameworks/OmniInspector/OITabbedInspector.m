@@ -5,20 +5,20 @@
 // distributed with this project and can also be found at
 // <http://www.omnigroup.com/developer/sourcecode/sourcelicense/>.
 
-#import "OITabbedInspector.h"
+#import <OmniInspector/OITabbedInspector.h>
 
 #import <AppKit/AppKit.h>
+#import <OmniAppKit/OmniAppKit.h>
 #import <OmniBase/OmniBase.h>
 #import <OmniFoundation/OmniFoundation.h>
-#import <OmniAppKit/OmniAppKit.h>
-
-#import "OIInspectionSet.h"
-#import "OIInspectorController.h"
-#import "OIInspectorRegistry.h"
-#import "OIInspectorTabController.h"
-#import "OITabCell.h"
-#import "OITabMatrix.h"
-#import "OIButtonMatrixBackgroundView.h"
+#import <OmniInspector/OIButtonMatrixBackgroundView.h>
+#import <OmniInspector/OIInspectionSet.h>
+#import <OmniInspector/OIInspectorController.h>
+#import <OmniInspector/OIInspectorHeaderView.h>
+#import <OmniInspector/OIInspectorRegistry.h>
+#import <OmniInspector/OIInspectorTabController.h>
+#import <OmniInspector/OITabMatrix.h>
+#import <OmniInspector/OITabCell.h>
 
 RCS_ID("$Id$")
 
@@ -41,6 +41,9 @@ RCS_ID("$Id$")
 #pragma mark -
 
 @implementation OITabbedInspector
+{
+    NSMutableDictionary *_preferredTabIdentifierForInspectionIdentifier;
+}
 
 @synthesize buttonMatrix = buttonMatrix;
 
@@ -63,13 +66,13 @@ RCS_ID("$Id$")
         }
     }
 #endif
-    
+
     float inspectorWidth;
     if (_weak_inspectorController)
         inspectorWidth = [_weak_inspectorController.inspectorRegistry inspectorWidth];
     else
         inspectorWidth = [[OIInspectorRegistry inspectorRegistryForMainWindow] inspectorWidth];
-    
+
     NSRect inspectionFrame = [inspectorView frame];
     OBASSERT(inspectionFrame.size.width <= inspectorWidth); // OK to make views from nibs wider, but probably indicates a problem if we are making them smaller.
     inspectionFrame.size.width = inspectorWidth;
@@ -95,7 +98,6 @@ RCS_ID("$Id$")
 #ifdef OITabbedInspectorUnifiedLookDefaultsKey
     if ([[NSUserDefaults standardUserDefaults] boolForKey:OITabbedInspectorUnifiedLookDefaultsKey]) {
         [buttonMatrixBackground setBackgroundColor:nil];
-        [(OITabMatrix *)buttonMatrix setTabMatrixHighlightStyle:OITabMatrixDepressionHighlightStyle];
     } else
 #endif
     {
@@ -165,21 +167,12 @@ RCS_ID("$Id$")
                 windowTitle = [windowTitle stringByAppendingString:[NSString stringForKeyEquivalent:[tab shortcutKey] andModifierMask:[tab shortcutModifierFlags]]];
                 windowTitle = [windowTitle stringByAppendingString:@")"];
             }
-            duringMouseDown = YES;
         }
     }
     NSDictionary *textAttributes = [NSDictionary dictionaryWithObjectsAndKeys:[NSFont systemFontOfSize:[NSFont labelFontSize]], NSFontAttributeName, nil];
     NSMutableAttributedString *windowTitleAttributedstring = [[NSMutableAttributedString alloc] init];
     [windowTitleAttributedstring replaceCharactersInRange:NSMakeRange(0, [[windowTitleAttributedstring string] length]) withString:windowTitle];
-    if (duringMouseDown) {
-        NSUInteger partial = [prefix length];
-        [windowTitleAttributedstring setAttributes:textAttributes range:NSMakeRange(0, partial)];
-        // NSFont's +systemFontOfSize: does not have an italic variant.  So I'm just using Helvetica.  Using +userFontOfSize: is not a good option because the userFont can be changed for other reasons by apps.
-        NSDictionary *italicAttributes = [NSDictionary dictionaryWithObjectsAndKeys:[[NSFontManager sharedFontManager] convertFont:[[NSFontManager sharedFontManager] convertFont:[NSFont systemFontOfSize:[NSFont labelFontSize]] toFamily:@"Helvetica"] toHaveTrait:NSItalicFontMask], NSFontAttributeName, nil];
-        [windowTitleAttributedstring setAttributes:italicAttributes range:NSMakeRange(partial, [[windowTitleAttributedstring string] length] - partial)];
-    } else {
-        [windowTitleAttributedstring setAttributes:textAttributes range:NSMakeRange(0, [[windowTitleAttributedstring string] length])];
-    }
+    [windowTitleAttributedstring setAttributes:textAttributes range:NSMakeRange(0, [[windowTitleAttributedstring string] length])];
     
     return windowTitleAttributedstring;
 }
@@ -283,18 +276,17 @@ RCS_ID("$Id$")
         [self _layoutSelectedTabs];
 }
 
-- (void)updateDimmedForTabWithIdentifier:(NSString *)tabIdentifier;
+- (OIInspectorTabController *)tabWithIdentifier:(NSString *)identifier;
 {
-    OIInspectorTabController *tab = [self _tabWithIdentifier:tabIdentifier];
-    OBASSERT(tab);
-    
-    if (tab)
-        [self _updateDimmedForTab:tab];
+    for (OIInspectorTabController *tab in _tabControllers)
+        if (OFISEQUAL(identifier, [[tab inspector] identifier]))
+            return tab;
+    return nil;
 }
 
 - (OIInspector *)inspectorWithIdentifier:(NSString *)tabIdentifier;
 {
-    return [[self _tabWithIdentifier:tabIdentifier] inspector];
+    return [[self tabWithIdentifier:tabIdentifier] inspector];
 }
 
 - (NSArray *)selectedTabIdentifiers;
@@ -319,19 +311,26 @@ RCS_ID("$Id$")
     return identifiers;
 }
 
-- (CGFloat)additionalHeaderHeight;
+- (CGFloat)defaultHeaderHeight;
 {
-    CGFloat extraHeightBecauseTheDividerIsNotThere = 0;
-#ifdef OITabbedInspectorUnifiedLookDefaultsKey
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:OITabbedInspectorUnifiedLookDefaultsKey]) {
-        extraHeightBecauseTheDividerIsNotThere = 1;
+    CGFloat height = [super defaultHeaderHeight];
+
+    if (self.placesButtonsInHeaderView) {
+        if (buttonMatrix) {
+            height += NSHeight(buttonMatrix.frame);
+        } else {
+            height += 31.0f;
+        }
     }
-#endif
+
+    return height;
+}
+
+- (void)switchToInspectorWithIdentifier:(NSString *)tabIdentifier;
+{
+    [self setSelectedTabIdentifiers:[NSArray arrayWithObject:tabIdentifier] pinnedTabIdentifiers:nil];
     
-    if ([buttonMatrix tabMatrixHighlightStyle] == OITabMatrixDepressionHighlightStyle)
-        return [buttonMatrix frame].size.height + extraHeightBecauseTheDividerIsNotThere;
-    else
-        return 0;
+    [_weak_inspectorController showInspector];
 }
 
 #pragma mark -
@@ -346,38 +345,13 @@ RCS_ID("$Id$")
     NSMutableArray *pinnedIdentifiers = [NSMutableArray array];
 
     for (NSCell *cell in selectedCells) {
-        OIInspectorTabController *tab = [cell representedObject];
-        [selectedIdentifiers addObject:[tab identifier]];
+        NSString *identifier = [cell representedObject];
+        [selectedIdentifiers addObject:identifier];
         if ([pinnedCellsSet member:cell]) {
-            [pinnedIdentifiers addObject:[tab identifier]];
+            [pinnedIdentifiers addObject:identifier];
         }
     }
     [self setSelectedTabIdentifiers:selectedIdentifiers pinnedTabIdentifiers:pinnedIdentifiers];
-}
-
-// Not set in nib, We set this up for individual tab menu items in -menuItemsForTarget:action:; the containing group is set up with the selector requested by the caller.
-- (IBAction)switchToInspector:(id)sender;
-{
-    OIInspectorTabController *tab = [sender representedObject];
-    OBASSERT([_tabControllers indexOfObjectIdenticalTo:tab] != NSNotFound);
-    
-    BOOL isVisible = [_weak_inspectorController isExpanded] && [_weak_inspectorController isVisible];
-    
-    if (isVisible && [tab isVisible]) {
-        NSMutableArray *identifiers = [NSMutableArray arrayWithArray:[self selectedTabIdentifiers]];
-        [identifiers removeObject:[tab identifier]];
-        [self setSelectedTabIdentifiers:identifiers pinnedTabIdentifiers:nil];
-        if ([identifiers count] == 0) {
-            [buttonMatrix deselectAllCells];
-            return;
-        }
-    } else if (tab) {
-        [self setSelectedTabIdentifiers:[NSArray arrayWithObject:[tab identifier]] pinnedTabIdentifiers:nil];
-    } else {
-        [buttonMatrix deselectAllCells];
-    }
-    
-    [_weak_inspectorController showInspector];
 }
 
 #pragma mark -
@@ -391,7 +365,11 @@ RCS_ID("$Id$")
     _singleSelection = [dict boolForKey:@"single-selection" defaultValue:NO];
     _autoSelection = [dict boolForKey:@"auto-selection" defaultValue:_singleSelection];
     _placesButtonsInTitlebar = [dict boolForKey:@"placesButtonsInTitlebar"];
-    
+    _placesButtonsInHeaderView = [dict boolForKey:@"placesButtonsInHeaderView"];
+    _preferredTabIdentifierForInspectionIdentifier = [[NSMutableDictionary alloc] init];
+
+    OBASSERT_IF(_placesButtonsInHeaderView, !(self.isCollapsible), @"Support for both collapsable and placesButtonsInHeaderView are not fully implemented, please update code if this configuration needs to be used");
+
     NSMutableArray *tabControllers = [[NSMutableArray alloc] init];
     
     // Read our sub-inspectors from the plist
@@ -403,6 +381,11 @@ RCS_ID("$Id$")
         OIInspectorTabController *tabController = [[OIInspectorTabController alloc] initWithInspectorDictionary:tabPlist containingInspector:self inspectorRegistry:inspectorRegistry bundle:sourceBundle];
 	if (!tabController)
 	    continue;
+
+        NSString *inspectionIdentifier = [tabPlist objectForKey:@"preferredForInspectionIdentifier"];
+        if (inspectionIdentifier != nil) {
+            _preferredTabIdentifierForInspectionIdentifier[inspectionIdentifier] = tabController.identifier;
+        }
 
         [tabControllers addObject:tabController];
     }
@@ -464,8 +447,8 @@ RCS_ID("$Id$")
     }
     
     for (OIInspectorTabController *tab in _tabControllers) {
-	NSMenuItem *item = [tab menuItemForTarget:self action:@selector(switchToInspector:)];
-	[item setRepresentedObject:tab];
+	NSMenuItem *item = [tab menuItemForTarget:nil action:@selector(revealEmbeddedInspectorFromMenuItem:)];
+        [item setRepresentedObject:tab.identifier];
         if (!hasSingleInspector)
             [item setIndentationLevel:2];
 	[menuItems addObject:item];
@@ -522,7 +505,6 @@ RCS_ID("$Id$")
     [_weak_inspectorController updateTitle];
 }
 
-
 #pragma mark -
 #pragma mark NSObject (OIInspectorOptionalMethods)
 
@@ -548,10 +530,6 @@ RCS_ID("$Id$")
     
     if  (!isVisible) {
         [item setState:NSOffState];
-    } else if ([item action] == @selector(switchToInspector:)) {
-	// one of our tabs
-	OIInspectorTabController *tab = [item representedObject];
-	[item setState:[tab isVisible] ? NSOnState : NSOffState];
     }
     return YES;
 }
@@ -561,18 +539,10 @@ RCS_ID("$Id$")
 
 - (void)_selectTabBasedOnObjects:(NSArray *)objects;
 {
-    // Find the 'most relevant' object that has an inspector that directly applies to it.  This depends on the objects getting added to the inspection set in the right order.
+    // Find the 'most relevant' object that has an inspector that directly applies to it.  You can either register a preferred tab identifier for an inspection identifier, or auto-select a tab based on the order in which objects were added to the inspection set.
     OIInspectionSet *inspectionSet = [_weak_inspectorController.inspectorRegistry inspectionSet];
     NSArray *sortedObjects = [inspectionSet objectsSortedByInsertionOrder:objects];
     
-    if (/* DISABLES CODE */ (0)) {
-        NSUInteger objectIndex, objectCount = [sortedObjects count];
-        for (objectIndex = 0; objectIndex < objectCount; objectIndex++) {
-            id object = [sortedObjects objectAtIndex:objectIndex];
-            NSLog(@"%ld - %@", [inspectionSet insertionOrderForObject:object], [object shortDescription]);
-        }
-    }
-
     NSString *inspectionIdentifier = [_weak_inspectorController.inspectorRegistry inspectionIdentifierForCurrentInspectionSet];
     if (_currentInspectionIdentifier || inspectionIdentifier) {
         // do not change the selected tab if the inspectionIdentifier has not changed.
@@ -581,41 +551,25 @@ RCS_ID("$Id$")
         _currentInspectionIdentifier = [inspectionIdentifier copy];
     }
 
-    NSArray *tabIdentifiers = [self tabIdentifiers];
-    
-    for (id object in sortedObjects) {
-        // Ask each of the tabs if this tab is the perfect match for the object
-        for (NSString *tabIdentifier in tabIdentifiers) {
-            OIInspector *inspector = [self inspectorWithIdentifier:tabIdentifier];
-            if ([inspector shouldBeUsedForObject:object]) {
-                [self setSelectedTabIdentifiers:[NSArray arrayWithObject:tabIdentifier] pinnedTabIdentifiers:[NSArray array]];
-                return;
+    NSString *preferredIdentifier = _currentInspectionIdentifier != nil ? _preferredTabIdentifierForInspectionIdentifier[_currentInspectionIdentifier] : nil;
+    if (preferredIdentifier == nil) {
+        NSArray *tabIdentifiers = [self tabIdentifiers];
+        for (id object in sortedObjects) {
+            // Ask each of the tabs if this tab is the perfect match for the object
+            for (NSString *tabIdentifier in tabIdentifiers) {
+                OIInspector *inspector = [self inspectorWithIdentifier:tabIdentifier];
+                if ([inspector shouldBeUsedForObject:object]) {
+                    preferredIdentifier = tabIdentifier;
+                    break;
+                }
             }
         }
     }
-    
-    // Nothing appropriate found; just leave it.
-}
 
-- (OIInspectorTabController *)_tabWithIdentifier:(NSString *)identifier;
-{
-    for (OIInspectorTabController *tab in _tabControllers)
-        if (OFISEQUAL(identifier, [[tab inspector] identifier]))
-            return tab;
-    return nil;
-}
-
-- (void)_updateDimmedForTab:(OIInspectorTabController *)tab;
-{
-    BOOL shouldDim = [tab shouldBeDimmed];
-    
-    NSUInteger tabIndex = [_tabControllers indexOfObject:tab];
-    OBASSERT(tabIndex != NSNotFound);
-    
-    OITabCell *cell = [buttonMatrix cellAtRow:0 column:tabIndex];
-    if (shouldDim != [cell dimmed]) {
-        [cell setDimmed:shouldDim];
-        [buttonMatrix setNeedsDisplay:YES];
+    if (preferredIdentifier != nil) {
+        [self setSelectedTabIdentifiers:@[preferredIdentifier] pinnedTabIdentifiers:@[]];
+    } else {
+        // Nothing appropriate found; just leave it.
     }
 }
 
@@ -623,7 +577,6 @@ RCS_ID("$Id$")
 {
     for (OIInspectorTabController *tab in _tabControllers) {
 	[tab inspectObjects:_shouldInspectNothing];
-	[self _updateDimmedForTab:tab];
     }
 }
 
@@ -636,13 +589,13 @@ RCS_ID("$Id$")
     [buttonMatrix renewRows:1 columns:tabIndex];
     [buttonMatrix sizeToCells];
     [buttonMatrix deselectAllCells];
-
+    
     while (tabIndex--) {
-	OIInspectorTabController *tab = [_tabControllers objectAtIndex:tabIndex];
-	NSButtonCell *cell = [buttonMatrix cellAtRow:0 column:tabIndex];
+        OIInspectorTabController *tab = [_tabControllers objectAtIndex:tabIndex];
+        NSButtonCell *cell = [buttonMatrix cellAtRow:0 column:tabIndex];
         [cell setImage:[tab image]];
-	[cell setRepresentedObject:tab];
-	
+        [cell setRepresentedObject:[tab identifier]];
+        
         if ([tab isVisible])
             [buttonMatrix setSelectionFrom:tabIndex to:tabIndex anchor:tabIndex highlight:YES];
     }
@@ -705,17 +658,17 @@ RCS_ID("$Id$")
 	
 	selectedTabCount++;
 
-        NSView *view = [tab inspectorView];
-        NSRect viewFrame = [view frame];
+        NSView *tabInspectorView = [tab inspectorView];
+        NSRect viewFrame = [tabInspectorView frame];
 	OBASSERT(viewFrame.size.width <= size.width); // make sure it'll fit
 	
         viewFrame.origin.x = (CGFloat)floor((size.width - viewFrame.size.width) / 2.0);
         viewFrame.origin.y = size.height;
-        viewFrame.size = [view frame].size;
-        [view setFrame:viewFrame];
-	[contentView addSubview:view];
+        viewFrame.size = [tabInspectorView frame].size;
+        [tabInspectorView setFrame:viewFrame];
+	[contentView addSubview:tabInspectorView];
 	
-        size.height += [view frame].size.height;
+        size.height += [tabInspectorView frame].size.height;
     }
     
     if (selectedTabCount == 0)
@@ -727,7 +680,7 @@ RCS_ID("$Id$")
     [contentView setFrame:contentFrame];
     
     NSView *inspectorView = self.view;
-    if (!self.placesButtonsInTitlebar) {
+    if (!self.placesButtonsInTitlebar && !self.placesButtonsInHeaderView) {
         size.height += [buttonMatrix frame].size.height + 2.0;
     }
     NSRect frame = [inspectorView frame];
@@ -804,6 +757,12 @@ RCS_ID("$Id$")
         [self.titlebarAccessory.view addSubview:buttonMatrix.superview];
         NSRect rButtonMatrixBackground = buttonMatrix.superview.frame;
         rButtonMatrixBackground.origin = NSZeroPoint;
+        buttonMatrix.superview.frame = rButtonMatrixBackground;
+    } else if (window && self.placesButtonsInHeaderView && !_weak_inspectorController.headingButton.accessoryView) {
+        OIInspectorHeaderView *headerView = _weak_inspectorController.headingButton;
+        headerView.accessoryView = buttonMatrix.superview;
+        NSRect rButtonMatrixBackground = buttonMatrix.superview.frame;
+        rButtonMatrixBackground.origin = CGPointMake(0.0f, headerView.titleContentHeight);
         buttonMatrix.superview.frame = rButtonMatrixBackground;
     }
     

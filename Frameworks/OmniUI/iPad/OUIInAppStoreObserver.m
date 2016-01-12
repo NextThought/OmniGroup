@@ -15,9 +15,10 @@ RCS_ID("$Id$");
 
 @implementation OUIInAppStoreObserver
 
-- (void)paymentQueue:(SKPaymentQueue *)queue updatedTransactions:(NSArray *)transactions
+- (void)paymentQueue:(SKPaymentQueue *)queue updatedTransactions:(NSArray *)transactions NS_EXTENSION_UNAVAILABLE_IOS("")
 {
     OUIAppController *appDelegate = [OUIAppController controller];
+    
     NSArray *productIdentifiers = [appDelegate inAppPurchaseIdentifiers];
     NSMutableDictionary *productIdentifierForSKU = [NSMutableDictionary dictionary];
     for (NSString *productIdentifier in productIdentifiers) {
@@ -26,6 +27,8 @@ RCS_ID("$Id$");
             productIdentifierForSKU[pricingOptionSKU] = productIdentifier;
         }
     }
+    
+    id <OUIInAppStoreObserverDelegate> myDelegate = self.delegate; // Strong reference to our delegate for the duration of this method
 
     NSMutableArray *failedTransactions = [NSMutableArray array];
     
@@ -40,15 +43,13 @@ RCS_ID("$Id$");
                 if (![productIdentifiers containsObject:productIdentifier])
                     continue;
 
-                if (![appDelegate addPurchasedProductToKeychain:productIdentifier])
-                    continue;
-
+                [appDelegate addPurchasedProductToKeychain:productIdentifier];
                 [appDelegate didUnlockInAppPurchase:productIdentifier];
 
                 if (transaction.transactionState == SKPaymentTransactionStatePurchased)
-                    [self.delegate storeObserver:self paymentQueue:queue successfullyPurchasedSKU:purchasedSKU];
+                    [myDelegate storeObserver:self paymentQueue:queue successfullyPurchasedSKU:purchasedSKU];
                 else
-                    [self.delegate storeObserver:self paymentQueue:queue successfullyRestoredSKU:purchasedSKU];
+                    [myDelegate storeObserver:self paymentQueue:queue successfullyRestoredSKU:purchasedSKU];
 
                 [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
 
@@ -67,7 +68,7 @@ RCS_ID("$Id$");
     }
     
     if (failedTransactions.count)
-        [self.delegate storeObserver:self paymentQueue:queue transactionsFailed:failedTransactions];
+        [myDelegate storeObserver:self paymentQueue:queue transactionsFailed:failedTransactions];
 }
 
 - (void)paymentQueueRestoreCompletedTransactionsFinished:(SKPaymentQueue *)queue;

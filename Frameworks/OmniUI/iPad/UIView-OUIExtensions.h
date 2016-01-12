@@ -53,17 +53,16 @@ typedef OUIViewVisitorResult(^OUIViewVisitorBlock)(UIView *view);
 
 @property(readonly,nonatomic) UIEdgeInsets borderEdgeInsets;
 
+#ifdef DEBUG
+- (void)expectDeallocationOfViewTreeSoon;
+#endif
+
 @end
 
 #ifdef DEBUG // Uses private API
 extern UIResponder *OUIWindowFindFirstResponder(UIWindow *window);
 extern void OUILogViewTree(UIView *root);
 #endif
-
-extern NSArray *OUIViewAddShadowEdges(UIView *self);
-extern void OUIViewLayoutShadowEdges(UIView *self, NSArray *shadowEdges, BOOL flipped);
-
-#ifdef NS_BLOCKS_AVAILABLE
 
 // Fiddles the UIView animation enabledness
 extern void OUIWithAnimationsDisabled(BOOL disabled, void (^actions)(void));
@@ -78,8 +77,6 @@ extern void OUIWithLayerAnimationsDisabled(BOOL disabled, void (^actions)(void))
 extern void OUIWithAppropriateLayerAnimations(void (^actions)(void));
 
 extern void OUIDisplayNeededViews(void);
-
-#endif
 
 #ifdef OMNI_ASSERTIONS_ON
 extern BOOL OUICheckValidFrame(CGRect rect);

@@ -1,4 +1,4 @@
-// Copyright 2010-2012 The Omni Group. All rights reserved.
+// Copyright 2010-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -18,8 +18,16 @@ extern void OUILogAncestorViews(UIView *view);
 #endif
 
 // Convenience for UIGraphicsBegin/EndImageContext for resolution independent drawing
-extern void OUIGraphicsBeginImageContext(CGSize size);
-extern void OUIGraphicsEndImageContext(void); 
+static inline void OUIGraphicsBeginImageContext(CGSize size)
+{
+    // NO = we want a transparent context
+    // 0 = scale factor is set to the scale factor of the device's main screen
+    UIGraphicsBeginImageContextWithOptions(size, NO, 0);
+}
+static inline void OUIGraphicsEndImageContext(void)
+{
+    UIGraphicsEndImageContext();
+}
 
 // For segmented contorls, stepper buttons, etc.
 
@@ -41,7 +49,7 @@ extern UIImage *OUIMakeShadowedImage(UIImage *image, OUIShadowType type);
 extern void OUISetShadowOnLabel(UILabel *label, OUIShadowType type);
 
 extern void OUIDrawTransparentColorBackground(CGContextRef ctx, CGRect rect, CGSize phase);
-extern void OUIDrawPatternBackground(CGContextRef ctx, NSString *imageName, CGRect rect, CGSize phase);
+extern void OUIDrawPatternBackground(CGContextRef ctx, UIImage *patternImage, CGRect rect, CGSize phase);
 
 static inline CGRect OUIEdgeInsetsOutsetRect(CGRect rect, UIEdgeInsets insets)
 {

@@ -1,4 +1,4 @@
-// Copyright 2009-2014 Omni Development, Inc. All rights reserved.
+// Copyright 2009-2015 Omni Development, Inc. All rights reserved.
 //
 // This software may only be used and reproduced according to the
 // terms in the file OmniSourceLicense.html, which should be
@@ -91,7 +91,7 @@ static SecKeyRef copyKeyRefFromEncodedKey(SecExternalFormat keyFormat, const cha
     [pemBlob appendBytes:"-----BEGIN " length:11];
     //[pemBlob appendBytes:pemHeaderString length:strlen(pemHeaderString)];
     [pemBlob appendBytes:"PUBLIC KEY-----\r\n" length:17];
-    [pemBlob appendData:[[keyBytes base64String] dataUsingEncoding:NSASCIIStringEncoding]];
+    [pemBlob appendData:[[keyBytes data] base64EncodedDataWithOptions:NSDataBase64Encoding64CharacterLineLength]];
     [pemBlob appendBytes:"\r\n-----END " length:11];
     //[pemBlob appendBytes:pemHeaderString length:strlen(pemHeaderString)];
     [pemBlob appendBytes:"PUBLIC KEY-----\r\n" length:17];
@@ -104,7 +104,7 @@ static SecKeyRef copyKeyRefFromEncodedKey(SecExternalFormat keyFormat, const cha
     
     SecItemImportExportKeyParameters keyParams = {
         .version = SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION,
-        .flags = kSecKeyImportOnlyOne | kSecItemPemArmour,
+        .flags = kSecKeyImportOnlyOne,
 	.passphrase = NULL,
 	.alertTitle = NULL,
 	.alertPrompt = NULL,
@@ -113,7 +113,8 @@ static SecKeyRef copyKeyRefFromEncodedKey(SecExternalFormat keyFormat, const cha
 	.keyAttributes = NULL, /* See below for rant */
     };
     
-    err = SecItemImport((__bridge CFDataRef)keyBytes, NULL, &keyFormat, &itemType, kSecKeyImportOnlyOne, &keyParams, NULL, &importedItems);
+    err = SecItemImport((__bridge CFDataRef)keyBytes, NULL, &keyFormat, &itemType, 0, &keyParams, NULL, &importedItems);
+
     if (err != noErr) {
         errInfo = [NSMutableDictionary dictionary];
         [errInfo setObject:[NSError errorWithDomain:NSOSStatusErrorDomain code:err userInfo:[NSDictionary dictionaryWithObject:@"SecItemImport" forKey:@"function"]]forKey:NSUnderlyingErrorKey];
@@ -435,10 +436,13 @@ SecKeyRef OFXMLSigCopyKeyFromEllipticKeyValue(xmlNode *keyvalue, int *outOrder, 
 
 static NSData *getNamedCurve(const xmlChar *curveName, int *log2_p_out, NSError **outError)
 {
-    for(const struct OFNamedCurveInfo *cursor = _OFEllipticCurveInfoTable; cursor->urn; cursor++) {
-        if (xmlStrcmp(curveName, (xmlChar *)(cursor->urn)) == 0) {
-            *log2_p_out = cursor->generatorSize;
-            return [NSData dataWithBytesNoCopy:(void *)(cursor->derOid) length:(cursor->derOidLength) freeWhenDone:NO];
+    if (strncmp((const char *)curveName, "urn:oid:", 8) == 0) {
+        const xmlChar *curveOIDString = curveName + 8;
+        for(const struct OFNamedCurveInfo *cursor = _OFEllipticCurveInfoTable; cursor->urn; cursor++) {
+            if (xmlStrcmp(curveOIDString, (xmlChar *)(cursor->urn)) == 0) {
+                *log2_p_out = cursor->generatorSize;
+                return [NSData dataWithBytesNoCopy:(void *)(cursor->derOid) length:(cursor->derOidLength) freeWhenDone:NO];
+            }
         }
     }
 
