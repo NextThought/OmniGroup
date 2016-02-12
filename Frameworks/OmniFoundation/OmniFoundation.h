@@ -9,14 +9,6 @@
 
 #import <Foundation/Foundation.h>
 
-#if TARGET_OS_TV
-
-#import <OmniFoundation/OFNull.h>
-#import <OmniFoundation/OFObject.h>
-#import <OmniFoundation/NSString-OFConversion.h>
-
-#else
-
 #import <OmniFoundation/OFFeatures.h>
 
 #import <OmniFoundation/OFASN1Utilities.h>
@@ -42,8 +34,10 @@
 #import <OmniFoundation/OFFileEdit.h>
 #import <OmniFoundation/OFFileMotionResult.h>
 #import <OmniFoundation/OFGeometry.h>
+#if !TARGET_OS_TV
 #import <OmniFoundation/OFHTTPState.h>
 #import <OmniFoundation/OFHTTPStateMachine.h>
+#endif
 #import <OmniFoundation/OFIndexPath.h>
 #import <OmniFoundation/OFKnownKeyDictionaryTemplate.h>
 #import <OmniFoundation/OFLockFile.h>
@@ -53,8 +47,10 @@
 #import <OmniFoundation/OFMutableKnownKeyDictionary.h>
 #import <OmniFoundation/OFNetChangeNotifier.h>
 #import <OmniFoundation/OFNetReachability.h>
+#if !TARGET_OS_TV
 #import <OmniFoundation/OFNetStateNotifier.h>
 #import <OmniFoundation/OFNetStateRegistration.h>
+#endif
 #import <OmniFoundation/OFNull.h>
 #import <OmniFoundation/OFObject.h>
 #import <OmniFoundation/OFOrderedMutableDictionary.h>
@@ -80,7 +76,7 @@
 #import <OmniFoundation/OFWeakReference.h>
 //#import <OmniFoundation/OFXMLSignature.h> -- imports non-module headers
 
-#if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
+#if (!defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE) && (!defined(TARGET_TV_OS) || !TARGET_TV_OS)
 #import <OmniFoundation/OFBTree.h>
 #import <OmniFoundation/OFBulkBlockPool.h>
 #import <OmniFoundation/OFBundledClass.h>
@@ -135,13 +131,13 @@
 #import <OmniFoundation/OFXMLReader.h>
 #import <OmniFoundation/OFXMLString.h>
 #import <OmniFoundation/OFXMLUnparsedElement.h>
-#if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
+#if (!defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE) && (!defined(TARGET_TV_OS) || !TARGET_TV_OS)
 #import <OmniFoundation/OFXMLMaker.h>
 #import <OmniFoundation/OFXMLTextWriterSink.h>
 #endif
 
 // AppleScript
-#if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
+#if (!defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE) && (!defined(TARGET_TV_OS) || !TARGET_TV_OS)
 #import <OmniFoundation/NSAppleEventDescriptor-OFExtensions.h>
 #import <OmniFoundation/OFScriptHelpers.h>
 #import <OmniFoundation/NSScriptClassDescription-OFExtensions.h>
@@ -151,7 +147,7 @@
 #endif
 
 // Formatters
-#if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
+#if (!defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE) && (!defined(TARGET_TV_OS) || !TARGET_TV_OS)
 #import <OmniFoundation/OFCapitalizeFormatter.h>
 #import <OmniFoundation/OFMetricPrefixFormatter.h>
 #import <OmniFoundation/OFMultipleNumberFormatter.h>
@@ -193,7 +189,7 @@
 #import <OmniFoundation/NSFileManager-OFSimpleExtensions.h>
 #import <OmniFoundation/NSFileManager-OFTemporaryPath.h>
 
-#if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
+#if (!defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE) && (!defined(TARGET_TV_OS) || !TARGET_TV_OS)
 #import <OmniFoundation/NSBundle-OFExtensions.h>
 #import <OmniFoundation/NSCalendarDate-OFExtensions.h>
 #import <OmniFoundation/NSComparisonPredicate-OFExtensions.h>
@@ -223,5 +219,3 @@
 #import <OmniFoundation/OFCFCallbacks.h>
 #import <OmniFoundation/CFData-OFExtensions.h>
 #import <OmniFoundation/CFPropertyList-OFExtensions.h>
-
-#endif
