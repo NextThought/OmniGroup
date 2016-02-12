@@ -9,6 +9,14 @@
 
 #import <Foundation/Foundation.h>
 
+#if TARGET_OS_TV
+
+#import <OmniFoundation/OFNull.h>
+#import <OmniFoundation/OFObject.h>
+#import <OmniFoundation/NSString-OFConversion.h>
+
+#else
+
 #import <OmniFoundation/OFFeatures.h>
 
 #import <OmniFoundation/OFASN1Utilities.h>
@@ -73,44 +81,44 @@
 //#import <OmniFoundation/OFXMLSignature.h> -- imports non-module headers
 
 #if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
-	#import <OmniFoundation/OFBTree.h>
-	#import <OmniFoundation/OFBulkBlockPool.h>
-	#import <OmniFoundation/OFBundledClass.h>
-	#import <OmniFoundation/OFByteSet.h>
-	#import <OmniFoundation/OFCDSAUtilities.h>
-	#import <OmniFoundation/OFCacheFile.h>
-	#import <OmniFoundation/OFCharacterScanner-OFTrie.h>
-	#import <OmniFoundation/OFController.h>
-	#import <OmniFoundation/OFDataCursor.h>
-	#import <OmniFoundation/OFDatedMutableDictionary.h>
-	#import <OmniFoundation/OFDedicatedThreadScheduler.h>
-	#import <OmniFoundation/OFDelayedEvent.h>
-        //#import <OmniFoundation/OFDigestUtilities.h> -- imports non-module headers
-	#import <OmniFoundation/OFDynamicStoreListener.h>
-	#import <OmniFoundation/OFEnumNameTable-OFFlagMask.h>
-	#import <OmniFoundation/OFFileUtilities.h>
-	#import <OmniFoundation/OFHTTPHeaderDictionary.h>
-	#import <OmniFoundation/OFHeap.h>
-	#import <OmniFoundation/OFInvocation.h>
-	#import <OmniFoundation/OFMatrix.h>
-	#import <OmniFoundation/OFMessageQueue.h>
-	#import <OmniFoundation/OFMessageQueuePriorityProtocol.h>
-	#import <OmniFoundation/OFObject-Queue.h>
-	#import <OmniFoundation/OFOffsetMutableArray.h>
-	#import <OmniFoundation/OFQueueProcessor.h>
-	#import <OmniFoundation/OFResultHolder.h>
-	#import <OmniFoundation/OFRunLoopQueueProcessor.h>
-	#import <OmniFoundation/OFScheduledEvent.h>
-	#import <OmniFoundation/OFScheduler.h>
-	#import <OmniFoundation/OFScratchFile.h>
-	#import <OmniFoundation/OFSecurityUtilities.h>
-	#import <OmniFoundation/OFSignature.h>
-	#import <OmniFoundation/OFSparseArray.h>
-	#import <OmniFoundation/OFSubjectTargettingScriptCommand.h>
-	#import <OmniFoundation/OFThreeValuedMask.h>
-	#import <OmniFoundation/OFTrie.h>
-	#import <OmniFoundation/OFTrieBucket.h>
-	#import <OmniFoundation/OFTrieNode.h>
+#import <OmniFoundation/OFBTree.h>
+#import <OmniFoundation/OFBulkBlockPool.h>
+#import <OmniFoundation/OFBundledClass.h>
+#import <OmniFoundation/OFByteSet.h>
+#import <OmniFoundation/OFCDSAUtilities.h>
+#import <OmniFoundation/OFCacheFile.h>
+#import <OmniFoundation/OFCharacterScanner-OFTrie.h>
+#import <OmniFoundation/OFController.h>
+#import <OmniFoundation/OFDataCursor.h>
+#import <OmniFoundation/OFDatedMutableDictionary.h>
+#import <OmniFoundation/OFDedicatedThreadScheduler.h>
+#import <OmniFoundation/OFDelayedEvent.h>
+//#import <OmniFoundation/OFDigestUtilities.h> -- imports non-module headers
+#import <OmniFoundation/OFDynamicStoreListener.h>
+#import <OmniFoundation/OFEnumNameTable-OFFlagMask.h>
+#import <OmniFoundation/OFFileUtilities.h>
+#import <OmniFoundation/OFHTTPHeaderDictionary.h>
+#import <OmniFoundation/OFHeap.h>
+#import <OmniFoundation/OFInvocation.h>
+#import <OmniFoundation/OFMatrix.h>
+#import <OmniFoundation/OFMessageQueue.h>
+#import <OmniFoundation/OFMessageQueuePriorityProtocol.h>
+#import <OmniFoundation/OFObject-Queue.h>
+#import <OmniFoundation/OFOffsetMutableArray.h>
+#import <OmniFoundation/OFQueueProcessor.h>
+#import <OmniFoundation/OFResultHolder.h>
+#import <OmniFoundation/OFRunLoopQueueProcessor.h>
+#import <OmniFoundation/OFScheduledEvent.h>
+#import <OmniFoundation/OFScheduler.h>
+#import <OmniFoundation/OFScratchFile.h>
+#import <OmniFoundation/OFSecurityUtilities.h>
+#import <OmniFoundation/OFSignature.h>
+#import <OmniFoundation/OFSparseArray.h>
+#import <OmniFoundation/OFSubjectTargettingScriptCommand.h>
+#import <OmniFoundation/OFThreeValuedMask.h>
+#import <OmniFoundation/OFTrie.h>
+#import <OmniFoundation/OFTrieBucket.h>
+#import <OmniFoundation/OFTrieNode.h>
 #endif
 
 
@@ -128,31 +136,31 @@
 #import <OmniFoundation/OFXMLString.h>
 #import <OmniFoundation/OFXMLUnparsedElement.h>
 #if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
-    #import <OmniFoundation/OFXMLMaker.h>
-    #import <OmniFoundation/OFXMLTextWriterSink.h>
+#import <OmniFoundation/OFXMLMaker.h>
+#import <OmniFoundation/OFXMLTextWriterSink.h>
 #endif
 
 // AppleScript
 #if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
-    #import <OmniFoundation/NSAppleEventDescriptor-OFExtensions.h>
-    #import <OmniFoundation/OFScriptHelpers.h>
-    #import <OmniFoundation/NSScriptClassDescription-OFExtensions.h>
-    #import <OmniFoundation/OFAddScriptCommand.h>
-    #import <OmniFoundation/OFRemoveScriptCommand.h>
-    #import <OmniFoundation/OFScriptPlaceholder.h>
+#import <OmniFoundation/NSAppleEventDescriptor-OFExtensions.h>
+#import <OmniFoundation/OFScriptHelpers.h>
+#import <OmniFoundation/NSScriptClassDescription-OFExtensions.h>
+#import <OmniFoundation/OFAddScriptCommand.h>
+#import <OmniFoundation/OFRemoveScriptCommand.h>
+#import <OmniFoundation/OFScriptPlaceholder.h>
 #endif
 
 // Formatters
 #if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
-    #import <OmniFoundation/OFCapitalizeFormatter.h>
-    #import <OmniFoundation/OFMetricPrefixFormatter.h>
-    #import <OmniFoundation/OFMultipleNumberFormatter.h>
-    #import <OmniFoundation/OFNumberFormatter.h>
-    #import <OmniFoundation/OFSimpleStringFormatter.h>
-    #import <OmniFoundation/OFSocialSecurityFormatter.h>
-    #import <OmniFoundation/OFTelephoneFormatter.h>
-    #import <OmniFoundation/OFUppercaseFormatter.h>
-    #import <OmniFoundation/OFZipCodeFormatter.h>
+#import <OmniFoundation/OFCapitalizeFormatter.h>
+#import <OmniFoundation/OFMetricPrefixFormatter.h>
+#import <OmniFoundation/OFMultipleNumberFormatter.h>
+#import <OmniFoundation/OFNumberFormatter.h>
+#import <OmniFoundation/OFSimpleStringFormatter.h>
+#import <OmniFoundation/OFSocialSecurityFormatter.h>
+#import <OmniFoundation/OFTelephoneFormatter.h>
+#import <OmniFoundation/OFUppercaseFormatter.h>
+#import <OmniFoundation/OFZipCodeFormatter.h>
 #endif
 
 // Foundation extensions
@@ -186,23 +194,23 @@
 #import <OmniFoundation/NSFileManager-OFTemporaryPath.h>
 
 #if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
-    #import <OmniFoundation/NSBundle-OFExtensions.h>
-    #import <OmniFoundation/NSCalendarDate-OFExtensions.h>
-    #import <OmniFoundation/NSComparisonPredicate-OFExtensions.h>
-    #import <OmniFoundation/NSData-OFExtensions.h>
-    #import <OmniFoundation/NSData-OFFileIO.h>
-    #import <OmniFoundation/NSDecimalNumber-OFExtensions.h>
-    #import <OmniFoundation/NSException-OFExtensions.h>
-    #import <OmniFoundation/NSFileManager-OFExtensions.h>
-    #import <OmniFoundation/NSMutableData-OFExtensions.h>
-    #import <OmniFoundation/NSNotificationCenter-OFExtensions.h>
-    #import <OmniFoundation/NSNotificationQueue-OFExtensions.h>
-    #import <OmniFoundation/NSObject-OFAppleScriptExtensions.h>
-    #import <OmniFoundation/NSProcessInfo-OFExtensions.h>
-    #import <OmniFoundation/NSScanner-OFExtensions.h>
-    #import <OmniFoundation/NSScriptCommand-OFExtensions.h>
-    #import <OmniFoundation/NSScriptObjectSpecifier-OFExtensions.h>
-    #import <OmniFoundation/NSThread-OFExtensions.h>
+#import <OmniFoundation/NSBundle-OFExtensions.h>
+#import <OmniFoundation/NSCalendarDate-OFExtensions.h>
+#import <OmniFoundation/NSComparisonPredicate-OFExtensions.h>
+#import <OmniFoundation/NSData-OFExtensions.h>
+#import <OmniFoundation/NSData-OFFileIO.h>
+#import <OmniFoundation/NSDecimalNumber-OFExtensions.h>
+#import <OmniFoundation/NSException-OFExtensions.h>
+#import <OmniFoundation/NSFileManager-OFExtensions.h>
+#import <OmniFoundation/NSMutableData-OFExtensions.h>
+#import <OmniFoundation/NSNotificationCenter-OFExtensions.h>
+#import <OmniFoundation/NSNotificationQueue-OFExtensions.h>
+#import <OmniFoundation/NSObject-OFAppleScriptExtensions.h>
+#import <OmniFoundation/NSProcessInfo-OFExtensions.h>
+#import <OmniFoundation/NSScanner-OFExtensions.h>
+#import <OmniFoundation/NSScriptCommand-OFExtensions.h>
+#import <OmniFoundation/NSScriptObjectSpecifier-OFExtensions.h>
+#import <OmniFoundation/NSThread-OFExtensions.h>
 #endif
 
 // CoreFoundation extensions
@@ -215,3 +223,5 @@
 #import <OmniFoundation/OFCFCallbacks.h>
 #import <OmniFoundation/CFData-OFExtensions.h>
 #import <OmniFoundation/CFPropertyList-OFExtensions.h>
+
+#endif
