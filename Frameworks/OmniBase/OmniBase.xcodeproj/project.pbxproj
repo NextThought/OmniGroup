@@ -1342,7 +1342,7 @@
 		};
 		40167E371C6CCCED000C4973 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 34C40F81194F4C84001A4399 /* Touch-Framework-Common.xcconfig */;
+			baseConfigurationReference = 34C40F83194F4C84001A4399 /* Touch-Framework-Debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";

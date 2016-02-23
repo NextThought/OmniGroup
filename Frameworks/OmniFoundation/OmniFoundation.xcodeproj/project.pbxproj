@@ -5570,6 +5570,7 @@
 		};
 		40167E6B1C6CD071000C4973 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 34F16B45194F6C6100AD9C4D /* Touch-Framework-Debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -5625,6 +5626,7 @@
 		};
 		40167E6C1C6CD071000C4973 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 34F16B46194F6C6100AD9C4D /* Touch-Framework-Release.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
