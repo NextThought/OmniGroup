@@ -494,6 +494,8 @@
 				TargetAttributes = {
 					34800E111B19233E0008DC9E = {
 						CreatedOnToolsVersion = 6.3.1;
+						DevelopmentTeam = XGPWRAB2BX;
+						ProvisioningStyle = Manual;
 					};
 				};
 			};
@@ -682,6 +684,8 @@
 			baseConfigurationReference = 34800E3D1B1923870008DC9E /* Touch-Framework-Debug.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEVELOPMENT_TEAM = XGPWRAB2BX;
 				GCC_PREFIX_HEADER = OmniUnzip_Prefix.pch;
 				GCC_PREPROCESSOR_DEFINITIONS = "$(value)";
 				GCC_WARN_SHADOW = YES;
@@ -697,6 +701,8 @@
 			baseConfigurationReference = 34800E3E1B1923870008DC9E /* Touch-Framework-Release.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				DEVELOPMENT_TEAM = XGPWRAB2BX;
 				GCC_PREFIX_HEADER = OmniUnzip_Prefix.pch;
 				GCC_PREPROCESSOR_DEFINITIONS = "$(value)";
 				GCC_WARN_SHADOW = YES;

@@ -842,6 +842,8 @@
 				TargetAttributes = {
 					34637CCB194F448F009B51C5 = {
 						CreatedOnToolsVersion = 6.0;
+						DevelopmentTeam = XGPWRAB2BX;
+						ProvisioningStyle = Manual;
 					};
 					34637CD5194F448F009B51C5 = {
 						CreatedOnToolsVersion = 6.0;
@@ -1124,6 +1126,8 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEVELOPMENT_TEAM = XGPWRAB2BX;
 				INFOPLIST_FILE = Info.plist;
 				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniBase;
 				PRODUCT_NAME = OmniBase;
@@ -1136,6 +1140,8 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				DEVELOPMENT_TEAM = XGPWRAB2BX;
 				INFOPLIST_FILE = Info.plist;
 				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniBase;
 				PRODUCT_NAME = OmniBase;

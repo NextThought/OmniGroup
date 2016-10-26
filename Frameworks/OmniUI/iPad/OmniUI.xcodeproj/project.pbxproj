@@ -2081,6 +2081,8 @@
 				TargetAttributes = {
 					348A79BA1B5849C70082D55D = {
 						CreatedOnToolsVersion = 7.0;
+						DevelopmentTeam = XGPWRAB2BX;
+						ProvisioningStyle = Manual;
 					};
 				};
 			};
@@ -2547,6 +2549,8 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				DEVELOPMENT_TEAM = XGPWRAB2BX;
 				INFOPLIST_FILE = Info.plist;
 				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniUI;
 				PRODUCT_NAME = OmniUI;
@@ -2559,6 +2563,8 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				DEVELOPMENT_TEAM = XGPWRAB2BX;
 				INFOPLIST_FILE = Info.plist;
 				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniUI;
 				PRODUCT_NAME = OmniUI;

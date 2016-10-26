@@ -692,6 +692,8 @@
 				TargetAttributes = {
 					34218E4919C23ECE00899C9A = {
 						CreatedOnToolsVersion = 6.1;
+						DevelopmentTeam = XGPWRAB2BX;
+						ProvisioningStyle = Manual;
 					};
 				};
 			};
@@ -932,6 +934,8 @@
 			baseConfigurationReference = 34218E4319C23EB900899C9A /* Touch-Framework-Debug.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				DEVELOPMENT_TEAM = XGPWRAB2BX;
 				GCC_PREFIX_HEADER = "$(TARGET_NAME)_Prefix.h";
 				INFOPLIST_FILE = Info.plist;
 				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniQuartz;
@@ -944,6 +948,8 @@
 			baseConfigurationReference = 34218E4419C23EB900899C9A /* Touch-Framework-Release.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				DEVELOPMENT_TEAM = XGPWRAB2BX;
 				GCC_PREFIX_HEADER = "$(TARGET_NAME)_Prefix.h";
 				INFOPLIST_FILE = Info.plist;
 				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniQuartz;
