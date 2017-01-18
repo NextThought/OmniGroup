@@ -2739,10 +2739,15 @@
 				TargetAttributes = {
 					34C12AFB194FF90F005CB70B = {
 						CreatedOnToolsVersion = 6.0;
+						DevelopmentTeam = XGPWRAB2BX;
+						ProvisioningStyle = Manual;
 					};
 					34C12B05194FF90F005CB70B = {
 						CreatedOnToolsVersion = 6.0;
 						TestTargetID = 34C12AFB194FF90F005CB70B;
+					};
+					4AA1E67A08AA764600E2FF6B = {
+						DevelopmentTeam = XGPWRAB2BX;
 					};
 					4AA1E7FA08AA764600E2FF6B = {
 						TestTargetID = 4AA1E67A08AA764600E2FF6B;
@@ -3311,6 +3316,8 @@
 			baseConfigurationReference = 34C12B2B194FF926005CB70B /* Touch-Framework-Debug.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEVELOPMENT_TEAM = XGPWRAB2BX;
 				INFOPLIST_FILE = Info.plist;
 				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.OmniAppKit;
 				PRODUCT_NAME = OmniAppKit;
@@ -3322,6 +3329,8 @@
 			baseConfigurationReference = 34C12B2C194FF926005CB70B /* Touch-Framework-Release.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				DEVELOPMENT_TEAM = XGPWRAB2BX;
 				INFOPLIST_FILE = Info.plist;
 				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.OmniAppKit;
 				PRODUCT_NAME = OmniAppKit;
@@ -3378,6 +3387,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				DEVELOPMENT_TEAM = XGPWRAB2BX;
 				INFOPLIST_FILE = Info.plist;
 				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.OmniAppKit;
 				PRODUCT_NAME = OmniAppKit;

@@ -3904,6 +3904,8 @@
 				TargetAttributes = {
 					34F16B19194F6C3200AD9C4D = {
 						CreatedOnToolsVersion = 6.0;
+						DevelopmentTeam = XGPWRAB2BX;
+						ProvisioningStyle = Manual;
 					};
 					34F16B23194F6C3200AD9C4D = {
 						CreatedOnToolsVersion = 6.0;
@@ -4893,6 +4895,8 @@
 			baseConfigurationReference = 34F16B45194F6C6100AD9C4D /* Touch-Framework-Debug.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEVELOPMENT_TEAM = XGPWRAB2BX;
 				INFOPLIST_FILE = Info.plist;
 				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniFoundation;
 				OTHER_LDFLAGS = (
@@ -4908,6 +4912,8 @@
 			baseConfigurationReference = 34F16B46194F6C6100AD9C4D /* Touch-Framework-Release.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				DEVELOPMENT_TEAM = XGPWRAB2BX;
 				INFOPLIST_FILE = Info.plist;
 				OMNI_BUNDLE_IDENTIFIER = com.omnigroup.framework.OmniFoundation;
 				OTHER_LDFLAGS = (

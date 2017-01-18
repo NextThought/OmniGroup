@@ -14,7 +14,7 @@
 
 @class CABasicAnimation;
 
-@interface OQContentAnimatingLayer : CALayer
+@interface OQContentAnimatingLayer : CALayer<CAAnimationDelegate>
 {
 @private
     NSMutableArray *_activeContentAnimations;
